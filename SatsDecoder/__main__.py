@@ -1,6 +1,4 @@
-import argparse
 import configparser
-import sys
 
 from SatsDecoder import CONFIG, HOMEDIR, PROTOCOLS, ui
 from SatsDecoder.version import __version__

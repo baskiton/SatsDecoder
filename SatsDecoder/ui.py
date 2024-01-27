@@ -82,7 +82,7 @@ class HistoryFrame(ttk.LabelFrame):
                 i['iid'] = r[0]
             return i
 
-    def put(self, tag, name, *args):
+    def put(self, tag, name, *args, date=None):
         vals = args[:len(self.master.decoder.columns)]
         if tag == 'img':
             *_, ir, fname = args
@@ -91,7 +91,7 @@ class HistoryFrame(ttk.LabelFrame):
             self.vals[fname] = args[len(self.master.decoder.columns):]
 
         iid = self.table.insert('', 'end', text=name, tags=(tag,),
-                                values=[dt.datetime.utcnow(), tag, *vals])
+                                values=[date or dt.datetime.utcnow(), tag, *vals])
         self.vals[iid] = args[len(self.master.decoder.columns):]
         self.table.selection_set(iid)
 
@@ -398,6 +398,7 @@ class DecoderFrame(ttk.Frame):
             for i in self.decoder.recognize(data):
                 args = i
                 ty, name, *_, packet = i
+                date = 0
 
                 if ty == 'img':
                     ir_ret, fname = packet
@@ -414,6 +415,7 @@ class DecoderFrame(ttk.Frame):
                     fp = pathlib.Path(self.out_dir_v.get()) / name
                     self.dv_frame.set_tlm(tlm, fp)
                     args = args[:-1] + (tlm, fp)
+                    date = tlm.Time
 
                     with fp.open('w') as f:
                         if sys.version_info < (3, 8, 0):
@@ -429,7 +431,7 @@ class DecoderFrame(ttk.Frame):
                 elif ty == 'raw':
                     self.dv_frame.set_raw(packet)
 
-                self.history_frame.put(*args)
+                self.history_frame.put(*args, date=date)
 
 
 class App(ttk.Frame):
