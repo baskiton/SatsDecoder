@@ -22,9 +22,11 @@ class Image:
             else:
                 mode = 'w+b'
                 try:
-                    self.fn.unlink(1)
+                    self.fn.unlink()
                 except IsADirectoryError:
                     self.fn.rmdir()
+                except FileNotFoundError:
+                    pass
             self.f = open(self.fn, mode)
 
         return self.f
