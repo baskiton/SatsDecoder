@@ -70,6 +70,7 @@ class HistoryFrame(ttk.LabelFrame):
     def clear(self):
         self.table.delete(*self.table.get_children())
         self.vals.clear()
+        self.master.decoder.ir.clear(1)
 
     def item_select(self, evt=None):
         self.master.event_generate(self.EVT_SEL, when='tail', x=evt.x, y=evt.y)

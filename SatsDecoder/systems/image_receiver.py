@@ -111,3 +111,8 @@ class ImageReceiver:
 
     def push_data(self, data):
         raise NotImplementedError
+
+    def clear(self):
+        for i in self.images.values():
+            i.close()
+        self.current_fid = 0
