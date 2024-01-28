@@ -165,7 +165,6 @@ ImgData = construct.Struct(
     'name' / construct.Computed(u'ImgData'),
     'reserved0' / construct.Int8ul,
     'offset' / construct.Int32ul,
-    'reserved1' / construct.Bytes(5),
     'data' / construct.GreedyBytes,
 )
 
