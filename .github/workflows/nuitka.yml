@@ -1,0 +1,102 @@
+name: nuitka-build
+
+on:
+  push:
+    branches: [ nuitka ]
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+        python: [ "3.11" ]
+        include:
+          - os: windows-2019
+            python: "3.7"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: 'pip'
+          cache-dependency-path: |
+            **/requirements*.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          bash semver.sh
+
+      - name: Build Executable
+        uses: Nuitka/Nuitka-Action@main
+        with:
+          nuitka-version: main
+          python-flag: -m
+          script-name: SatsDecoder
+          enable-plugins: tk-inter
+          onefile: true
+          standalone: true
+          disable-console: ${{ runner.os == 'Windows' }}
+          mingw64: ${{ runner.os == 'Windows' }}
+
+      - name: Dist rename
+        run: |
+          mkdir -p dist
+          case ${{ matrix.os }} in
+            ubuntu-latest)
+              mv build/SatsDecoder.bin dist/SatsDecoder-linux.bin
+              ;;
+            windows-2019)
+              mv build/SatsDecoder.exe dist/SatsDecoder-win7.exe
+              ;;
+            windows-latest)
+              mv build/SatsDecoder.dist dist/SatsDecoder-win
+              mv build/SatsDecoder.exe dist/
+              ;;
+          esac
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SatsDecoder-${{ matrix.os }}
+          path: |
+            dist/*
+
+  test_release:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/download-artifact@v4
+
+      - name: Collect
+        run: |
+          mkdir out &&
+          cp -r SatsDecoder-*/* out/
+          cd out
+          zip SatsDecoder-win -mr SatsDecoder-win
+
+      - name: Cleanup
+        continue-on-error: true
+        run: gh release delete test -R ${{ github.repository }} --cleanup-tag -y
+
+      - name: Create test release
+        run: gh release create test -R ${{ github.repository }} -t test --target nuitka --generate-notes --prerelease out/*
