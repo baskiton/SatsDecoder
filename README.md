@@ -50,9 +50,21 @@ python -m SatsDecoder --ui
 Required at least Python 3.7  
 I recommend to use a virtual environment
 
-```commandline
-pip install -r requirements.txt
-pip install pyinstaller
-pyinstaller -y decoder.spec
-```
+* Pyinstaller
+    ```commandline
+    pip install -r requirements.txt
+    pip install pyinstaller
+    pyinstaller -y decoder.spec
+    ```
+
+* Nuitka
+    ```commandline
+    pip install -r requirements.txt
+    pip install nuitka
+    python -m nuitka python -m nuitka --python-flag=-m --onefile --standalone \
+        --assume-yes-for-downloads --output-dir=dist --script-name=SatsDecoder \
+        --enable-plugins=tk-inter --windows-icon-from-ico=res/icon.png \
+        --include-data-dir=res=res --noinclude-data-files=res/*.txt
+    ```
+
 The result build can be found in the `dist` folder
