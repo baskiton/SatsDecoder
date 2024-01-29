@@ -50,8 +50,9 @@ jobs:
 
       - name: Build
         run: |
-          bash semver.sh &&
-          pyinstaller -y decoder.spec
+          bash semver.sh
+          [[ ${{ matrix.os }} == windows-latest ]] && pyinstaller -y decoder.spec
+          pyinstaller -y decoder-onefile.spec
 
       - name: Dist rename
         run: |
@@ -61,6 +62,9 @@ jobs:
               ;;
             windows-2019)
               mv dist/SatsDecoder.exe dist/SatsDecoder-win7.exe
+              ;;
+            windows-latest)
+              mv dist/SatsDecoder dist/SatsDecoder-win
               ;;
           esac
 
@@ -79,8 +83,10 @@ jobs:
 
       - name: Collect
         run: |
-          mkdir out &&
+          mkdir -p out
           cp -r SatsDecoder-*/* out/
+          cd out
+          zip SatsDecoder-win -mr SatsDecoder-win
 
       - name: Cleanup
         continue-on-error: true
