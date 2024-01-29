@@ -54,6 +54,9 @@ jobs:
           enable-plugins: tk-inter
           onefile: true
           standalone: true
+          include-data-dir: res=res
+          noinclude-data-files: res/*.txt
+          windows-icon-from-ico: res/icon.png
           disable-console: ${{ runner.os == 'Windows' }}
           mingw64: ${{ runner.os == 'Windows' }}
 

@@ -21,7 +21,7 @@ import PIL.Image
 import PIL.ImageFile
 import PIL.ImageTk
 
-from SatsDecoder import AGWPE_CON, PROTOCOLS, systems, utils
+from SatsDecoder import AGWPE_CON, PROTOCOLS, RES, systems, utils
 from SatsDecoder.version import __version__
 
 
@@ -438,6 +438,8 @@ class DecoderFrame(ttk.Frame):
 class App(ttk.Frame):
     def __init__(self, config):
         super().__init__()
+        self.ico = PIL.Image.open(RES / 'icon.png')
+        self.master.iconphoto(False, PIL.ImageTk.PhotoImage(self.ico))
 
         self.config = config
 
@@ -488,7 +490,7 @@ class App(ttk.Frame):
 
     def about(self, evt=None):
         seq = queue.Queue(5)
-        img = None
+        img = img_l = None
 
         def sequence_check(evt=None):
             nonlocal seq
@@ -503,7 +505,7 @@ class App(ttk.Frame):
             s = ''.join(seq.queue)
             if s in utils.seqs_map:
                 def foo(ss):
-                    nonlocal img
+                    nonlocal img, img_l
 
                     u = base64.b64decode(utils.seqs_map[ss]).decode()
                     w_width = pad_frame.winfo_width() - 2
@@ -517,7 +519,10 @@ class App(ttk.Frame):
                     for i in pad_frame.winfo_children():
                         i.destroy()
                     ok_btn.config(text='73!')
-                    ttk.Label(pad_frame, image=img, justify='center').grid()
+                    if img_l:
+                        img_l.destroy()
+                    img_l = ttk.Label(pad_frame, image=img, justify='center')
+                    img_l.grid()
 
                     about.update()
 
@@ -535,7 +540,7 @@ class App(ttk.Frame):
         frame.grid(column=0, row=0, sticky=tk.NSEW)
 
         ttk.Label(frame, text=f'SatsDecoder v{__version__}').grid(columnspan=2)
-        ttk.Label(frame, text='MIT License\nCopyright (c) 2023 Alexander Baskikh\n', justify='center').grid(columnspan=2, rowspan=3)
+        ttk.Label(frame, text='MIT License\nCopyright (c) 2024 Alexander Baskikh\n', justify='center').grid(columnspan=2, rowspan=3)
 
         links = (
             ('GitHub page:', 'https://github.com/baskiton/SatsDecoder'),

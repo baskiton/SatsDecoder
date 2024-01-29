@@ -1,0 +1,3 @@
+icon.png:
+    This file received from https://freeicons.io/space-icon-set-32688/space-spaceship-chip-satellite-electronic-icon-1244913
+    and available for Creative Commons(Attribution 3.0 unported) license
