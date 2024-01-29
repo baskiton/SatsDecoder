@@ -45,26 +45,38 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller
+          [[ ${{ runner.os }} == Windows ]] && echo imageio >> requirements.txt
           pip install -r requirements.txt
+          bash semver.sh
 
       - name: Build
-        run: |
-          bash semver.sh
-          [[ ${{ matrix.os }} == windows-latest ]] && pyinstaller -y decoder.spec
-          pyinstaller -y decoder-onefile.spec
+        uses: Nuitka/Nuitka-Action@main
+        with:
+          nuitka-version: main
+          python-flag: -m
+          script-name: SatsDecoder
+          enable-plugins: tk-inter
+          onefile: true
+          standalone: true
+          include-data-dir: res=res
+          noinclude-data-files: res/*.txt
+          windows-icon-from-ico: res/icon.png
+          disable-console: ${{ runner.os == 'Windows' }}
+          mingw64: ${{ runner.os == 'Windows' }}
 
       - name: Dist rename
         run: |
+          mkdir -p dist
           case ${{ matrix.os }} in
             ubuntu-latest)
-              mv dist/SatsDecoder dist/SatsDecoder-linux
+              mv build/SatsDecoder.bin dist/SatsDecoder-linux.bin
               ;;
             windows-2019)
-              mv dist/SatsDecoder.exe dist/SatsDecoder-win7.exe
+              mv build/SatsDecoder.exe dist/SatsDecoder-win7.exe
               ;;
             windows-latest)
-              mv dist/SatsDecoder dist/SatsDecoder-win
+              mv build/SatsDecoder.dist dist/SatsDecoder-win
+              mv build/SatsDecoder.exe dist/
               ;;
           esac
 
