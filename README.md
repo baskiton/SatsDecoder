@@ -42,7 +42,7 @@ pip install -r requirements.txt
 
 To run:
 ```commandline
-python -m SatsDecoder --ui
+python -m SatsDecoder
 ```
 
 
