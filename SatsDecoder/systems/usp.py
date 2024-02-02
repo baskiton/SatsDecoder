@@ -1,9 +1,7 @@
 import datetime as dt
-import tkinter as tk
-
-from tkinter import ttk
 
 import construct
+
 from SatsDecoder.systems import common
 from SatsDecoder.systems.image_receiver import ImageReceiver
 
@@ -52,9 +50,9 @@ beacon_flags = construct.BitStruct(
     'Ich_limit3' / construct.Flag,
     'Ich_limit2' / construct.Flag,
     'Ich_limit1' / construct.Flag,
-    'reserved0' / construct.BitsInteger(7),
+    '_reserved0' / construct.BitsInteger(7),
     'charger' / construct.Flag,
-    'reserved1' / construct.BitsInteger(8),
+    '_reserved1' / construct.BitsInteger(8),
 )
 
 Beacon = construct.Struct(
@@ -107,17 +105,17 @@ regular_flags = construct.BitStruct(
     'channelon3' / construct.Flag,
     'channelon2' / construct.Flag,
     'channelon1' / construct.Flag,
-    'Ich_limit4' / construct.Flag,
-    'Ich_limit3' / construct.Flag,
-    'Ich_limit2' / construct.Flag,
-    'Ich_limit1' / construct.Flag,
-    'reserved0' / construct.BitsInteger(3),
+    'Ich_fault4' / construct.Flag,
+    'Ich_fault3' / construct.Flag,
+    'Ich_fault2' / construct.Flag,
+    'Ich_fault1' / construct.Flag,
+    '_reserved0' / construct.BitsInteger(3),
     'add_channelon3' / construct.Flag,
     'add_channelon2' / construct.Flag,
     'add_channelon1' / construct.Flag,
     'fsb' / construct.Flag,
     'charger' / construct.Flag,
-    'reserved1' / construct.BitsInteger(8),
+    '_reserved1' / construct.BitsInteger(8),
 )
 
 Regular = construct.Struct(
@@ -235,105 +233,95 @@ class UspImageReceiver(ImageReceiver):
         return 1
 
 
-class _UspTlmCommon(ttk.Treeview):
-    def __init__(self, master):
-        super().__init__(master, columns='x val', selectmode='browse', show='tree')
-
-        self.column('#0', anchor='e')
-        self.column('x', width=10, stretch=tk.NO)
-
-        self.vsb = ttk.Scrollbar(self.master, orient='vertical', command=self.yview)
-        self.configure(yscrollcommand=self.vsb.set)
-
-    def fill(self, tlm):
-        for k, v in tlm.items():
-            if not k.startswith('_'):
-                self.set(k, 'val', v)
-
-
-class _UspRegular(_UspTlmCommon):
-    def __init__(self, master):
-        super().__init__(master)
-
-        self.insert('', 'end', 'name', text='Name')
-        self.insert('', 'end', 'Usb1', text='Voltage SB #1, V')
-        self.insert('', 'end', 'Usb2', text='Voltage SB #2, V')
-        self.insert('', 'end', 'Usb3', text='Voltage SB #3, V')
-        self.insert('', 'end', 'Isb1', text='Current SB #1, mA')
-        self.insert('', 'end', 'Isb2', text='Current SB #2, mA')
-        self.insert('', 'end', 'Isb3', text='Current SB #3, mA')
-        self.insert('', 'end', 'Iab', text='Current battery, mA')
-        self.insert('', 'end', 'Ich1', text='Current Ch #1, mA')
-        self.insert('', 'end', 'Ich2', text='Current Ch #2, mA')
-        self.insert('', 'end', 'Ich3', text='Current Ch #3, mA')
-        self.insert('', 'end', 'Ich4', text='Current Ch #4, mA')
-        self.insert('', 'end', 't1_pw', text='Temperature battery 1, °C')
-        self.insert('', 'end', 't2_pw', text='Temperature battery 2, °C')
-        self.insert('', 'end', 't3_pw', text='Temperature battery 3, °C')
-        self.insert('', 'end', 't4_pw', text='Temperature battery 4, °C')
-        self.insert('', 'end', 'Uab', text='Voltage battery, V')
-        self.insert('', 'end', 'reg_tel_id', text='Telemetry SN')
-        self.insert('', 'end', 'Time', text='Time')
-        self.insert('', 'end', 'Nres', text='Reloads')
-        self.insert('', 'end', 'FL', text='Flags UHF')
-
-        # TODO
-        self.insert('', 'end', 'flags', text='Flags')
-
-
-class _UspBeacon(_UspRegular):
-    def __init__(self, master):
-        super().__init__(master)
-
-        self.delete('flags')
-        self.insert('', 'end', 't_amp', text='Temperature UHF amp, °C')
-        self.insert('', 'end', 't_uhf', text='Temperature UHF, °C')
-        self.insert('', 'end', 'RSSIrx', text='RSSI Received, dBm')
-        self.insert('', 'end', 'RSSIidle', text='RSSI Idle, dBm')
-        self.insert('', 'end', 'Pf', text='Direct radiation power')
-        self.insert('', 'end', 'Pb', text='Back radiation power')
-        self.insert('', 'end', 'Nres_uhf', text='Reloads UHF')
-        self.insert('', 'end', 'Fl_uhf', text='Flags UHF')
-        self.insert('', 'end', 'Time_uhf', text='Time UHF')
-        self.insert('', 'end', 'UpTime', text='Uptime')
-        self.insert('', 'end', 'Current', text='Current UHF, mA')
-        self.insert('', 'end', 'Uuhf', text='Voltage UHF, V')
-
-        # TODO
-        self.insert('', 'end', 'flags', text='Flags')
-
-
-class _UspTlmView(ttk.Frame):
-    def __init__(self, master):
-        super().__init__(master)
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
-
-        self.tlm_frames = {
-            u'Beacon': _UspBeacon(self),
-            u'Regular': _UspRegular(self),
-        }
-
-        self.tlm_name_l = ttk.Label(self)
-        self.tlm_name_l.grid(row=1, sticky=tk.EW, pady=3)
-
-    def fill(self, tlm, filename):
-        table = self.tlm_frames[tlm.name]
-        table.fill(tlm)
-        for f in self.tlm_frames.values():
-            f.grid_forget()
-            f.vsb.grid_forget()
-
-        table.grid(column=0, row=0, sticky=tk.NSEW)
-        table.vsb.grid(column=1, row=0, sticky=tk.NSEW)
-
-        self.tlm_name_l.config(text=filename)
-
-
 class UspProtocol:
     columns = 'msg-id',
     c_width = 60,
-    tlm_view = _UspTlmView
+    tlm_table = {
+        u'Regular': {
+            'table': (
+                ('name', 'Name'),
+                ('Usb1', 'Voltage SB #1, V'),
+                ('Usb2', 'Voltage SB #2, V'),
+                ('Usb3', 'Voltage SB #3, V'),
+                ('Isb1', 'Current SB #1, mA'),
+                ('Isb2', 'Current SB #2, mA'),
+                ('Isb3', 'Current SB #3, mA'),
+                ('Iab', 'Current battery, mA'),
+                ('Ich1', 'Current Ch #1, mA'),
+                ('Ich2', 'Current Ch #2, mA'),
+                ('Ich3', 'Current Ch #3, mA'),
+                ('Ich4', 'Current Ch #4, mA'),
+                ('t1_pw', 'Temperature battery #1, °C'),
+                ('t2_pw', 'Temperature battery #2, °C'),
+                ('t3_pw', 'Temperature battery #3, °C'),
+                ('t4_pw', 'Temperature battery #4, °C'),
+                ('Uab', 'Voltage battery, V'),
+                ('reg_tel_id', 'Telemetry SN'),
+                ('Time', 'Time'),
+                ('Nres', 'Reloads'),
+                ('FL', 'Flags UHF'),
+            ),
+            'flags': (
+                ('Uab_crit', 'Critical battery voltage'),
+                ('Uab_min', 'Minimal battery voltage'),
+                ('heater2_manual', 'Heater #2 manual'),
+                ('heater1_manual', 'Heater #1 manual'),
+                ('heater2_on', 'Heater #2 ON'),
+                ('heater1_on', 'Heater #1 ON'),
+                ('Tab_max', 'Maximal battery Temperature'),
+                ('Tab_min', 'Minimal battery Temperature'),
+                ('channelon4', 'Channel #4 ON'),
+                ('channelon3', 'Channel #3 ON'),
+                ('channelon2', 'Channel #2 ON'),
+                ('channelon1', 'Channel #1 ON'),
+                ('Ich_fault4', 'Channel #4 Fault'),
+                ('Ich_fault3', 'Channel #3 Fault'),
+                ('Ich_fault2', 'Channel #2 Fault'),
+                ('Ich_fault1', 'Channel #1 Fault'),
+                ('add_channelon3', 'Additional channel #3 ON'),
+                ('add_channelon2', 'Additional channel #2 ON'),
+                ('add_channelon1', 'Additional channel #1 ON'),
+                ('fsb', 'Switch Error'),
+                ('charger', 'Charger connected'),
+            ),
+        },
+        u'Beacon': {
+            'table': ...,
+        }
+    }
+    tlm_table[u'Beacon']['table'] = tlm_table[u'Regular']['table'] + (
+        ('t_amp', 'Temperature UHF amp, °C'),
+        ('t_uhf', 'Temperature UHF, °C'),
+        ('RSSIrx', 'RSSI Received, dBm'),
+        ('RSSIidle', 'RSSI Idle, dBm'),
+        ('Pf', 'Direct radiation power'),
+        ('Pb', 'Back radiation power'),
+        ('Nres_uhf', 'Reloads UHF'),
+        ('Fl_uhf', 'Flags UHF'),
+        ('Time_uhf', 'Time UHF'),
+        ('UpTime', 'Uptime'),
+        ('Current', 'Current UHF, mA'),
+        ('Uuhf', 'Voltage UHF, V'),
+    )
+    tlm_table[u'Beacon']['flags'] = (
+        ('Uab_crit', 'Critical battery voltage'),
+        ('Uab_min', 'Minimal battery voltage'),
+        ('heater2_manual', 'Heater #2 manual'),
+        ('heater1_manual', 'Heater #1 manual'),
+        ('heater2_on', 'Heater #2 ON'),
+        ('heater1_on', 'Heater #1 ON'),
+        ('Tab_max', 'Maximal battery Temperature'),
+        ('Tab_min', 'Minimal battery Temperature'),
+        ('channelon4', 'Channel #4 ON'),
+        ('channelon3', 'Channel #3 ON'),
+        ('channelon2', 'Channel #2 ON'),
+        ('channelon1', 'Channel #1 ON'),
+        ('Ich_limit4', 'Exceeding channel #4 current'),
+        ('Ich_limit3', 'Exceeding channel #3 current'),
+        ('Ich_limit2', 'Exceeding channel #2 current'),
+        ('Ich_limit1', 'Exceeding channel #1 current'),
+        ('charger', 'Charger connected'),
+    )
 
     def __init__(self, outdir):
         self.ir = UspImageReceiver(outdir)

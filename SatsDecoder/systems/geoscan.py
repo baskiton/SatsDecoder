@@ -1,7 +1,4 @@
 import datetime as dt
-import tkinter as tk
-
-from tkinter import ttk
 
 import construct
 
@@ -41,6 +38,7 @@ class MulAdapter(construct.Adapter):
 
 
 geoscan_frame = construct.Struct(
+    'name' / construct.Computed(u'Beacon'),
     'Time' / common.UNIXTimestampAdapter(construct.Int32ul),
     'Iab' / MulAdapter(0.0766, construct.Int16ul),      # mA
     'Isp' / MulAdapter(0.03076, construct.Int16ul),     # mA
@@ -159,51 +157,34 @@ class GeoscanImageReceiver(ImageReceiver):
         return (self._prev_data_sz < prev_sz) and b'\xff\xd9' in data.data
 
 
-class _GeoscanTlmView(ttk.Frame):
-    def __init__(self, master):
-        super().__init__(master)
-        self.rowconfigure(0, weight=1)
-
-        self.tlm_table = ttk.Treeview(self, columns='x val', selectmode='browse', show='tree')
-        self.tlm_table.column('#0', anchor='e')
-        self.tlm_table.column('x', width=10, stretch=tk.NO)
-
-        self.tlm_table.insert('', 'end', 'Time', text='Time')
-        self.tlm_table.insert('', 'end', 'Iab', text='Current total, mA')
-        self.tlm_table.insert('', 'end', 'Isp', text='Current SP, mA')
-        self.tlm_table.insert('', 'end', 'Uab_per', text='Voltage per battery, V')
-        self.tlm_table.insert('', 'end', 'Uab_sum', text='Voltage total, V')
-        self.tlm_table.insert('', 'end', 'Tx_plus', text='Temperature SP X+, °C')
-        self.tlm_table.insert('', 'end', 'Tx_minus', text='Temperature SP X-, °C')
-        self.tlm_table.insert('', 'end', 'Ty_plus', text='Temperature SP Y+, °C')
-        self.tlm_table.insert('', 'end', 'Ty_minus', text='Temperature SP Y-, °C')
-        self.tlm_table.insert('', 'end', 'Tz_plus', text='Temperature SP Z+, °C')
-        self.tlm_table.insert('', 'end', 'Tz_minus', text='Temperature SP Z-, °C')
-        self.tlm_table.insert('', 'end', 'Tab1', text='Temperature battery 1, °C')
-        self.tlm_table.insert('', 'end', 'Tab2', text='Temperature battery 2, °C')
-        self.tlm_table.insert('', 'end', 'CPU_load', text='CPU load, %')
-        self.tlm_table.insert('', 'end', 'Nres_osc', text='Reloads spacecraft')
-        self.tlm_table.insert('', 'end', 'Nres_CommU', text='Reloads CommU')
-        self.tlm_table.insert('', 'end', 'RSSI', text='RSSI, dBm')
-        self.tlm_table.insert('', 'end', 'pad', text='pad')
-
-        self.tlm_table.grid(sticky=tk.NSEW)
-
-        self.tlm_name_l = ttk.Label(self)
-        self.tlm_name_l.grid(sticky=tk.EW, pady=3)
-
-    def fill(self, tlm, filename):
-        for k, v in tlm.items():
-            if not k.startswith('_'):
-                self.tlm_table.set(k, 'val', v)
-
-        self.tlm_name_l.config(text=filename)
-
-
 class GeoscanProtocol:
     columns = ()
     c_width = ()
-    tlm_view = _GeoscanTlmView
+    tlm_table = {
+        u'Beacon': {
+            'table': (
+                ('name', 'Name'),
+                ('Time', 'Time'),
+                ('Iab', 'Current total, mA'),
+                ('Isp', 'Current SP, mA'),
+                ('Uab_per', 'Voltage per battery, V'),
+                ('Uab_sum', 'Voltage total, V'),
+                ('Tx_plus', 'Temperature SP X+, °C'),
+                ('Tx_minus', 'Temperature SP X-, °C'),
+                ('Ty_plus', 'Temperature SP Y+, °C'),
+                ('Ty_minus', 'Temperature SP Y-, °C'),
+                ('Tz_plus', 'Temperature SP Z+, °C'),
+                ('Tz_minus', 'Temperature SP Z-, °C'),
+                ('Tab1', 'Temperature battery #1, °C'),
+                ('Tab2', 'Temperature battery #2, °C'),
+                ('CPU_load', 'CPU load, %'),
+                ('Nres_osc', 'Reloads spacecraft'),
+                ('Nres_CommU', 'Reloads CommU'),
+                ('RSSI', 'RSSI, dBm'),
+                ('pad', 'pad'),
+            )
+        },
+    }
 
     def __init__(self, outdir):
         self.ir = GeoscanImageReceiver(outdir)

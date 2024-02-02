@@ -61,7 +61,7 @@ class HistoryFrame(ttk.LabelFrame):
 
         self.table.grid(sticky=tk.NSEW, pady=3)
 
-        self.vsb = ttk.Scrollbar(self, orient='vertical', command=self.table.yview)
+        self.vsb = utils.AutoScrollbar(self, orient='vertical', command=self.table.yview)
         self.vsb.grid(sticky=tk.NSEW, pady=3, column=1, row=1)
 
         self.table.configure(yscrollcommand=self.vsb.set)
@@ -204,7 +204,7 @@ class DataViewFrame(ttk.LabelFrame):
         self.text = tk.Text(self, state='disabled')
         self.viewers.append(self.text)
 
-        self.tlm = master.decoder.tlm_view(self)
+        self.tlm = utils.TlmCommonFrame(self, master.decoder.tlm_table)
         self.viewers.append(self.tlm)
 
         self.img = CanvasFrame(self)
@@ -472,7 +472,7 @@ class App(ttk.Frame):
 
         #####
         self.update()
-        self.master.minsize(self.winfo_width(), self.winfo_height())
+        self.master.minsize(600, 400)
 
     def exit(self, evt=None):
         for name, df in self.tabs.items():
