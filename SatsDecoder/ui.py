@@ -374,8 +374,6 @@ class DecoderFrame(ttk.Frame):
                 raise e
 
     def _receive(self):
-        cur_if = None
-
         while self.sk:
             try:
                 frame = self.sk.recv(4096)
@@ -390,7 +388,6 @@ class DecoderFrame(ttk.Frame):
                 return
 
             data = frame[37:]
-            # TODO
             for i in self.decoder.recognize(data):
                 args = i
                 ty, name, *_, packet = i
@@ -398,9 +395,6 @@ class DecoderFrame(ttk.Frame):
 
                 if ty == 'img':
                     ir_ret, fname = packet
-                    # if ir_ret == 1:
-                    #     if fname:
-                    #         cur_if = f
                     self.dv_frame.set_img(self.decoder.ir, fname)
                     args = args[:-1] + (self.decoder.ir, fname)
 
@@ -409,7 +403,7 @@ class DecoderFrame(ttk.Frame):
                     name = ('%s_%s_%s.txt' % (name, self.proto, tlm.Time)).replace(
                         ' ', '_').replace(':', '-')
                     fp = pathlib.Path(self.out_dir_v.get()) / name
-                    self.dv_frame.set_tlm(tlm, fp)
+                    # self.dv_frame.set_tlm(tlm, fp)
                     args = args[:-1] + (tlm, fp)
                     date = tlm.Time
 
@@ -418,11 +412,11 @@ class DecoderFrame(ttk.Frame):
                         f.write('\n\n')
                         f.write(str(packet))
 
-                elif ty == 'ascii':
-                    self.dv_frame.set_text(packet)
+                # elif ty == 'ascii':
+                #     self.dv_frame.set_text(packet)
 
-                elif ty == 'raw':
-                    self.dv_frame.set_raw(packet)
+                # else:   # raw, etc
+                #     self.dv_frame.set_raw(packet)
 
                 self.history_frame.put(*args, date=date)
 
