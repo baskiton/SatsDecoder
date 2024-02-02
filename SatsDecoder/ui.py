@@ -5,7 +5,6 @@ import json
 import pathlib
 import re
 import socket as sk
-import sys
 import threading
 import tkinter as tk
 import urllib
@@ -217,11 +216,7 @@ class DataViewFrame(ttk.LabelFrame):
 
     def set_raw(self, data):
         if isinstance(data, bytes):
-            if sys.version_info < (3, 8, 0):
-                data = data.hex()
-            else:
-                data = data.hex(' ')
-
+            data = utils.bytes2hex(data)
         self.set_text(data)
 
     def set_tlm(self, tlm, fname):
@@ -312,10 +307,10 @@ class DecoderFrame(ttk.Frame):
             self.dv_frame.set_tlm(vals[-2], vals[-1])
         elif tag == 'ascii':
             self.dv_frame.set_text(vals[-1])
-        elif tag == 'raw':
-            self.dv_frame.set_raw(vals[-1])
         elif tag == 'img':
             self.dv_frame.set_img(vals[-2], vals[-1], 1)
+        else:   # raw, etc
+            self.dv_frame.set_raw(vals[-1])
 
     def set_out_dir(self):
         d = filedialog.askdirectory()
@@ -419,10 +414,7 @@ class DecoderFrame(ttk.Frame):
                     date = tlm.Time
 
                     with fp.open('w') as f:
-                        if sys.version_info < (3, 8, 0):
-                            f.write(data.hex())
-                        else:
-                            f.write(data.hex(' '))
+                        f.write(utils.bytes2hex(data))
                         f.write('\n\n')
                         f.write(str(packet))
 

@@ -1,3 +1,6 @@
+import sys
+
+
 class Dict(dict):
     def __getattr__(self, name):
         return super().__getattr__(name) if name.startswith('__') else self[name]
@@ -13,6 +16,10 @@ class Dict(dict):
             super().__delattr__(name)
         else:
             del self[name]
+
+
+def bytes2hex(data):
+    return data.hex(*((' ',) if sys.version_info >= (3, 8, 0) else ()))
 
 
 seqs_map = {

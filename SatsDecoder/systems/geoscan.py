@@ -1,11 +1,11 @@
 import datetime as dt
-import sys
 import tkinter as tk
 
 from tkinter import ttk
 
 import construct
 
+from SatsDecoder import utils
 from SatsDecoder.systems import common
 from SatsDecoder.systems.image_receiver import ImageReceiver
 
@@ -81,8 +81,8 @@ _frame = construct.Struct(
     'mtype' / construct.Int16ul,            # #3
     'offset' / construct.Int16ul,           # #5
     'subsystem_num' / construct.Int8ul,     # #7
-    'data' / construct.Bytes(construct.this.dlen - 6)
-    # 'data' / construct.Bytes(56)
+    # 'data' / construct.Bytes(construct.this.dlen - 6)
+    'data' / construct.Bytes(56)
 )
 
 
@@ -124,7 +124,7 @@ class GeoscanImageReceiver(ImageReceiver):
                 img.base_offset = data.offset
                 img.first_data_offset = data.offset = 0
 
-                img.push_data(data.offset, data.data)
+                img.push_data(data.offset, data.data[:data.dlen - 6])
 
         elif data.mtype == self.CMD_IMG_FRAME:
             force = data.data.startswith(b'\xff\xd8')
@@ -142,7 +142,7 @@ class GeoscanImageReceiver(ImageReceiver):
                 if x < img.first_data_offset:
                     img.first_data_offset = x
 
-                img.push_data(data.offset, data.data)
+                img.push_data(data.offset, data.data[:data.dlen - 6])
                 if self.is_last_data(data) and not self.merge_mode:
                     img.close()
                     self.current_fid = None
@@ -234,11 +234,7 @@ class GeoscanProtocol:
         try:
             frame = _frame.parse(data)
         except construct.ConstructError:
-            if sys.version_info < (3, 8, 0):
-                data = data.hex()
-            else:
-                data = data.hex(' ')
             yield 'raw', name, data
             return
 
-        yield 'frame', name, frame
+        yield 'frame', name, f'{str(frame)}\n\nHex:\n{utils.bytes2hex(data)}'

@@ -1,5 +1,4 @@
 import datetime as dt
-import sys
 import tkinter as tk
 
 from tkinter import ttk
@@ -365,9 +364,5 @@ class UspProtocol:
 
             else:
                 ty = 'raw'
-                if sys.version_info < (3, 8, 0):
-                    p_data = p_data.hex()
-                else:
-                    p_data = p_data.hex(' ')
 
             yield ty, self.get_sender_callsign(data), '0x%04X' % i.message, p_data
