@@ -4,8 +4,9 @@
 name: Release
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
