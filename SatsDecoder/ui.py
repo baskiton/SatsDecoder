@@ -484,6 +484,7 @@ class App(ttk.Frame):
             self.config.set(name, 'merge mode', str(df.merge_mode_v.get()))
 
         self.config.set('main', 'pos', self.master.winfo_geometry())
+        self.config.set('info', 'version', __version__)
         self.quit()
 
     def about(self, evt=None):
