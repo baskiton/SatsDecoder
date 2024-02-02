@@ -83,17 +83,29 @@ class HistoryFrame(ttk.LabelFrame):
             return i
 
     def put(self, tag, name, *args, date=None):
+        ins = 1
         vals = args[:len(self.master.decoder.columns)]
         if tag == 'img':
             *_, ir, fname = args
             if fname in self.vals:
                 return
-            self.vals[fname] = args[len(self.master.decoder.columns):]
+            self.vals[fname] = 1
 
-        iid = self.table.insert('', 'end', text=name, tags=(tag,),
-                                values=[date or dt.datetime.utcnow(), tag, *vals])
+        elif tag == 'tlm' and date and date in self.vals:
+            ins = 0
+            iid = self.vals[date]
+
+        if not date:
+            date = dt.datetime.utcnow()
+
+        if ins:
+            iid = self.table.insert('', 'end', text=name, tags=(tag,),
+                                    values=[date, tag, *vals])
+            self.vals[date] = iid
+
         self.vals[iid] = args[len(self.master.decoder.columns):]
         self.table.selection_set(iid)
+        self.table.see(iid)
 
 
 class CanvasFrame(ttk.Frame):
