@@ -26,7 +26,7 @@ REGULAR = 0xDE21
 IMG_START = 0x0C20
 IMG_SIZE = 0x0C2B
 IMG_DATA = 0x0C24
-ASCII = 0xFFF1
+# ASCII = 0xFFF1
 
 # XF210 = 0xF210
 # X4235 = 0x4235
@@ -345,10 +345,6 @@ class UspProtocol:
             elif i.message in (BEACON, REGULAR):
                 ty = 'tlm'
                 p_data = data, p_data
-
-            elif i.message == ASCII:
-                ty = 'ascii'
-                p_data = p_data.decode('ascii', 'replace')
 
             else:
                 ty = 'raw'

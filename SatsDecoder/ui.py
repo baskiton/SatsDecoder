@@ -13,7 +13,7 @@ import urllib.request
 import queue
 import webbrowser
 
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, filedialog, messagebox, scrolledtext
 
 import PIL
 import PIL.Image
@@ -57,7 +57,7 @@ class HistoryFrame(ttk.LabelFrame):
 
         # for i in range(3):
         #     self.put('raw', f'rs200s-{i}', '0x%04X' % 0x01ac, b'raw string \0\1\2\3\4')
-        # self.put('ascii', f'rs200s-{i}', '0x%04X' % 0xfff1, 'hello world')
+        # self.put('raw', f'rs200s-{i}', '0x%04X' % 0xfff1, b'hello world\n\rnew line\nand\ttab')
 
         self.table.grid(sticky=tk.NSEW, pady=3)
 
@@ -201,7 +201,21 @@ class DataViewFrame(ttk.LabelFrame):
         self.rowconfigure(0, weight=1)
         self.viewers = []
 
-        self.text = tk.Text(self, state='disabled')
+        self.control_text_frame = ttk.Frame(self)
+        self.control_text_frame.rowconfigure(0, weight=1)
+        self.viewers.append(self.control_text_frame)
+        self.view_select_v = tk.StringVar(self.control_text_frame, 'RAW')
+        self.view_select_raw = ttk.Radiobutton(self.control_text_frame, value='RAW', text='RAW',
+                                               variable=self.view_select_v, command=self.change_text_mode)
+        self.view_select_raw.grid(row=0, column=0)
+        self.view_select_ascii = ttk.Radiobutton(self.control_text_frame, value='ASCII', text='ASCII',
+                                                 variable=self.view_select_v, command=self.change_text_mode)
+        self.view_select_ascii.grid(row=0, column=1)
+        self.copy_btn = ttk.Button(self.control_text_frame, text='Copy', command=self.do_copy)
+        self.copy_btn.grid(row=0, column=2)
+
+        self.text_raw = b''
+        self.text = scrolledtext.ScrolledText(self, state='disabled')
         self.viewers.append(self.text)
 
         self.tlm = utils.TlmCommonFrame(self, master.decoder.tlm_table)
@@ -216,20 +230,44 @@ class DataViewFrame(ttk.LabelFrame):
         if not skip_ian:
             self.img.active_fname = self.active_ir = None
 
-    def set_text(self, text):
+    def change_text_mode(self):
+        self.set_raw(self.text_raw)
+
+    def do_copy(self):
+        mode = self.view_select_v.get()
+        data = self.text_raw
+
+        if isinstance(data, bytes):
+            if mode == 'RAW':
+                data = utils.bytes2hex(data)
+            else:   # ASCII
+                data = data.decode('ascii', 'replace')
+
+        self.clipboard_clear()
+        self.clipboard_append(data)
+
+    def set_raw(self, data, tag='raw'):
+        self.text_raw = data
+        mode = self.view_select_v.get()
+
+        if isinstance(data, bytes):
+            if mode == 'RAW':
+                data = utils.bytes2hex(data)
+            else:   # ASCII
+                data = data.decode('ascii', 'replace')
+
         self.clear()
 
         self.text['state'] = 'normal'
         self.text.delete('1.0', 'end')
-        self.text.insert('end', text)
+        self.text.insert('end', data)
         self.text['state'] = 'disabled'
 
         self.text.grid(column=0, row=0, sticky=tk.NSEW)
-
-    def set_raw(self, data):
-        if isinstance(data, bytes):
-            data = utils.bytes2hex(data)
-        self.set_text(data)
+        self.control_text_frame.grid(column=0, row=1, sticky=tk.E)
+        st = (tag == 'raw') and tk.NORMAL or tk.DISABLED
+        self.view_select_raw.configure(state=st)
+        self.view_select_ascii.configure(state=st)
 
     def set_tlm(self, tlm, fname):
         self.clear()
@@ -317,12 +355,10 @@ class DecoderFrame(ttk.Frame):
 
         if tag == 'tlm':
             self.dv_frame.set_tlm(vals[-2], vals[-1])
-        elif tag == 'ascii':
-            self.dv_frame.set_text(vals[-1])
         elif tag == 'img':
             self.dv_frame.set_img(vals[-2], vals[-1], 1)
         else:   # raw, etc
-            self.dv_frame.set_raw(vals[-1])
+            self.dv_frame.set_raw(vals[-1], tag)
 
     def set_out_dir(self):
         d = filedialog.askdirectory()
@@ -415,7 +451,6 @@ class DecoderFrame(ttk.Frame):
                     name = ('%s_%s_%s.txt' % (name, self.proto, tlm.Time)).replace(
                         ' ', '_').replace(':', '-')
                     fp = pathlib.Path(self.out_dir_v.get()) / name
-                    # self.dv_frame.set_tlm(tlm, fp)
                     args = args[:-1] + (tlm, fp)
                     date = tlm.Time
 
@@ -423,12 +458,6 @@ class DecoderFrame(ttk.Frame):
                         f.write(utils.bytes2hex(data))
                         f.write('\n\n')
                         f.write(str(packet))
-
-                # elif ty == 'ascii':
-                #     self.dv_frame.set_text(packet)
-
-                # else:   # raw, etc
-                #     self.dv_frame.set_raw(packet)
 
                 self.history_frame.put(*args, date=date)
 
