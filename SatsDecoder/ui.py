@@ -99,7 +99,12 @@ class HistoryFrame(ttk.LabelFrame):
             date = dt.datetime.utcnow()
 
         if ins:
-            iid = self.table.insert('', 'end', text=name, tags=(tag,),
+            try:
+                parent_iid = self.table.item(name) and name
+            except tk.TclError:
+                parent_iid = self.table.insert('', 'end', name, text=name)
+
+            iid = self.table.insert(parent_iid, 'end', tags=(tag,),
                                     values=[date, tag, *vals])
             self.vals[date] = iid
 
@@ -346,7 +351,7 @@ class DecoderFrame(ttk.Frame):
 
     def fill_data(self, evt=None):
         x = self.history_frame.get_selected()
-        if not x:
+        if not (x and x.tags):
             self.dv_frame.clear()
             return
 
