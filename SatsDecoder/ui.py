@@ -1,5 +1,6 @@
 import base64
 import datetime as dt
+import errno
 import io
 import json
 import pathlib
@@ -298,7 +299,8 @@ class DecoderFrame(ttk.Frame):
         self.config = config
         self.proto = proto
         self.name = name or proto
-        self.sk = 0
+        self.sk = self.thr = 0
+        self.sk_lock = threading.Lock()
         self.decoder = self.decoders[proto](self.config.get(proto, 'outdir'))
 
         self.grid(column=0, row=0, sticky=tk.NSEW)
@@ -372,7 +374,7 @@ class DecoderFrame(ttk.Frame):
             self.out_dir_v.set(d)
 
     def con(self):
-        self.stop() if self.sk else self._start()
+        self.stop(1) if self.sk else self._start()
 
     def set_merge_mode(self):
         self.decoder.ir.set_merge_mode(self.merge_mode_v.get())
@@ -382,18 +384,23 @@ class DecoderFrame(ttk.Frame):
         self.dv_frame.set_img(self.decoder.ir, fn, 1)
         self.history_frame.put('img', self.proto, self.decoder.ir, fn)
 
-    def stop(self):
-        if self.sk:
-            s = self.sk
-            self.sk = 0
-            s.close()
+    def stop(self, is_main=0):
+        with self.sk_lock:
+            if self.sk:
+                s = self.sk
+                self.sk = 0
+                s.close()
 
-        self.con_btn.config(text='Connect')
-        self.server_e.config(state=tk.NORMAL)
-        self.port_e.config(state=tk.NORMAL)
-        self.out_dir_e.config(state=tk.NORMAL)
-        self.out_dir_btn.config(state=tk.NORMAL)
-        self.update()
+        if is_main:
+            if self.thr and self.thr.is_alive():
+                self.thr.join(0)
+                self.thr = 0
+            self.con_btn.config(text='Connect')
+            self.server_e.config(state=tk.NORMAL)
+            self.port_e.config(state=tk.NORMAL)
+            self.out_dir_e.config(state=tk.NORMAL)
+            self.out_dir_btn.config(state=tk.NORMAL)
+            self.update()
 
     def _start(self):
         try:
@@ -420,52 +427,57 @@ class DecoderFrame(ttk.Frame):
 
             self.decoder.ir.set_outdir(self.out_dir_v.get())
             self.decoder.ir.set_merge_mode(self.merge_mode_v.get())
-            try:
-                self._receive()
-            except Exception as e:
-                messagebox.showerror(message='%s: %s' % (self.name, e))
-                self.stop()
-                raise e
+
+            self.thr = threading.Thread(target=self._receive)
+            self.thr.start()
 
     def _receive(self):
         while self.sk:
             try:
-                frame = self.sk.recv(4096)
+                with self.sk_lock:
+                    frame = self.sk.recv(4096)
             except (sk.timeout, TimeoutError):
                 continue
-            finally:
-                self.update()
+            except OSError as e:
+                if e.errno != errno.EBADF:
+                    messagebox.showerror(message='%s: %s' % (self.name, e))
+                break
 
             if not frame:
                 messagebox.showwarning(message='%s: Connection lost' % self.name)
-                self.stop()
-                return
+                break
 
-            data = frame[37:]
-            for i in self.decoder.recognize(data):
-                args = i
-                ty, name, *_, packet = i
-                date = 0
+            try:
+                data = frame[37:]
+                for i in self.decoder.recognize(data):
+                    args = i
+                    ty, name, *_, packet = i
+                    date = 0
 
-                if ty == 'img':
-                    ir_ret, fname = packet
-                    self.dv_frame.set_img(self.decoder.ir, fname)
-                    args = args[:-1] + (self.decoder.ir, fname)
+                    if ty == 'img':
+                        ir_ret, fname = packet
+                        self.dv_frame.set_img(self.decoder.ir, fname)
+                        args = args[:-1] + (self.decoder.ir, fname)
 
-                elif ty == 'tlm':
-                    packet, tlm = packet
-                    name = ('%s_%s_%s.txt' % (name, self.proto, tlm.Time)).replace(
-                        ' ', '_').replace(':', '-')
-                    fp = pathlib.Path(self.out_dir_v.get()) / name
-                    args = args[:-1] + (tlm, fp)
-                    date = tlm.Time
+                    elif ty == 'tlm':
+                        packet, tlm = packet
+                        name = ('%s_%s_%s.txt' % (name, self.proto, tlm.Time)).replace(
+                            ' ', '_').replace(':', '-')
+                        fp = pathlib.Path(self.out_dir_v.get()) / name
+                        args = args[:-1] + (tlm, fp)
+                        date = tlm.Time
 
-                    with fp.open('w') as f:
-                        f.write(utils.bytes2hex(data))
-                        f.write('\n\n')
-                        f.write(str(packet))
+                        with fp.open('w') as f:
+                            f.write(utils.bytes2hex(data))
+                            f.write('\n\n')
+                            f.write(str(packet))
 
-                self.history_frame.put(*args, date=date)
+                    self.history_frame.put(*args, date=date)
+            except Exception as e:
+                messagebox.showerror(message='%s: %s' % (self.name, e))
+                break
+
+        self.stop()
 
 
 class App(ttk.Frame):
@@ -511,8 +523,7 @@ class App(ttk.Frame):
 
     def exit(self, evt=None):
         for name, df in self.tabs.items():
-            if df.sk:
-                df.stop()
+            df.stop(1)
             self.config.set(name, 'ip', df.server_v.get())
             self.config.set(name, 'port', df.port_v.get())
             self.config.set(name, 'outdir', df.out_dir_v.get())
