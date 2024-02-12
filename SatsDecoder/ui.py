@@ -120,6 +120,7 @@ class CanvasFrame(ttk.Frame):
         super().__init__(master)
         self.rowconfigure(1, weight=1)
         self.active_img = None
+        self.cnv_img_id = tk.ALL
 
         self.image_starter = ttk.Label(self, text='STARTER', foreground='red')
         self.image_starter.grid(column=0, row=0, sticky=tk.E, padx=0)
@@ -176,9 +177,10 @@ class CanvasFrame(ttk.Frame):
                 self.canvas_sz = i.size
                 self.canvas.update()
                 # self.master.minsize(self.winfo_width(), self.winfo_height())
-            self._imgtk = PIL.ImageTk.PhotoImage(i)
-            self.canvas.delete(tk.ALL)
-            self.canvas.create_image(0, 0, anchor=tk.NW, image=self._imgtk)
+            _imgtk = PIL.ImageTk.PhotoImage(i)
+            to_del, self.cnv_img_id = self.cnv_img_id, self.canvas.create_image(0, 0, anchor=tk.NW, image=_imgtk)
+            self.canvas.delete(to_del)
+            self._imgtk = _imgtk
 
         except PIL.UnidentifiedImageError:
             self.canvas.delete(tk.ALL)
