@@ -29,6 +29,8 @@ jobs:
         include:
           - os: windows-2019
             python: "3.7"
+    outputs:
+      ver: ${{ steps.build.outputs.ver }}
 
     steps:
       - uses: actions/checkout@v4
@@ -48,8 +50,9 @@ jobs:
           pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Build
+        id: build
         run: |
-          bash semver.sh
+          echo "ver=v$(bash semver.sh)" | tee "$GITHUB_OUTPUT"
           [[ ${{ matrix.os }} == windows-latest ]] && pyinstaller -y decoder.spec
           pyinstaller -y decoder-onefile.spec
 
@@ -93,3 +96,15 @@ jobs:
 
       - name: Create nightly release
         run: gh release create nightly -R ${{ github.repository }} -t nightly --target dev --generate-notes --prerelease out/*
+
+      - name: Create Badge
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        env:
+          ver: ${{ needs.build.outputs.ver }}
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: 7270038ca73e8e5f1acea6280cc8a416
+          filename: satsdecoder-pre.json
+          label: dev
+          message: ${{ env.ver }}
+          color: yellow

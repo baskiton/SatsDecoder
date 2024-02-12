@@ -1,5 +1,10 @@
 # Satellites decoder
 
+![](https://img.shields.io/github/v/release/baskiton/SatsDecoder?label=stable)
+![](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/baskiton/7270038ca73e8e5f1acea6280cc8a416/raw/satsdecoder-pre.json)  
+![](https://img.shields.io/github/downloads/baskiton/SatsDecoder/total?label=downloads%40total)
+![](https://img.shields.io/github/downloads/baskiton/SatsDecoder/latest/total)
+
 Image and Telemetry decoder for some amateurs satellites (geoscan, sputnix platforms...)
 
 First, download, setup and run soundmodem  
