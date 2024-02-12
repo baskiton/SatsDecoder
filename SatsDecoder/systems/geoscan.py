@@ -140,10 +140,13 @@ class GeoscanImageReceiver(ImageReceiver):
                 if x < img.first_data_offset:
                     img.first_data_offset = x
 
-                img.push_data(data.offset, data.data[:data.dlen - 6])
-                if self.is_last_data(data) and not self.merge_mode:
-                    img.close()
-                    self.current_fid = None
+                x = data.data[:data.dlen - 6]
+                img.push_data(data.offset, x)
+                # if self.is_last_data(x) and not self.merge_mode:
+                if self.is_last_data(x):
+                    img.flush()
+                    # img.close()
+                    # self.current_fid = None
                     return 2
 
         else:
@@ -153,8 +156,8 @@ class GeoscanImageReceiver(ImageReceiver):
 
     def is_last_data(self, data):
         prev_sz = self._prev_data_sz
-        self._prev_data_sz = len(data.data)
-        return (self._prev_data_sz < prev_sz) and b'\xff\xd9' in data.data
+        self._prev_data_sz = len(data)
+        return (self._prev_data_sz < prev_sz) and b'\xff\xd9' in data
 
 
 class GeoscanProtocol:
@@ -204,12 +207,9 @@ class GeoscanProtocol:
 
         x = self.ir.push_data(data)
         if x:
-            if x == 2:
-                fn = self.last_fn
-            else:
-                fn = self.ir.cur_img.fn
-                self.last_fn = fn
-            yield 'img', name, (x, fn)
+            if x != 2:
+                self.last_fn = self.ir.cur_img.fn
+            yield 'img', name, (x, self.ir.cur_img)
             return
 
         try:

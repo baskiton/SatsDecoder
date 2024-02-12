@@ -213,7 +213,7 @@ class UspImageReceiver(ImageReceiver):
         if data.message == IMG_DATA:
             img = self.get_image()
             with img.lock:
-                img.push_data(packet.offset, packet.data)
+                img.push_data(packet.offset, packet.data[:data.size - 5])
                 if packet.offset < img.first_data_offset:
                     img.first_data_offset = packet.offset
 
@@ -340,7 +340,7 @@ class UspProtocol:
 
             if i.message in (IMG_DATA, IMG_START, IMG_SIZE):
                 ty = 'img'
-                p_data = self.ir.push_data(i), self.ir.cur_img.fn
+                p_data = self.ir.push_data(i), self.ir.cur_img
 
             elif i.message in (BEACON, REGULAR):
                 ty = 'tlm'

@@ -88,10 +88,10 @@ class HistoryFrame(ttk.LabelFrame):
         ins = 1
         vals = args[:len(self.master.decoder.columns)]
         if tag == 'img':
-            *_, ir, fname = args
-            if fname in self.vals:
+            *_, img = args
+            if img.fn in self.vals:
                 return
-            self.vals[fname] = 1
+            self.vals[img.fn] = 1
 
         elif tag == 'tlm' and date and date in self.vals:
             ins = 0
@@ -119,8 +119,7 @@ class CanvasFrame(ttk.Frame):
     def __init__(self, master):
         super().__init__(master)
         self.rowconfigure(1, weight=1)
-        self.active_fname = None
-        self.active_ir = None
+        self.active_img = None
 
         self.image_starter = ttk.Label(self, text='STARTER', foreground='red')
         self.image_starter.grid(column=0, row=0, sticky=tk.E, padx=0)
@@ -157,25 +156,21 @@ class CanvasFrame(ttk.Frame):
         self.image_name_l = ttk.Label(self)
         self.image_name_l.grid(columnspan=8, sticky=tk.SW, pady=3)
 
-    def fill_canvas(self, ir, fname, force=0):
-        if not force and self.active_fname != fname:
+    def fill_canvas(self, img, force=0):
+        if not (force or (self.active_img and self.active_img.fn == img.fn)):
             return 1
 
-        self.active_fname = fname
-        self.active_ir = ir
-        img = ir.cur_img
-
-        self.image_name_l.config(text=fname.name)
-
+        self.active_img = img
+        self.image_name_l.config(text=img.fn.name)
         self.image_starter.config(foreground=img.has_starter and 'green' or 'red')
         self.image_soi.config(foreground=img.has_soi and 'green' or 'red')
         self.image_offset_v.set(img.base_offset)
         self.first_data_off_v.set(img.first_data_offset)
         self.strip_btn.config(state=img.first_data_offset and tk.NORMAL or tk.DISABLED)
 
-        i = None
+        i = 0
         try:
-            i = PIL.Image.open(fname)
+            i = PIL.Image.open(img.f)
             if i.size != self.canvas_sz:
                 self.canvas.config(width=i.width, height=i.height)
                 self.canvas_sz = i.size
@@ -194,11 +189,11 @@ class CanvasFrame(ttk.Frame):
             i.close()
 
     def strip_file(self):
-        if self.active_ir and self.active_ir.cur_img:
+        if self.active_img:
             # TODO
-            self.active_ir.cur_img.rebase_offset()
+            self.active_img.rebase_offset()
 
-            self.fill_canvas(self.active_ir, self.active_fname, 1)
+            self.fill_canvas(self.active_img, 1)
 
 
 class DataViewFrame(ttk.LabelFrame):
@@ -228,14 +223,14 @@ class DataViewFrame(ttk.LabelFrame):
         self.tlm = utils.TlmCommonFrame(self, master.decoder.tlm_table)
         self.viewers.append(self.tlm)
 
-        self.img = CanvasFrame(self)
-        self.viewers.append(self.img)
+        self.cnv = CanvasFrame(self)
+        self.viewers.append(self.cnv)
 
-    def clear(self, skip_ian=0):
+    def clear(self, skip_iai=0):
         for i in self.viewers:
             i.grid_forget()
-        if not skip_ian:
-            self.img.active_fname = self.active_ir = None
+        if not skip_iai:
+            self.cnv.active_img = None
 
     def change_text_mode(self):
         self.set_raw(self.text_raw)
@@ -282,10 +277,10 @@ class DataViewFrame(ttk.LabelFrame):
         self.tlm.fill(tlm, fname)
         self.tlm.grid(column=0, row=0, sticky=tk.NSEW)
 
-    def set_img(self, ir, fname, select=0):
-        if not self.img.fill_canvas(ir, fname, select):
+    def set_img(self, img, select=0):
+        if not self.cnv.fill_canvas(img, select):
             self.clear(1)
-            self.img.grid(column=0, row=0, sticky=tk.NSEW)
+            self.cnv.grid(column=0, row=0, sticky=tk.NSEW)
 
 
 class DecoderFrame(ttk.Frame):
@@ -364,7 +359,7 @@ class DecoderFrame(ttk.Frame):
         if tag == 'tlm':
             self.dv_frame.set_tlm(vals[-2], vals[-1])
         elif tag == 'img':
-            self.dv_frame.set_img(vals[-2], vals[-1], 1)
+            self.dv_frame.set_img(vals[-1], 1)
         else:   # raw, etc
             self.dv_frame.set_raw(vals[-1], tag)
 
@@ -380,9 +375,9 @@ class DecoderFrame(ttk.Frame):
         self.decoder.ir.set_merge_mode(self.merge_mode_v.get())
 
     def new_img(self):
-        fn = self.decoder.ir.force_new().fn
-        self.dv_frame.set_img(self.decoder.ir, fn, 1)
-        self.history_frame.put('img', self.proto, self.decoder.ir, fn)
+        img = self.decoder.ir.force_new()
+        self.dv_frame.set_img(img, 1)
+        self.history_frame.put('img', self.proto, img)
 
     def stop(self, is_main=0):
         with self.sk_lock:
@@ -400,7 +395,6 @@ class DecoderFrame(ttk.Frame):
             self.port_e.config(state=tk.NORMAL)
             self.out_dir_e.config(state=tk.NORMAL)
             self.out_dir_btn.config(state=tk.NORMAL)
-            self.update()
 
     def _start(self):
         try:
@@ -423,7 +417,6 @@ class DecoderFrame(ttk.Frame):
             self.port_e.config(state=tk.DISABLED)
             self.out_dir_e.config(state=tk.DISABLED)
             self.out_dir_btn.config(state=tk.DISABLED)
-            self.update()
 
             self.decoder.ir.set_outdir(self.out_dir_v.get())
             self.decoder.ir.set_merge_mode(self.merge_mode_v.get())
@@ -436,7 +429,7 @@ class DecoderFrame(ttk.Frame):
             try:
                 with self.sk_lock:
                     frame = self.sk.recv(4096)
-            except (sk.timeout, TimeoutError):
+            except (sk.timeout, TimeoutError, AttributeError):
                 continue
             except OSError as e:
                 if e.errno != errno.EBADF:
@@ -455,9 +448,9 @@ class DecoderFrame(ttk.Frame):
                     date = 0
 
                     if ty == 'img':
-                        ir_ret, fname = packet
-                        self.dv_frame.set_img(self.decoder.ir, fname)
-                        args = args[:-1] + (self.decoder.ir, fname)
+                        ir_ret, img = packet
+                        self.dv_frame.set_img(img)
+                        args = args[:-1] + (img,)
 
                     elif ty == 'tlm':
                         packet, tlm = packet

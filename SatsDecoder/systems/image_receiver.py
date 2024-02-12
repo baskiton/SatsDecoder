@@ -31,6 +31,10 @@ class Image:
 
         return self.f
 
+    def flush(self):
+        if self.f:
+            self.f.flush()
+
     def close(self):
         if self.f:
             self.f.close()
@@ -40,7 +44,7 @@ class Image:
         f = self.open()
         f.seek(off)
         f.write(data)
-        f.flush()
+        # f.flush()
 
     def rebase_offset(self, off=None):
         with self.lock:
