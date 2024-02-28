@@ -38,7 +38,8 @@ class MulAdapter(construct.Adapter):
 
 
 geoscan_frame = construct.Struct(
-    'name' / construct.Computed(u'Beacon'),
+    '_name' / construct.Computed('beacon'),
+    'name' / construct.Computed('Beacon'),
     'Time' / common.UNIXTimestampAdapter(construct.Int32ul),
     'Iab' / MulAdapter(0.0766, construct.Int16ul),      # mA
     'Isp' / MulAdapter(0.03076, construct.Int16ul),     # mA
@@ -164,7 +165,7 @@ class GeoscanProtocol:
     columns = ()
     c_width = ()
     tlm_table = {
-        u'Beacon': {
+        'beacon': {
             'table': (
                 ('name', 'Name'),
                 ('Time', 'Time'),

@@ -93,9 +93,9 @@ class HistoryFrame(ttk.LabelFrame):
                 return
             self.vals[img.fn] = 1
 
-        elif tag == 'tlm' and date and date in self.vals:
-            ins = 0
-            iid = self.vals[date]
+        # elif tag == 'tlm' and date and date in self.vals:
+        #     ins = 0
+        #     iid = self.vals[date]
 
         if not date:
             date = dt.datetime.utcnow()
@@ -456,11 +456,11 @@ class DecoderFrame(ttk.Frame):
 
                     elif ty == 'tlm':
                         packet, tlm = packet
-                        name = ('%s_%s_%s.txt' % (name, self.proto, tlm.Time)).replace(
+                        date = getattr(tlm, 'Time', dt.datetime.utcnow())
+                        name = ('%s_%s_%s_%s.txt' % (name, self.proto, tlm._name, date)).replace(
                             ' ', '_').replace(':', '-')
                         fp = pathlib.Path(self.out_dir_v.get()) / name
                         args = args[:-1] + (tlm, fp)
-                        date = tlm.Time
 
                         with fp.open('w') as f:
                             f.write(utils.bytes2hex(data))

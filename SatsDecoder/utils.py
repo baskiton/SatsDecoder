@@ -34,17 +34,25 @@ class TlmCommonTable(ttk.Treeview):
     def __init__(self, master, vals):
         super().__init__(master, columns='x val', selectmode='browse', show='tree')
 
-        self.column('#0', anchor='e', stretch=tk.NO)
-        self.column('x', width=10, stretch=tk.NO)
         self.flags = {}
 
+        f = font.nametofont('TkDefaultFont', self)
+        w = 0
         for k, v in vals.items():
             x = ''
+            w0 = 20
             if k != 'table':
                 x = self.insert('', 'end', k, text=k)
+                w0 = 40
 
             for iid, text in v:
+                w1 = f.measure(text) + w0
+                if w1 > w:
+                    w = w1
                 self.insert(x, 'end', iid, text=text)
+
+        self.column('#0', width=w, anchor='e', stretch=tk.NO)
+        self.column('x', width=10, stretch=tk.NO)
 
         self.vsb = AutoScrollbar(self.master, orient='vertical', command=self.yview)
         self.configure(yscrollcommand=self.vsb.set)
@@ -81,7 +89,7 @@ class TlmCommonFrame(ttk.Frame):
         self.tlm_name_l.grid(row=3, column=0, sticky=tk.EW, pady=3)
 
     def fill(self, tlm, filename):
-        table = self.tlm_tables[tlm.name]
+        table = self.tlm_tables[tlm._name]
         table.fill(tlm)
 
         for i in self.tlm_tables.values():
