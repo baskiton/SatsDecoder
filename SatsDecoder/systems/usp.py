@@ -32,15 +32,18 @@ PSU_REGULAR1 = 0x0081
 PSU_REGULAR2 = 0x0082
 PSU_REGULAR3 = 0x0083
 PSU_REGULAR4 = 0x0084
+PSU_REGULAR5 = 0x0085
+ACK = 0x0118
+NACK = 0x0119
 INFO = 0x011A
 REGULAR_TEMPERATURE = 0x0440
 GET_PAYLOAD_TELEMETRY = 0x0A00
-ARS_X_VEL = 0x0B10
-ARS_Y_VEL = 0x0B11
-ARS_Z_VEL = 0x0B12
-MAG_X = 0x0B13
-MAG_Y = 0x0B14
-MAG_Z = 0x0B15
+RATESENS_REGULAR_X = 0x0B10
+RATESENS_REGULAR_Y = 0x0B11
+RATESENS_REGULAR_Z = 0x0B12
+MAGNSENS_REGULAR_X = 0x0B13
+MAGNSENS_REGULAR_Y = 0x0B14
+MAGNSENS_REGULAR_Z = 0x0B15
 VECTOR_X = 0x0B21
 VECTOR_Y = 0x0B22
 VECTOR_Z = 0x0B23
@@ -50,6 +53,7 @@ VHF_SETTINGS = 0x4201
 BEACON = 0x4216
 EXTENDED_BEACON = 0x4217
 TIME_REQUEST = 0x421A
+UHF_BEACON = 0x4246
 DETECTOR_TRANSMITS = 0x5430
 DATA_MASSIVE_ADDR_RPL = 0x5439
 DATA_EVENT_ADDR_RPL = 0x543A
@@ -67,8 +71,14 @@ COMPL_MASSIVE_DATA = 0xABDB
 GET_PAYLOAD_CURRENT_CONFIG = 0xABDD
 REGULAR_TELEMETRY = 0xDE21
 EXTENDED_TELEMETRY = 0xDE22
+ACKNOWLEDGE = 0xDE24
 OVERCURRENT = 0xDE25
 SWITCH_STATUS = 0xDE27
+REGULAR_TELEMETRY6U = 0xDF25
+PS_REGULAR_TELEMETRY_5CH = 0xED21
+TM_ADCS_BEACON_OLD = 0xF204
+TM_ADCS_BEACON = 0xF210
+TM_ADCS_BEACON_6_WHEELS = 0xF212
 CH_ADC_X1 = 0xFB21
 CH_ADC_X2 = 0xFB22
 CH_ADC_Y1 = 0xFB23
@@ -80,138 +90,179 @@ TEMP_CUR_Y2 = 0xFC24
 VERSION_SW = 0xFFE1
 
 # other
-IMG_START = 0x0C20
-IMG_SIZE = 0x0C2B
-IMG_DATA = 0x0C24
+FILETRANSFER_INIT = 0x0C20
+FILETRANSFER_FILESIZE = 0x0C2B
+FILETRANSFER_DATA = 0x0C24
 
 
-# tlmasd
+# tlm
+# 0x000E
 regular_common_flags0 = construct.BitStruct(
-    '_pad0' / construct.BitsInteger(6),
-    'voltage_invalid' / construct.Flag,  # voltage invalid
-    'current_invalid' / construct.Flag,  # current invalid
+    'current_invalid' / construct.Flag,  # Current invalid
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    '_reserved' / construct.BitsInteger(6),  # reserved
 )
 regular_common = construct.Struct(
     '_name' / construct.Computed('regular_common'),
     'name' / construct.Computed('Regular common'),
     'desc' / construct.Computed('Common current and voltage telemetry'),
-    'current' / construct.Int16sl,  # current
-    'voltage' / construct.Int16sl,  # voltage
+    'current' / construct.Int16sl,  # Current, mA
+    'voltage' / construct.Int16sl,  # Voltage, mV
     'flags0' / regular_common_flags0,
 )
 
+# 0x000F
 regular_x_flags0 = construct.BitStruct(
-    '_pad0' / construct.BitsInteger(6),
-    'voltage_invalid' / construct.Flag,  # voltage invalid
-    'current_invalid' / construct.Flag,  # current invalid
+    'current_invalid' / construct.Flag,  # Current invalid
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    '_reserved' / construct.BitsInteger(6),  # reserved
 )
 regular_x = construct.Struct(
     '_name' / construct.Computed('regular_x'),
     'name' / construct.Computed('Regular X'),
-    'desc' / construct.Computed('Current and voltage telemetry, X'),
-    'current' / construct.Int16sl,  # current
-    'voltage' / construct.Int16sl,  # voltage
+    'desc' / construct.Computed('Current and voltage telemetry, X-axis'),
+    'current' / construct.Int16sl,  # Current, mA
+    'voltage' / construct.Int16sl,  # Voltage, mV
     'flags0' / regular_x_flags0,
 )
 
+# 0x0010
 regular_y_flags0 = construct.BitStruct(
-    '_pad0' / construct.BitsInteger(6),
-    'voltage_invalid' / construct.Flag,  # voltage invalid
-    'current_invalid' / construct.Flag,  # current invalid
+    'current_invalid' / construct.Flag,  # Current invalid
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    '_reserved' / construct.BitsInteger(6),  # reserved
 )
 regular_y = construct.Struct(
     '_name' / construct.Computed('regular_y'),
     'name' / construct.Computed('Regular Y'),
-    'desc' / construct.Computed('Current and voltage telemetry, Y'),
-    'current' / construct.Int16sl,  # current
-    'voltage' / construct.Int16sl,  # voltage
+    'desc' / construct.Computed('Current and voltage telemetry, Y-axis'),
+    'current' / construct.Int16sl,  # Current, mA
+    'voltage' / construct.Int16sl,  # Voltage, mV
     'flags0' / regular_y_flags0,
 )
 
+# 0x0011
 regular_z_flags0 = construct.BitStruct(
-    '_pad0' / construct.BitsInteger(6),
-    'voltage_invalid' / construct.Flag,  # voltage invalid
-    'current_invalid' / construct.Flag,  # current invalid
+    'current_invalid' / construct.Flag,  # Current invalid
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    '_reserved' / construct.BitsInteger(6),  # reserved
 )
 regular_z = construct.Struct(
     '_name' / construct.Computed('regular_z'),
     'name' / construct.Computed('Regular Z'),
-    'desc' / construct.Computed('Current and voltage telemetry, Z'),
-    'current' / construct.Int16sl,  # current
-    'voltage' / construct.Int16sl,  # voltage
+    'desc' / construct.Computed('Current and voltage telemetry, Z-axis'),
+    'current' / construct.Int16sl,  # Current, mA
+    'voltage' / construct.Int16sl,  # Voltage, mV
     'flags0' / regular_z_flags0,
 )
 
+# 0x0080
 psu_regular0_flags0 = construct.BitStruct(
-    '_pad0' / construct.BitsInteger(6),
-    'voltage_invalid' / construct.Flag,  # voltage invalid
-    'current_invalid' / construct.Flag,  # current invalid
+    'current_invalid' / construct.Flag,  # Current invalid
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    '_reserved' / construct.BitsInteger(6),  # reserved
 )
 psu_regular0 = construct.Struct(
     '_name' / construct.Computed('psu_regular0'),
     'name' / construct.Computed('PSU Regular #0'),
-    'desc' / construct.Computed('PSU Regular #0'),
-    'current' / construct.Int16sl,  # current
-    'voltage' / construct.Int16sl,  # voltage
+    'desc' / construct.Computed('LP-MCU 3.3V power\'s telemetry'),
+    'current' / construct.Int16sl,  # Current, mA
+    'voltage' / construct.Int16sl,  # Voltage, mV
     'flags0' / psu_regular0_flags0,
 )
 
+# 0x0081
 psu_regular1_flags0 = construct.BitStruct(
-    '_pad0' / construct.BitsInteger(6),
-    'voltage_invalid' / construct.Flag,  # voltage invalid
-    'current_invalid' / construct.Flag,  # current invalid
+    'current_invalid' / construct.Flag,  # Current invalid
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    '_reserved' / construct.BitsInteger(6),  # reserved
 )
 psu_regular1 = construct.Struct(
     '_name' / construct.Computed('psu_regular1'),
     'name' / construct.Computed('PSU Regular #1'),
-    'desc' / construct.Computed('PSU Regular #1'),
-    'current' / construct.Int16sl,  # current
-    'voltage' / construct.Int16sl,  # voltage
+    'desc' / construct.Computed('Raspberry 3.3V power\'s telemetry'),
+    'current' / construct.Int16sl,  # Current, mA
+    'voltage' / construct.Int16sl,  # Voltage, mV
     'flags0' / psu_regular1_flags0,
 )
 
+# 0x0082
 psu_regular2_flags0 = construct.BitStruct(
-    '_pad0' / construct.BitsInteger(6),
-    'voltage_invalid' / construct.Flag,  # voltage invalid
-    'current_invalid' / construct.Flag,  # current invalid
+    'current_invalid' / construct.Flag,  # Current invalid
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    '_reserved' / construct.BitsInteger(6),  # reserved
 )
 psu_regular2 = construct.Struct(
     '_name' / construct.Computed('psu_regular2'),
     'name' / construct.Computed('PSU Regular #2'),
-    'desc' / construct.Computed('PSU Regular #2'),
-    'current' / construct.Int16sl,  # current
-    'voltage' / construct.Int16sl,  # voltage
+    'desc' / construct.Computed('Raspberry 1.8V power\'s telemetry'),
+    'current' / construct.Int16sl,  # Current, mA
+    'voltage' / construct.Int16sl,  # Voltage, mV
     'flags0' / psu_regular2_flags0,
 )
 
+# 0x0083
 psu_regular3_flags0 = construct.BitStruct(
-    '_pad0' / construct.BitsInteger(6),
-    'voltage_invalid' / construct.Flag,  # voltage invalid
-    'current_invalid' / construct.Flag,  # current invalid
+    'current_invalid' / construct.Flag,  # Current invalid
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    '_reserved' / construct.BitsInteger(6),  # reserved
 )
 psu_regular3 = construct.Struct(
     '_name' / construct.Computed('psu_regular3'),
     'name' / construct.Computed('PSU Regular #3'),
-    'desc' / construct.Computed('PSU Regular #3'),
-    'current' / construct.Int16sl,  # current
-    'voltage' / construct.Int16sl,  # voltage
+    'desc' / construct.Computed('Raspberry 5.0V power\'s telemetry'),
+    'current' / construct.Int16sl,  # Current, mA
+    'voltage' / construct.Int16sl,  # Voltage, mV
     'flags0' / psu_regular3_flags0,
 )
 
+# 0x0084
 psu_regular4_flags0 = construct.BitStruct(
-    '_pad0' / construct.BitsInteger(6),
-    'voltage_invalid' / construct.Flag,  # voltage invalid
-    'current_invalid' / construct.Flag,  # current invalid
+    'current_invalid' / construct.Flag,  # Current invalid
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    '_reserved' / construct.BitsInteger(6),  # reserved
 )
 psu_regular4 = construct.Struct(
     '_name' / construct.Computed('psu_regular4'),
     'name' / construct.Computed('PSU Regular #4'),
-    'desc' / construct.Computed('PSU Regular #4'),
-    'current' / construct.Int16sl,  # current
-    'voltage' / construct.Int16sl,  # voltage
+    'desc' / construct.Computed('Sun sensors power\'s telemetry'),
+    'current' / construct.Int16sl,  # Current, mA
+    'voltage' / construct.Int16sl,  # Voltage, mV
     'flags0' / psu_regular4_flags0,
 )
 
+# 0x0085
+psu_regular5_flags0 = construct.BitStruct(
+    'current_invalid' / construct.Flag,  # Current invalid
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    '_reserved' / construct.BitsInteger(6),  # reserved
+)
+psu_regular5 = construct.Struct(
+    '_name' / construct.Computed('psu_regular5'),
+    'name' / construct.Computed('PSU Regular #5'),
+    'desc' / construct.Computed('ADCS MCU 3.3V power\'s telemetry'),
+    'current' / construct.Int16sl,  # Current, mA
+    'voltage' / construct.Int16sl,  # Voltage, mV
+    'flags0' / psu_regular5_flags0,
+)
+
+# 0x0118
+ack = construct.Struct(
+    '_name' / construct.Computed('ack'),
+    'name' / construct.Computed('ACK'),
+    'desc' / construct.Computed('Successful command confirmation'),
+    'value' / construct.Hex(construct.Int16ul),  # Value
+)
+
+# 0x0119
+nack = construct.Struct(
+    '_name' / construct.Computed('nack'),
+    'name' / construct.Computed('NACK'),
+    'desc' / construct.Computed('Command error'),
+    'value' / construct.Hex(construct.Int16ul),  # Value
+)
+
+# 0x011A
 Info = construct.Struct(
     '_name' / construct.Computed('Info'),
     'name' / construct.Computed('Info'),
@@ -227,10 +278,11 @@ Info = construct.Struct(
     'VECT_STAT' / construct.Hex(construct.Int32ul),  # Результат загрузки полинома вектора
 )
 
+# 0x0440
 regular_temperature_flags0 = construct.BitStruct(
-    '_pad0' / construct.BitsInteger(6),
-    'temperature1_invalid' / construct.Flag,  # temperature1_invalid
     'temperature0_invalid' / construct.Flag,  # temperature0_invalid
+    'temperature1_invalid' / construct.Flag,  # temperature1_invalid
+    '_pad0' / construct.BitsInteger(6),
 )
 regular_temperature = construct.Struct(
     '_name' / construct.Computed('regular_temperature'),
@@ -241,6 +293,7 @@ regular_temperature = construct.Struct(
     'flags0' / regular_temperature_flags0,
 )
 
+# 0x0A00
 get_Payload_telemetry = construct.Struct(
     '_name' / construct.Computed('get_Payload_telemetry'),
     'name' / construct.Computed('Payload telemetry'),
@@ -274,123 +327,133 @@ get_Payload_telemetry = construct.Struct(
     'LastEvent_CH2_3' / construct.Hex(construct.Int8ul),  # Последние событие канал 2 H2M2.
 )
 
-ars_X_vel_flags0 = construct.BitStruct(
-    'Valid_X' / construct.Flag,  # Данные не актуальны
-    '_Reserv' / construct.BitsInteger(7),  # Резерв
+# 0x0B10
+ratesens_regular_x_flags0 = construct.BitStruct(
+    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
+    'invalid' / construct.Flag,  # Invalid flag.
 )
-ars_X_vel = construct.Struct(
-    '_name' / construct.Computed('ars_X_vel'),
-    'name' / construct.Computed('ARS X velolicy'),
-    'desc' / construct.Computed('Angular Rate Sensor regular telemetry for angular velocity by X (tested)'),
-    'Velocity_X' / construct.Float32l,  # Скорость, град/с
-    'Temp_X' / construct.Int8sl,  # Температура, градусы Цельсия
-    'flags0' / ars_X_vel_flags0,
-)
-
-ars_Y_vel_flags0 = construct.BitStruct(
-    'Valid_Y' / construct.Flag,  # Данные не актуальны
-    '_Reserv' / construct.BitsInteger(7),  # Резерв
-)
-ars_Y_vel = construct.Struct(
-    '_name' / construct.Computed('ars_Y_vel'),
-    'name' / construct.Computed('ARS Y velolicy'),
-    'desc' / construct.Computed('Angular Rate Sensor regular telemetry for angular velocity by Y (tested)'),
-    'Velocity_Y' / construct.Float32l,  # Скорость, град/с
-    'Temp_Y' / construct.Int8sl,  # Температура, градусы Цельсия
-    'flags0' / ars_Y_vel_flags0,
+ratesens_regular_x = construct.Struct(
+    '_name' / construct.Computed('ratesens_regular_x'),
+    'name' / construct.Computed('Ratesens regular X'),
+    'desc' / construct.Computed('X-axis VMS data'),
+    'velocity' / construct.Float32l,  # Value
+    'temperature' / construct.Int8sl,  # Value
+    'flags0' / ratesens_regular_x_flags0,
 )
 
-ars_Z_vel_flags0 = construct.BitStruct(
-    'Valid_Z' / construct.Flag,  # Данные не актуальны
-    '_Reserv' / construct.BitsInteger(7),  # Резерв
+# 0x0B11
+ratesens_regular_y_flags0 = construct.BitStruct(
+    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
+    'invalid' / construct.Flag,  # Invalid flag.
 )
-ars_Z_vel = construct.Struct(
-    '_name' / construct.Computed('ars_Z_vel'),
-    'name' / construct.Computed('ARS Z velolicy'),
-    'desc' / construct.Computed('Angular Rate Sensor regular telemetry for angular velocity by Z (tested)'),
-    'Velocity_Z' / construct.Float32l,  # Скорость, град/с
-    'Temp_Z' / construct.Int8sl,  # Температура, градусы Цельсия
-    'flags0' / ars_Z_vel_flags0,
-)
-
-mag_X_flags0 = construct.BitStruct(
-    'Valid_X' / construct.Flag,  # Данные не актуальны
-    '_Reserv' / construct.BitsInteger(7),  # Резерв
-)
-mag_X = construct.Struct(
-    '_name' / construct.Computed('mag_X'),
-    'name' / construct.Computed('Magnetometer - X-field'),
-    'desc' / construct.Computed('Magnetometer regular telemetry along X-field (tested)'),
-    'Field_X' / construct.Float32l,  # Магнитное поле, нТл
-    'Temp_X' / construct.Int8ul,  # Температура, градусы Цельсия
-    'flags0' / mag_X_flags0,
+ratesens_regular_y = construct.Struct(
+    '_name' / construct.Computed('ratesens_regular_y'),
+    'name' / construct.Computed('Ratesens regular Y'),
+    'desc' / construct.Computed('Y-axis VMS data'),
+    'velocity' / construct.Float32l,  # Value
+    'temperature' / construct.Int8sl,  # Value
+    'flags0' / ratesens_regular_y_flags0,
 )
 
-mag_Y_flags0 = construct.BitStruct(
-    'Valid_Y' / construct.Flag,  # Данные не актуальны
-    '_Reserv' / construct.BitsInteger(7),  # Резерв
+# 0x0B12
+ratesens_regular_z_flags0 = construct.BitStruct(
+    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
+    'invalid' / construct.Flag,  # Invalid flag.
 )
-mag_Y = construct.Struct(
-    '_name' / construct.Computed('mag_Y'),
-    'name' / construct.Computed('Magnetometer - Y-field'),
-    'desc' / construct.Computed('Magnetometer regular telemetry along Y-field (tested)'),
-    'Field_Y' / construct.Float32l,  # Магнитное поле, нТл
-    'Temp_Y' / construct.Int8sl,  # Температура, градусы Цельсия
-    'flags0' / mag_Y_flags0,
-)
-
-mag_Z_flags0 = construct.BitStruct(
-    'Valid_Z' / construct.Flag,  # Данные не актуальны
-    '_Reserv' / construct.BitsInteger(7),  # Резерв
-)
-mag_Z = construct.Struct(
-    '_name' / construct.Computed('mag_Z'),
-    'name' / construct.Computed('Magnetometer - Z-field'),
-    'desc' / construct.Computed('Magnetometer regular telemetry along Z-field (tested)'),
-    'Field_Z' / construct.Float32l,  # Магнитное поле, нТл
-    'Temp_Z' / construct.Int8sl,  # Температура, градусы Цельсия
-    'flags0' / mag_Z_flags0,
+ratesens_regular_z = construct.Struct(
+    '_name' / construct.Computed('ratesens_regular_z'),
+    'name' / construct.Computed('Ratesens regular Z'),
+    'desc' / construct.Computed('Z-axis VMS data'),
+    'velocity' / construct.Float32l,  # Value
+    'temperature' / construct.Int8sl,  # Value
+    'flags0' / ratesens_regular_z_flags0,
 )
 
+# 0x0B13
+magnsens_regular_x_flags0 = construct.BitStruct(
+    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
+    'invalid' / construct.Flag,  # Invalid flag.
+)
+magnsens_regular_x = construct.Struct(
+    '_name' / construct.Computed('magnsens_regular_x'),
+    'name' / construct.Computed('Magnsens regular X'),
+    'desc' / construct.Computed('X-axis magnetometer data'),
+    'field' / construct.Float32l,  # Value
+    'temperature' / construct.Int8sl,  # Value
+    'flags0' / magnsens_regular_x_flags0,
+)
+
+# 0x0B14
+magnsens_regular_y_flags0 = construct.BitStruct(
+    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
+    'invalid' / construct.Flag,  # Invalid flag.
+)
+magnsens_regular_y = construct.Struct(
+    '_name' / construct.Computed('magnsens_regular_y'),
+    'name' / construct.Computed('Magnsens regular Y'),
+    'desc' / construct.Computed('Y-axis magnetometer data'),
+    'field' / construct.Float32l,  # Value
+    'temperature' / construct.Int8sl,  # Value
+    'flags0' / magnsens_regular_y_flags0,
+)
+
+# 0x0B15
+magnsens_regular_z_flags0 = construct.BitStruct(
+    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
+    'invalid' / construct.Flag,  # Invalid flag.
+)
+magnsens_regular_z = construct.Struct(
+    '_name' / construct.Computed('magnsens_regular_z'),
+    'name' / construct.Computed('Magnsens regular Z'),
+    'desc' / construct.Computed('Z-axis magnetometer data'),
+    'field' / construct.Float32l,  # Value
+    'temperature' / construct.Int8sl,  # Value
+    'flags0' / magnsens_regular_z_flags0,
+)
+
+# 0x0B21
 Vector_X_flags0 = construct.BitStruct(
-    'Invalid_X' / construct.Flag,  # Данные актуальны
+    'invalid' / construct.Flag,  # Данные актуальны
     '_Reserv' / construct.BitsInteger(7),  # _Reserv
 )
 Vector_X = construct.Struct(
     '_name' / construct.Computed('Vector_X'),
     'name' / construct.Computed('Vector X'),
     'desc' / construct.Computed('X-axis regular telemetry'),
-    'Vect_X' / construct.Int32sl,  # Направление по X, град
-    'Temp_X' / construct.Int8sl,  # Температура, градусы Цельсия
+    'vector' / construct.Int32sl,  # Направление по X, град
+    'temperature' / construct.Int8sl,  # Температура, градусы Цельсия
     'flags0' / Vector_X_flags0,
 )
 
+# 0x0B22
 Vector_Y_flags0 = construct.BitStruct(
-    'Invalid_Y' / construct.Flag,  # Данные актуальны
+    'invalid' / construct.Flag,  # Данные актуальны
     '_Reserv' / construct.BitsInteger(7),  # _Reserv
 )
 Vector_Y = construct.Struct(
     '_name' / construct.Computed('Vector_Y'),
     'name' / construct.Computed('Vector Y'),
     'desc' / construct.Computed('Y-axis regular telemetry'),
-    'Vect_Y' / construct.Int32sl,  # Направление по Y, град
-    'Temp_Y' / construct.Int8sl,  # Температура, градусы Цельсия
+    'vector' / construct.Int32sl,  # Направление по Y, град
+    'temperature' / construct.Int8sl,  # Температура, градусы Цельсия
     'flags0' / Vector_Y_flags0,
 )
 
+# 0x0B23
 Vector_Z_flags0 = construct.BitStruct(
-    '_Reserved' / construct.BitsInteger(8),  # Резерв
-    'Invalid_Z' / construct.Flag,  # Данные актуальны
+    'invalid' / construct.Flag,  # Данные актуальны
     '_Reserv' / construct.BitsInteger(7),  # _Reserv
 )
 Vector_Z = construct.Struct(
     '_name' / construct.Computed('Vector_Z'),
     'name' / construct.Computed('Vector Z'),
     'desc' / construct.Computed('Z-axis regular telemetry'),
-    'Vect_Z' / construct.Int32sl,  # Направление по Z, град
+    'vector' / construct.Int32sl,  # Направление по Z, град
+    'temperature' / construct.Int8sl,  # Температура, градусы Цельсия
     'flags0' / Vector_Z_flags0,
 )
 
+# 0x0B24
 Brightness = construct.Struct(
     '_name' / construct.Computed('Brightness'),
     'name' / construct.Computed('Brightness'),
@@ -399,6 +462,7 @@ Brightness = construct.Struct(
     '_Reserved' / construct.BitsInteger(16),  # Резерв
 )
 
+# 0x0BF3
 common_telemetry = construct.Struct(
     '_name' / construct.Computed('common_telemetry'),
     'name' / construct.Computed('Common telemetry'),
@@ -406,6 +470,7 @@ common_telemetry = construct.Struct(
     'Data' / construct.Bytes(48),  # Data
 )
 
+# 0x4201
 vhf_settings = construct.Struct(
     '_name' / construct.Computed('vhf_settings'),
     'name' / construct.Computed('VHF Settings'),
@@ -418,9 +483,9 @@ vhf_settings = construct.Struct(
     'TPacketMode' / construct.Int8ul,  # TPacketMode
     'EnableBeacon' / construct.Int8ul,  # EnableBeacon
     'BeaconInterval' / construct.Int16ul,  # BeaconInterval
-    'CallSign' / construct.PaddedString(56, 'utf8'),  # CallSign
+    'CallSign' / construct.PaddedString(56, 'utf-8'),  # CallSign
     'SSID' / construct.Int8ul,  # SSID
-    'EarthCallSign' / construct.PaddedString(56, 'utf8'),  # EarthCallSign
+    'EarthCallSign' / construct.PaddedString(56, 'utf-8'),  # EarthCallSign
     'EarthSSID' / construct.Int8ul,  # EarthSSID
     'TLocation' / construct.Int8ul,  # TLocation
     'UNIcanID' / construct.Int16ul,  # UNIcanID
@@ -428,6 +493,7 @@ vhf_settings = construct.Struct(
     'BeaconStartupDelay' / construct.Int16ul,  # BeaconStartupDelay
 )
 
+# 0x4216
 beacon_flags0 = construct.BitStruct(
     'Uab_crit' / construct.Flag,  # Флаг "Батарея разряжена до критического уровня".
     'Uab_min' / construct.Flag,  # Флаг "Батарея разряжена до минимального уровня".
@@ -445,7 +511,11 @@ beacon_flags0 = construct.BitStruct(
     'Ich_limit3' / construct.Flag,  # Флаг превышения тока по каналу 3.
     'Ich_limit2' / construct.Flag,  # Флаг превышения тока по каналу 2.
     'Ich_limit1' / construct.Flag,  # Флаг превышения тока по каналу 1.
-    '_reserved0' / construct.BitsInteger(7),  # Резерв
+    '_reserved0' / construct.BitsInteger(3),  # Резерв
+    'Additional_channel_3_on' / construct.Flag,  # Флаг включения дополнительного канала 3
+    'Additional_channel_2_on' / construct.Flag,  # Флаг включения дополнительного канала 2
+    'Additional_channel_1_on' / construct.Flag,  # Флаг включения дополнительного канала 1
+    'FSB' / construct.Flag,  # Флаг ошибки коммутатора
     'charger' / construct.Flag,  # Флаг наличия напряжения на разъёме для зарядки
     '_reserved1' / construct.BitsInteger(8),  # Резерв
 )
@@ -473,7 +543,7 @@ beacon = construct.Struct(
     'reg_tel_id' / construct.Int32ul,  # Порядковый номер телеметрии PS.
     'Time' / common.UNIXTimestampAdapter(construct.Int32sl),  # Время последней телеметрии PS.
     'Nres' / construct.Int8ul,  # Количество перезагрузок PS.
-    'FL' / construct.Int8ul,  # Флаги PS.
+    'FL' / construct.Hex(construct.Int8ul),  # Флаги PS.
     't_amp' / construct.Int8sl,  # Температура усилителя УКВ (гр. С)
     't_uhf' / construct.Int8sl,  # Температура УКВ (гр. С)
     'RSSIrx' / construct.Int8sl,  # RSSI при приеме
@@ -481,13 +551,14 @@ beacon = construct.Struct(
     'Pf' / construct.Int8sl,  # Мощность прямого излучения
     'Pb' / construct.Int8sl,  # Мощность обратного излучения
     'Nres_uhf' / construct.Int8ul,  # Количество перезагрузок УКВ
-    'FL_uhf' / construct.Int8ul,  # Флаги УКВ
+    'FL_uhf' / construct.Hex(construct.Int8ul),  # Флаги УКВ
     'Time_uhf' / common.UNIXTimestampAdapter(construct.Int32sl),  # Время последней телеметрии УКВ
     'UpTime' / TimeDeltaAdapter(construct.Int32ul),  # Uptime в секундах
     'Current' / construct.Int16ul,  # Ток потребления УКВ
     'Uuhf' / construct.Int16sl,  # Напряжение УКВ (мВ)
 )
 
+# 0x4217
 extended_beacon = construct.Struct(
     '_name' / construct.Computed('extended_beacon'),
     'name' / construct.Computed('Extended Beacon'),
@@ -531,54 +602,90 @@ extended_beacon = construct.Struct(
     'LastEvent_CH2_3' / construct.Hex(construct.Int8ul),  # Последние событие канал 2 H2M2.
 )
 
+# 0x421A
 time_request = construct.Struct(
     '_name' / construct.Computed('time_request'),
     'name' / construct.Computed('TIME_REQUEST'),
     'desc' / construct.Computed('Acknowledge of completed data transmission'),
 )
 
+# 0x4246
+uhf_beacon_flags0 = construct.BitStruct(
+    'NumActiveSchedules' / construct.BitsInteger(5),  # Number of Active Schedules in executor.
+    'ResetOccurredDuringExecution' / construct.Flag,  # Reboot occurred during schedule execution.
+    'BackupScheduleActive' / construct.Flag,  # Backup schedule execution in progress.
+    '_Reserved' / construct.Flag,  # Value
+)
+uhf_beacon = construct.Struct(
+    '_name' / construct.Computed('uhf_beacon'),
+    'name' / construct.Computed('UHF Beacon'),
+    'desc' / construct.Computed('UHF Beacon'),
+    't_amp' / construct.Int8sl,  # UHF amp temperature, °C
+    't_uhf' / construct.Int8sl,  # UHF temperature, °C
+    'RSSIrx' / construct.Int8sl,  # RX RSSI (-dBm)
+    'RSSIidle' / construct.Int8sl,  # idle RSSI (-dBm)
+    'Pf' / construct.Int8sl,  # Forward wave power(dBm)
+    'Pb' / construct.Int8sl,  # Reflected wave power(dBm)
+    'uhf_reset_counter' / construct.Int8ul,  # UHF reset counter
+    'FL' / construct.Hex(construct.Int8ul),  # UHF flags
+    'Time' / common.UNIXTimestampAdapter(construct.Int32sl),  # UHF timestamp
+    'UpTime' / TimeDeltaAdapter(construct.Int32ul),  # Uptime(sec)
+    'RxBitrate' / construct.Int32ul,  # Uplink bitrate (Receive)
+    'CurrentConsumption' / construct.Int16ul,  # UHF consumption current
+    'InputVoltage' / construct.Int16sl,  # UHF voltage(mV)
+    'flags0' / uhf_beacon_flags0,
+)
+
+# 0x5430
 detector_transmits = construct.Struct(
     '_name' / construct.Computed('detector_transmits'),
     'name' / construct.Computed('DETECTOR_TRANSMITS'),
     'desc' / construct.Computed('Detector mod data'),
 )
 
+# 0x5439
 data_massive_addr_rpl = construct.Struct(
     '_name' / construct.Computed('data_massive_addr_rpl'),
     'name' / construct.Computed('DATA_MASSIVE_ADDR_RPL'),
     'desc' / construct.Computed('Massive addr mod data'),
 )
 
+# 0x543A
 data_event_addr_rpl = construct.Struct(
     '_name' / construct.Computed('data_event_addr_rpl'),
     'name' / construct.Computed('DATA_EVENT_ADDR_RPL'),
     'desc' / construct.Computed('Event addr mod data'),
 )
 
+# 0x543B
 data_monitor_addr_rpl = construct.Struct(
     '_name' / construct.Computed('data_monitor_addr_rpl'),
     'name' / construct.Computed('DATA_MONITOR_ADDR_RPL'),
     'desc' / construct.Computed('Monitor addr mod data'),
 )
 
+# 0x543C
 data_massive_rpl = construct.Struct(
     '_name' / construct.Computed('data_massive_rpl'),
     'name' / construct.Computed('DATA_MASSIVE_RPL'),
     'desc' / construct.Computed('Massive mod data'),
 )
 
+# 0x543D
 data_event_rpl = construct.Struct(
     '_name' / construct.Computed('data_event_rpl'),
     'name' / construct.Computed('DATA_EVENT_RPL'),
     'desc' / construct.Computed('Event mod ata'),
 )
 
+# 0x543E
 data_monitor_rpl = construct.Struct(
     '_name' / construct.Computed('data_monitor_rpl'),
     'name' / construct.Computed('DATA_MONITOR_RPL'),
     'desc' / construct.Computed('Monitor mod data'),
 )
 
+# 0xABD1
 get_Payload_FW_MSG = construct.Struct(
     '_name' / construct.Computed('get_Payload_FW_MSG'),
     'name' / construct.Computed('Payload FW MSG'),
@@ -588,42 +695,49 @@ get_Payload_FW_MSG = construct.Struct(
     'Release_Number' / construct.Int8ul,  # Release Number
 )
 
+# 0xABD4
 no_monitor_data = construct.Struct(
     '_name' / construct.Computed('no_monitor_data'),
     'name' / construct.Computed('NO_MONITOR_DATA'),
     'desc' / construct.Computed('There is no enought corresponding data'),
 )
 
+# 0xABD5
 no_event_data = construct.Struct(
     '_name' / construct.Computed('no_event_data'),
     'name' / construct.Computed('NO_EVENT_DATA'),
     'desc' / construct.Computed('There is no enought corresponding data'),
 )
 
+# 0xABD6
 no_massive_data = construct.Struct(
     '_name' / construct.Computed('no_massive_data'),
     'name' / construct.Computed('NO_MASSIVE_DATA'),
     'desc' / construct.Computed('There is no enought corresponding data'),
 )
 
+# 0xABD9
 compl_monitor_data = construct.Struct(
     '_name' / construct.Computed('compl_monitor_data'),
     'name' / construct.Computed('COMPL_MONITOR_DATA'),
     'desc' / construct.Computed('Acknowledge of completed data transmission'),
 )
 
+# 0xABDA
 compl_event_data = construct.Struct(
     '_name' / construct.Computed('compl_event_data'),
     'name' / construct.Computed('COMPL_EVENT_DATA'),
     'desc' / construct.Computed('Acknowledge of completed data transmission'),
 )
 
+# 0xABDB
 compl_massive_data = construct.Struct(
     '_name' / construct.Computed('compl_massive_data'),
     'name' / construct.Computed('COMPL_MASSIVE_DATA'),
     'desc' / construct.Computed('Acknowledge of completed data transmission'),
 )
 
+# 0xABDD
 get_Payload_CURRENT_CONFIG = construct.Struct(
     '_name' / construct.Computed('get_Payload_CURRENT_CONFIG'),
     'name' / construct.Computed('Payload CURRENT CONFIG'),
@@ -659,6 +773,7 @@ get_Payload_CURRENT_CONFIG = construct.Struct(
     'data_correct' / construct.Hex(construct.Int8ul),  # Флаг подтверждения корректности (грубо) текущей конфигурации, default value 0x01
 )
 
+# 0xDE21
 regular_telemetry_flags0 = construct.BitStruct(
     'VTG_BAT_CRIT' / construct.Flag,  # Флаг критического напр. АКБ
     'VTG_BAT_MIN' / construct.Flag,  # Флаг минимального напр. АКБ
@@ -687,7 +802,7 @@ regular_telemetry_flags0 = construct.BitStruct(
 regular_telemetry = construct.Struct(
     '_name' / construct.Computed('regular_telemetry'),
     'name' / construct.Computed('Regular'),
-    'desc' / construct.Computed('Regular telemetry for PSS'),
+    'desc' / construct.Computed('PSS Regular telemetry'),
     'VTG_S1' / construct.Int16ul,  # Напряжение на входе 1, мВ
     'VTG_S2' / construct.Int16ul,  # Напряжение на входе 2, мВ
     'VTG_S3' / construct.Int16ul,  # Напряжение на входе 3, мВ
@@ -711,6 +826,7 @@ regular_telemetry = construct.Struct(
     'reset_reason' / construct.Hex(construct.Int8ul),  # причина перезагрузки
 )
 
+# 0xDE22
 extended_telemetry = construct.Struct(
     '_name' / construct.Computed('extended_telemetry'),
     'name' / construct.Computed('Extended'),
@@ -731,8 +847,19 @@ extended_telemetry = construct.Struct(
     'REC_ID' / construct.Int32ul,  # Порядковый номер пакета
     'ST_DELAY' / construct.Int16ul,  # Задержка старта питания аппарата
     'SW_VER' / construct.Int16ul,  # PPS firmware version
+    'DEPLOY_START_TIMER' / construct.Int16ul,  # Value
+    'DEPLOY_STOP_TIMER' / construct.Int8ul,  # Value
+    'DEPLOY_MODE' / construct.Hex(construct.Int8ul),  # Value
 )
 
+# 0xDE24
+acknowledge = construct.Struct(
+    '_name' / construct.Computed('acknowledge'),
+    'name' / construct.Computed('Acknowledge'),
+    'desc' / construct.Computed('Command acceptence confirmation'),
+)
+
+# 0xDE25
 overcurrent = construct.Struct(
     '_name' / construct.Computed('overcurrent'),
     'name' / construct.Computed('Overcurrent'),
@@ -740,6 +867,7 @@ overcurrent = construct.Struct(
     'Channel' / construct.Int8ul,  # Номер канала
 )
 
+# 0xDE27
 switch_status = construct.Struct(
     '_name' / construct.Computed('switch_status'),
     'name' / construct.Computed('Switch status'),
@@ -750,6 +878,347 @@ switch_status = construct.Struct(
     'Ch3Status' / construct.Hex(construct.Int16ul),  # Статус канала 3
 )
 
+# 0xDF25
+regular_telemetry6u_flags0 = construct.BitStruct(
+    'ch1_status' / construct.Flag,  # Value
+    'ch2_status' / construct.Flag,  # Value
+    'ch3_status' / construct.Flag,  # Value
+    'ch4_status' / construct.Flag,  # Value
+    'ch5_status' / construct.Flag,  # Value
+    'ch6_status' / construct.Flag,  # Value
+    'ch7_status' / construct.Flag,  # Value
+    'ch8_status' / construct.Flag,  # Value
+    'ch9_status' / construct.Flag,  # Value
+    'ch10_status' / construct.Flag,  # Value
+    'ch11_status' / construct.Flag,  # Value
+    'ch12_status' / construct.Flag,  # Value
+    'ch13_status' / construct.Flag,  # Value
+    'ch14_status' / construct.Flag,  # Value
+    'ch15_status' / construct.Flag,  # Value
+    'ch16_status' / construct.Flag,  # Value
+    'ch17_status' / construct.Flag,  # Value
+    'ch18_status' / construct.Flag,  # Value
+    'ch19_status' / construct.Flag,  # Value
+    'ch20_status' / construct.Flag,  # Value
+    'ch21_status' / construct.Flag,  # Value
+    'ch22_status' / construct.Flag,  # Value
+    'ch23_status' / construct.Flag,  # Value
+    'ch24_status' / construct.Flag,  # Value
+    'ch25_status' / construct.Flag,  # Value
+    'ch26_status' / construct.Flag,  # Value
+    'ch27_status' / construct.Flag,  # Value
+    'ch28_status' / construct.Flag,  # Value
+    'ch29_status' / construct.Flag,  # Value
+    'ch30_status' / construct.Flag,  # Value
+    '_reserved' / construct.BitsInteger(2),  # Value
+    'Tab_min' / construct.Flag,  # none
+    'Tab_max' / construct.Flag,  # none
+    'heater1_on' / construct.Flag,  # none
+    'heater2_on' / construct.Flag,  # none
+    'heater1_manual' / construct.Flag,  # none
+    'heater2_manual' / construct.Flag,  # none
+    'Uab_min' / construct.Flag,  # none
+    'Uab_crit' / construct.Flag,  # none
+    'Ich_limit1' / construct.Flag,  # none
+    'Ich_limit2' / construct.Flag,  # none
+    'Ich_limit3' / construct.Flag,  # none
+    'Ich_limit4' / construct.Flag,  # none
+    'channelon1' / construct.Flag,  # none
+    'channelon2' / construct.Flag,  # none
+    'channelon3' / construct.Flag,  # none
+    'channelon4' / construct.Flag,  # none
+    'charger' / construct.Flag,  # none
+    'FSB' / construct.Flag,  # Power switch error.
+    'AuxCH1_enabled_flag' / construct.Flag,  # Additional_channel_1_on.
+    'AuxCH2_enabled_flag' / construct.Flag,  # Additional_channel_2_on.
+    'AuxCH3_enabled_flag' / construct.Flag,  # Additional_channel_3_on.
+    '_reserved0' / construct.BitsInteger(3),  # Reserved.
+    '_reserved1' / construct.BitsInteger(8),  # Reserved.
+)
+regular_telemetry6u = construct.Struct(
+    '_name' / construct.Computed('Regular_telemetry6U'),
+    'name' / construct.Computed('Regular telemetry 6U'),
+    'desc' / construct.Computed('Regular_telemetry6U'),
+    'Usb1' / construct.Int16ul,  # Solar Panel 1 Voltage(mV)
+    'Usb2' / construct.Int16ul,  # Solar Panel 2 Voltage(mV)
+    'Usb3' / construct.Int16ul,  # Solar Panel 3 Voltage(mV)
+    'Isb1' / construct.Int16ul,  # Solar Panel 1 Current(mA)
+    'Isb2' / construct.Int16ul,  # Solar Panel 2 Current(mA)
+    'Isb3' / construct.Int16ul,  # Solar Panel 3 Current(mA)
+    'Iab' / construct.Int16sl,  # Battery Current(mA)
+    'Uab' / construct.Int16ul,  # Voltage on cell 1.
+    'Uab1' / construct.Int16ul,  # Voltage on cell 1.
+    'Uab2' / construct.Int16ul,  # Voltage on cell 2.
+    't1_pw' / RegTemp,  # Battery temperature 1(deg. С)
+    't2_pw' / RegTemp,  # Battery temperature 2(deg. С)
+    'capacity' / construct.Int8ul,  # Value
+    'flags0' / regular_telemetry6u_flags0,
+    'reg_tel_id' / construct.Int32ul,  # PSS telemetry number.
+    'Time' / common.UNIXTimestampAdapter(construct.Int32sl),  # PSS last telemetry timestamp.
+    'ps_reset_counter' / construct.Int8ul,  # PSS reset counter.
+    'FL' / construct.Hex(construct.Int8ul),  # PS flags.
+)
+
+# 0xED21
+ps_regular_telemetry_5ch_flags0 = construct.BitStruct(
+    'Tab_min' / construct.Flag,  # none
+    'Tab_max' / construct.Flag,  # none
+    'heater1_on' / construct.Flag,  # none
+    'heater2_on' / construct.Flag,  # none
+    'heater1_manual' / construct.Flag,  # none
+    'heater2_manual' / construct.Flag,  # none
+    'Uab_min' / construct.Flag,  # none
+    'Uab_crit' / construct.Flag,  # none
+    'Ich_limit1' / construct.Flag,  # none
+    'Ich_limit2' / construct.Flag,  # none
+    'Ich_limit3' / construct.Flag,  # none
+    'Ich_limit4' / construct.Flag,  # none
+    'Ich_limit5' / construct.Flag,  # none
+    'channelon1' / construct.Flag,  # none
+    'channelon2' / construct.Flag,  # none
+    'channelon3' / construct.Flag,  # none
+    'channelon4' / construct.Flag,  # none
+    'channelon5' / construct.Flag,  # none
+    'charger' / construct.Flag,  # none
+    'FSB' / construct.Flag,  # Power switch error.
+    'AuxCH1_enabled_flag' / construct.Flag,  # Additional_channel_1_on.
+    'AuxCH2_enabled_flag' / construct.Flag,  # Additional_channel_2_on.
+    'AuxCH3_enabled_flag' / construct.Flag,  # Additional_channel_3_on.
+    '_reserved0' / construct.Flag,  # Reserved.
+    '_reserved1' / construct.BitsInteger(8),  # Reserved.
+)
+ps_regular_telemetry_5ch = construct.Struct(
+    '_name' / construct.Computed('ps_regular_telemetry_5ch'),
+    'name' / construct.Computed('PS Regular telemetry 5ch'),
+    'desc' / construct.Computed('Regular telemetry for PSS with 5 ch'),
+    'VTG_SOL1' / construct.Int16ul,  # Solar Panel 1 Voltage(mV)
+    'VTG_SOL2' / construct.Int16ul,  # Solar Panel 2 Voltage(mV)
+    'VTG_SOL3' / construct.Int16ul,  # Solar Panel 3 Voltage(mV)
+    'CUR_SOL1' / construct.Int16ul,  # Solar Panel 1 Current(mA)
+    'CUR_SOL2' / construct.Int16ul,  # Solar Panel 2 Current(mA)
+    'CUR_SOL3' / construct.Int16ul,  # Solar Panel 3 Current(mA)
+    'CUR_BAT' / construct.Int16sl,  # Battery Current(mA)
+    'CUR_PCH1' / construct.Int16ul,  # Channel 1 Current(mA)
+    'CUR_PCH2' / construct.Int16ul,  # Channel 2 Current(mA)
+    'CUR_PCH3' / construct.Int16ul,  # Channel 3 Current(mA)
+    'CUR_PCH4' / construct.Int16ul,  # Channel 4 Current(mA)
+    'CUR_PCH5' / construct.Int16ul,  # Channel 5 Current(mA)
+    'TMP_BAT1' / RegTemp,  # Battery temperature 1(deg. С)
+    'TMP_BAT2' / RegTemp,  # Battery temperature 2(deg. С)
+    'TMP_BAT3' / RegTemp,  # Battery temperature 3(deg. С)
+    'TMP_BAT4' / RegTemp,  # Battery temperature 4(deg. С)
+    'flags0' / ps_regular_telemetry_5ch_flags0,
+    'VBAT' / construct.Int16sl,  # Battery voltage(mV)
+    'REC_ID' / construct.Int32ul,  # PSS telemetry number.
+    'Time' / common.UNIXTimestampAdapter(construct.Int32sl),  # PSS last telemetry timestamp.
+    'ps_reset_counter' / construct.Int8ul,  # PSS reset counter.
+    'reset_reason' / construct.Hex(construct.Int8ul),  # PS flags.
+)
+
+# 0xF204
+_tm_adcs_beacon_old_policies = construct.Hex(construct.Enum(construct.BitsInteger(7), **{'None': 0, 'Integrator': 1, 'Integrator AVS shifts': 2, 'Triad': 3, 'Triad AVS shifts': 4, 'Kalman BWS': 5, 'Star tracker': 6, 'Star_tracker AVS shifts': 7, 'Kalman Q': 8, 'Kalman WQ': 9}))
+tm_adcs_beacon_old_flags0 = construct.BitStruct(
+    'eci_policy' / _tm_adcs_beacon_old_policies,
+    'eci_invalid' / construct.Flag,  # Value
+)
+tm_adcs_beacon_old_flags1 = construct.BitStruct(
+    'orb_policy' / _tm_adcs_beacon_old_policies,
+    'orb_invalid' / construct.Flag,  # Value
+)
+tm_adcs_beacon_old_flags2 = construct.BitStruct(
+    'forced_policy' / _tm_adcs_beacon_old_policies,
+    'forced_invalid' / construct.Flag,  # Value
+)
+tm_adcs_beacon_old_flags3 = construct.BitStruct(
+    'mfs_invalid' / construct.Flag,  # Value
+    'avs_invalid' / construct.Flag,  # Value
+    '_reserved' / construct.BitsInteger(6),  # Value
+)
+tm_adcs_beacon_old = construct.Struct(
+    '_name' / construct.Computed('tm_adcs_beacon_old'),
+    'name' / construct.Computed('TM ADCS beacon old'),
+    'desc' / construct.Computed('TM ADCS beacon old'),
+    'Time' / common.UNIXTimestampAdapter(construct.Int64sl),  # Value
+    'eci_quat_w' / construct.Float32l,  # Value
+    'eci_quat_vect_x' / construct.Float32l,  # Value
+    'eci_quat_vect_y' / construct.Float32l,  # Value
+    'eci_quat_vect_z' / construct.Float32l,  # Value
+    'eci_ave_x' / construct.Float32l,  # Value
+    'eci_ave_y' / construct.Float32l,  # Value
+    'eci_ave_z' / construct.Float32l,  # Value
+    'flags0' / tm_adcs_beacon_old_flags0,
+    'orb_time' / common.UNIXTimestampAdapter(construct.Int64sl),  # Value
+    'orb_quat_w' / construct.Float32l,  # Value
+    'orb_quat_vect_x' / construct.Float32l,  # Value
+    'orb_quat_vect_y' / construct.Float32l,  # Value
+    'orb_quat_vect_z' / construct.Float32l,  # Value
+    'orb_ave_x' / construct.Float32l,  # Value
+    'orb_ave_y' / construct.Float32l,  # Value
+    'orb_ave_z' / construct.Float32l,  # Value
+    'flags1' / tm_adcs_beacon_old_flags1,
+    'forced_time' / common.UNIXTimestampAdapter(construct.Int64sl),  # Value
+    'forced_quat_w' / construct.Float32l,  # Value
+    'forced_quat_vect_x' / construct.Float32l,  # Value
+    'forced_quat_vect_y' / construct.Float32l,  # Value
+    'forced_quat_vect_z' / construct.Float32l,  # Value
+    'forced_ave_x' / construct.Float32l,  # Value
+    'forced_ave_y' / construct.Float32l,  # Value
+    'forced_ave_z' / construct.Float32l,  # Value
+    'flags2' / tm_adcs_beacon_old_flags2,
+    'ss_invalids' / construct.Int16ul,  # Value
+    'wheel_invalids' / construct.Int8ul,  # Value
+    'flags3' / tm_adcs_beacon_old_flags3,
+)
+
+# 0xF210
+_tm_adcs_beacon_policies = construct.Hex(construct.Enum(construct.BitsInteger(7), **{'None': 0, 'Integrator': 1, 'Integrator + AV shifts': 2, 'Triad': 3, 'Triad + AV shifts': 4, 'Kalman BWS': 5, 'Star tracker': 6, 'Star tracker + AV shifts': 7, 'Kalman Q': 8, 'Kalman WQ': 9, 'Kalman WQP': 10}))
+tm_adcs_beacon_flags0 = construct.BitStruct(
+    'eci_policy' / _tm_adcs_beacon_policies,
+    'eci_invalid' / construct.Flag,  # Invalidity flag.
+)
+tm_adcs_beacon_flags1 = construct.BitStruct(
+    'orb_policy' / _tm_adcs_beacon_policies,
+    'orb_invalid' / construct.Flag,  # Invalidity flag.
+)
+tm_adcs_beacon_flags2 = construct.BitStruct(
+    'eci_forced_policy' / _tm_adcs_beacon_policies,
+    'eci_forced_invalid' / construct.Flag,  # Invalidity flag.
+)
+tm_adcs_beacon_flags3 = construct.BitStruct(
+    'ballistics_policy' / construct.Hex(construct.Enum(construct.BitsInteger(3), **{'Propagator': 0, 'GNSS': 1, 'GNSS + estimation by speed': 2})),
+    'gnss_invalid' / construct.Flag,  # GNSS invalidity.
+    'auto_ballistics_polity' / construct.Hex(construct.Enum(construct.BitsInteger(2), Disabled=0, Enabled=1)),  # Auto ballistics policy
+    'auto_control_policy' / construct.Hex(construct.Enum(construct.BitsInteger(2), **{'Disabled': 0, 'Enabled set 1': 1, 'Enabled set 2': 2})),  # Set angular motion auto control policy
+)
+tm_adcs_beacon_flags4 = construct.BitStruct(
+    'ss_active' / construct.BitsInteger(6),  # Active sun sensor.
+    'ss_invalid_x_plus' / construct.Flag,  # Sun sensors invalidity flags.
+    'ss_invalid_x_minus' / construct.Flag,  # Value
+    'ss_invalid_y_plus' / construct.Flag,  # Value
+    'ss_invalid_y_minus' / construct.Flag,  # Value
+    'ss_invalid_z_plus' / construct.Flag,  # Value
+    'ss_invalid_z_minus' / construct.Flag,  # Value
+    'ss_invalid_extra' / construct.Flag,  # Value
+    'star_tracker_invalid' / construct.Flag,  # Star tracker invalidity flag.
+    'avs_invalid' / construct.Flag,  # AVS invalidity flag.
+    'mfs_invalid' / construct.Flag,  # MFS invalidity flag.
+    'wheel_invalid_x_plus' / construct.Flag,  # Wheels invalidity flags.
+    'wheel_invalid_x_minus' / construct.Flag,  # Value
+    'wheel_invalid_y_plus' / construct.Flag,  # Value
+    'wheel_invalid_y_minus' / construct.Flag,  # Value
+    'reset_reason' / construct.Hex(construct.BitsInteger(4)),  # Last reset reason.
+)
+tm_adcs_beacon = construct.Struct(
+    '_name' / construct.Computed('tm_adcs_beacon'),
+    'name' / construct.Computed('TM ADCS beacon'),
+    'desc' / construct.Computed('TM ADCS beacon'),
+    'Time' / common.UNIXTimestampAdapter(construct.Int64sl),  # Current system time.
+    'uptime' / TimeDeltaAdapter(construct.Int32ul),  # Time from last reboot, [sec].
+    'eci_quat_w' / construct.Float32l,  # Value
+    'eci_quat_vect_x' / construct.Float32l,  # Value
+    'eci_quat_vect_y' / construct.Float32l,  # Value
+    'eci_quat_vect_z' / construct.Float32l,  # Value
+    'eci_AV_x' / construct.Float32l,  # Angular velocity, [deg/sec].
+    'eci_AV_y' / construct.Float32l,  # Value
+    'eci_AV_z' / construct.Float32l,  # Value
+    'flags0' / tm_adcs_beacon_flags0,
+    'orb_quat_w' / construct.Float32l,  # Value
+    'orb_quat_vect_x' / construct.Float32l,  # Value
+    'orb_quat_vect_y' / construct.Float32l,  # Value
+    'orb_quat_vect_z' / construct.Float32l,  # Value
+    'orb_AV_x' / construct.Float32l,  # Angular velocity, [deg/sec].
+    'orb_AV_y' / construct.Float32l,  # Value
+    'orb_AV_z' / construct.Float32l,  # Value
+    'flags1' / tm_adcs_beacon_flags1,
+    'eci_forced_quat_w' / construct.Float32l,  # Value
+    'eci_forced_quat_vect_x' / construct.Float32l,  # Value
+    'eci_forced_quat_vect_y' / construct.Float32l,  # Value
+    'eci_forced_quat_vect_z' / construct.Float32l,  # Value
+    'eci_forced_AV_x' / construct.Float32l,  # Angular velocity, [deg/sec].
+    'eci_forced_AV_y' / construct.Float32l,  # Value
+    'eci_forced_AV_z' / construct.Float32l,  # Value
+    'flags2' / tm_adcs_beacon_flags2,
+    'latitude' / construct.Float32l,  # Latitude, [deg].
+    'longitude' / construct.Float32l,  # Longitude, [deg].
+    'altitude' / construct.Float32l,  # Altitude, [m].
+    'flags3' / tm_adcs_beacon_flags3,
+    'adcs_task_type' / construct.Hex(construct.Enum(construct.Int8ul, **{'Idle': 0, 'B_dot': 1, 'Orientation ECI + unload wheels': 2, 'Orientation ORB + unload wheels': 3, 'Battery recharging': 4, 'Orientation ECI': 5, 'Orientation ORB': 6, 'Watch ECI point': 7, 'Watch LLA point': 8, 'Watch Sun': 9, 'None': 10})),  # Current task type
+    'adcs_task_quantity' / construct.Int8ul,  # Tasks quantity in scheduler.
+    'wheel_rpm_x_plus' / construct.Int16sl,  # Wheels angular velocities, [rpm].
+    'wheel_rpm_x_minus' / construct.Int16sl,  # Value
+    'wheel_rpm_y_plus' / construct.Int16sl,  # Value
+    'wheel_rpm_y_minus' / construct.Int16sl,  # Value
+    'flags4' / tm_adcs_beacon_flags4,
+)
+
+# 0xF212
+tm_adcs_beacon_6_wheels_flags4 = construct.BitStruct(
+    'ss_active' / construct.BitsInteger(6),  # Active sun sensor.
+    'ss_invalid_x_plus' / construct.Flag,  # Sun sensors invalidity flags.
+    'ss_invalid_x_minus' / construct.Flag,  # Value
+    'ss_invalid_y_plus' / construct.Flag,  # Value
+    'ss_invalid_y_minus' / construct.Flag,  # Value
+    'ss_invalid_z_plus' / construct.Flag,  # Value
+    'ss_invalid_z_minus' / construct.Flag,  # Value
+    'ss_invalid_extra' / construct.Flag,  # Value
+    'star_tracker_invalid' / construct.Flag,  # Star tracker invalidity flag.
+    'avs_invalid' / construct.Flag,  # AVS invalidity flag.
+    'mfs_invalid' / construct.Flag,  # MFS invalidity flag.
+    'wheel_invalid_1' / construct.Flag,  # Wheels invalidity flags.
+    'wheel_invalid_2' / construct.Flag,  # Value
+    'wheel_invalid_3' / construct.Flag,  # Value
+    'wheel_invalid_4' / construct.Flag,  # Value
+    'wheel_invalid_5' / construct.Flag,  # Value
+    'wheel_invalid_6' / construct.Flag,  # Value
+    '_reserved' / construct.BitsInteger(2),  # Value
+)
+tm_adcs_beacon_6_wheels = construct.Struct(
+    '_name' / construct.Computed('tm_adcs_beacon_6_wheels'),
+    'name' / construct.Computed('TM ADCS beacon 6 wheels'),
+    'desc' / construct.Computed('TM ADCS beacon 6 wheels'),
+    'Time' / common.UNIXTimestampAdapter(construct.Int64sl),  # Current system time.
+    'uptime' / TimeDeltaAdapter(construct.Int32ul),  # Time from last reboot, [sec].
+    'eci_quat_w' / construct.Float32l,  # Value
+    'eci_quat_vect_x' / construct.Float32l,  # Value
+    'eci_quat_vect_y' / construct.Float32l,  # Value
+    'eci_quat_vect_z' / construct.Float32l,  # Value
+    'eci_AV_x' / construct.Float32l,  # Angular velocity, [deg/sec].
+    'eci_AV_y' / construct.Float32l,  # Value
+    'eci_AV_z' / construct.Float32l,  # Value
+    'flags0' / tm_adcs_beacon_flags0,
+    'orb_quat_w' / construct.Float32l,  # Value
+    'orb_quat_vect_x' / construct.Float32l,  # Value
+    'orb_quat_vect_y' / construct.Float32l,  # Value
+    'orb_quat_vect_z' / construct.Float32l,  # Value
+    'orb_AV_x' / construct.Float32l,  # Angular velocity, [deg/sec].
+    'orb_AV_y' / construct.Float32l,  # Value
+    'orb_AV_z' / construct.Float32l,  # Value
+    'flags1' / tm_adcs_beacon_flags1,
+    'eci_forced_quat_w' / construct.Float32l,  # Value
+    'eci_forced_quat_vect_x' / construct.Float32l,  # Value
+    'eci_forced_quat_vect_y' / construct.Float32l,  # Value
+    'eci_forced_quat_vect_z' / construct.Float32l,  # Value
+    'eci_forced_AV_x' / construct.Float32l,  # Angular velocity, [deg/sec].
+    'eci_forced_AV_y' / construct.Float32l,  # Value
+    'eci_forced_AV_z' / construct.Float32l,  # Value
+    'flags2' / tm_adcs_beacon_flags2,
+    'latitude' / construct.Float32l,  # Latitude, [deg].
+    'longitude' / construct.Float32l,  # Longitude, [deg].
+    'altitude' / construct.Float32l,  # Altitude, [m].
+    'flags3' / tm_adcs_beacon_flags3,
+    'adcs_task_type' / construct.Int8ul,  # Current task type. 0 - Idle, 1 - B_dot, 2 - Orientation ECI + unload wheels, 3 - Orientation ORB + unload wheels, 4 - Battery recharging, 5 - Orientation ECI, 6 - Orientation ORB, 7 - Watch ECI point, 8 - Watch LLA point, 9 - Watch Sun, 10 - None.
+    'adcs_task_quantity' / construct.Int8ul,  # Tasks quantity in scheduler.
+    'wheel_rpm_1' / construct.Int16sl,  # Wheels angular velocities, [rpm].
+    'wheel_rpm_2' / construct.Int16sl,  # Value
+    'wheel_rpm_3' / construct.Int16sl,  # Value
+    'wheel_rpm_4' / construct.Int16sl,  # Value
+    'wheel_rpm_5' / construct.Int16sl,  # Value
+    'wheel_rpm_6' / construct.Int16sl,  # Value
+    'flags4' / tm_adcs_beacon_6_wheels_flags4,
+    'reset_reason' / construct.Hex(construct.Int8ul),  # Last reset reason.
+)
+
+# 0xFB21
 ch_adc_X1 = construct.Struct(
     '_name' / construct.Computed('ch_adc_X1'),
     'name' / construct.Computed('ADC Ch#X1'),
@@ -758,6 +1227,7 @@ ch_adc_X1 = construct.Struct(
     'Temp_Ext' / RegTemp,  # Температура датчика у детектора, градусы Цельсия * 100
 )
 
+# 0xFB22
 ch_adc_X2 = construct.Struct(
     '_name' / construct.Computed('ch_adc_X2'),
     'name' / construct.Computed('ADC Ch#X2'),
@@ -766,6 +1236,7 @@ ch_adc_X2 = construct.Struct(
     'Temp_Int' / RegTemp,  # Температура датчика МК, градусы Цельсия * 100
 )
 
+# 0xFB23
 ch_adc_Y1 = construct.Struct(
     '_name' / construct.Computed('ch_adc_Y1'),
     'name' / construct.Computed('ADC Ch#Y1'),
@@ -774,6 +1245,7 @@ ch_adc_Y1 = construct.Struct(
     'ADC_Ext' / construct.Int16ul,  # Отсчеты внешнего температурного датчика
 )
 
+# 0xFB24
 ch_adc_Y2 = construct.Struct(
     '_name' / construct.Computed('ch_adc_Y2'),
     'name' / construct.Computed('ADC Ch#Y2'),
@@ -782,6 +1254,7 @@ ch_adc_Y2 = construct.Struct(
     'ADC_Int' / construct.Int16ul,  # Отсчеты внутреннего температурного датчика
 )
 
+# 0xFC21
 temp_cur_X1 = construct.Struct(
     '_name' / construct.Computed('temp_cur_X1'),
     'name' / construct.Computed('Temperature/current X1'),
@@ -790,6 +1263,7 @@ temp_cur_X1 = construct.Struct(
     'Temp_Ext' / RegTemp,  # Температура датчика у детектора, градусы Цельсия * 100
 )
 
+# 0xFC22
 temp_cur_X2 = construct.Struct(
     '_name' / construct.Computed('temp_cur_X2'),
     'name' / construct.Computed('Temperature/current X2'),
@@ -798,6 +1272,7 @@ temp_cur_X2 = construct.Struct(
     'Temp_Int' / RegTemp,  # Температура датчика МК, градусы Цельсия * 100
 )
 
+# 0xFC23
 temp_cur_Y1 = construct.Struct(
     '_name' / construct.Computed('temp_cur_Y1'),
     'name' / construct.Computed('Temperature/current Y1'),
@@ -806,6 +1281,7 @@ temp_cur_Y1 = construct.Struct(
     'ADC_Ext' / construct.Int16ul,  # Отсчеты внешнего температурного датчика
 )
 
+# 0xFC24
 temp_cur_Y2 = construct.Struct(
     '_name' / construct.Computed('temp_cur_Y2'),
     'name' / construct.Computed('Temperature/current Y2'),
@@ -814,6 +1290,7 @@ temp_cur_Y2 = construct.Struct(
     'ADC_Int' / construct.Int16ul,  # Отсчеты внутреннего температурного датчика
 )
 
+# 0xFFE1
 version_sw = construct.Struct(
     '_name' / construct.Computed('version_sw'),
     'name' / construct.Computed('VERSION SW'),
@@ -824,10 +1301,10 @@ version_sw = construct.Struct(
 )
 
 # other
-ImgStart = construct.Struct(
-    '_name' / construct.Computed('ImgStart'),
-    'name' / construct.Computed('ImgStart'),
-    'mode' / construct.Int8ul,
+filetransfer_init = construct.Struct(
+    '_name' / construct.Computed('filetransfer_init'),
+    'name' / construct.Computed('filetransfer_init'),
+    'mode' / construct.Hex(construct.Enum(construct.Int8ul, **{'Receive': 0, 'Send': 1, 'No-query mode': 2, 'File list': 3, 'CRC': 4})),
     'ses_id' / construct.Int8ul,
     'bs' / construct.Int16ul,
     'offset' / construct.Int32ul,
@@ -835,16 +1312,16 @@ ImgStart = construct.Struct(
     'file_name' / construct.GreedyString('utf-8'),
 )
 
-ImgSize = construct.Struct(
-    '_name' / construct.Computed('ImgSize'),
-    'name' / construct.Computed('ImgSize'),
+filetransfer_filesize = construct.Struct(
+    '_name' / construct.Computed('filetransfer_filesize'),
+    'name' / construct.Computed('filetransfer_filesize'),
     'size' / construct.Int32ul,
 )
 
-ImgData = construct.Struct(
-    '_name' / construct.Computed('ImgData'),
-    'name' / construct.Computed('ImgData'),
-    'reserved0' / construct.Int8ul,
+filetransfer_data = construct.Struct(
+    '_name' / construct.Computed('filetransfer_data'),
+    'name' / construct.Computed('filetransfer_data'),
+    'session_id' / construct.Int8ul,
     'offset' / construct.Int32ul,
     'data' / construct.GreedyBytes,
 )
@@ -860,15 +1337,18 @@ tlm_map = {
     PSU_REGULAR2: 'psu_regular2' / psu_regular2,
     PSU_REGULAR3: 'psu_regular3' / psu_regular3,
     PSU_REGULAR4: 'psu_regular4' / psu_regular4,
+    PSU_REGULAR5: 'psu_regular5' / psu_regular5,
+    ACK: 'ack' / ack,
+    NACK: 'nack' / nack,
     INFO: 'Info' / Info,
     REGULAR_TEMPERATURE: 'regular_temperature' / regular_temperature,
     GET_PAYLOAD_TELEMETRY: 'get_Payload_telemetry' / get_Payload_telemetry,
-    ARS_X_VEL: 'ars_X_vel' / ars_X_vel,
-    ARS_Y_VEL: 'ars_Y_vel' / ars_Y_vel,
-    ARS_Z_VEL: 'ars_Z_vel' / ars_Z_vel,
-    MAG_X: 'mag_X' / mag_X,
-    MAG_Y: 'mag_Y' / mag_Y,
-    MAG_Z: 'mag_Z' / mag_Z,
+    RATESENS_REGULAR_X: 'ratesens_regular_x' / ratesens_regular_x,
+    RATESENS_REGULAR_Y: 'ratesens_regular_y' / ratesens_regular_y,
+    RATESENS_REGULAR_Z: 'ratesens_regular_z' / ratesens_regular_z,
+    MAGNSENS_REGULAR_X: 'magnsens_regular_x' / magnsens_regular_x,
+    MAGNSENS_REGULAR_Y: 'magnsens_regular_y' / magnsens_regular_y,
+    MAGNSENS_REGULAR_Z: 'magnsens_regular_z' / magnsens_regular_z,
     VECTOR_X: 'Vector_X' / Vector_X,
     VECTOR_Y: 'Vector_Y' / Vector_Y,
     VECTOR_Z: 'Vector_Z' / Vector_Z,
@@ -878,6 +1358,7 @@ tlm_map = {
     BEACON: 'beacon' / beacon,
     EXTENDED_BEACON: 'extended_beacon' / extended_beacon,
     TIME_REQUEST: 'time_request' / time_request,
+    UHF_BEACON: 'uhf_beacon' / uhf_beacon,
     DETECTOR_TRANSMITS: 'detector_transmits' / detector_transmits,
     DATA_MASSIVE_ADDR_RPL: 'data_massive_addr_rpl' / data_massive_addr_rpl,
     DATA_EVENT_ADDR_RPL: 'data_event_addr_rpl' / data_event_addr_rpl,
@@ -895,8 +1376,14 @@ tlm_map = {
     GET_PAYLOAD_CURRENT_CONFIG: 'get_Payload_CURRENT_CONFIG' / get_Payload_CURRENT_CONFIG,
     REGULAR_TELEMETRY: 'regular_telemetry' / regular_telemetry,
     EXTENDED_TELEMETRY: 'extended_telemetry' / extended_telemetry,
+    ACKNOWLEDGE: 'acknowledge' / acknowledge,
     OVERCURRENT: 'overcurrent' / overcurrent,
     SWITCH_STATUS: 'switch_status' / switch_status,
+    REGULAR_TELEMETRY6U: 'regular_telemetry6u' / regular_telemetry6u,
+    PS_REGULAR_TELEMETRY_5CH: 'ps_regular_telemetry_5ch' / ps_regular_telemetry_5ch,
+    TM_ADCS_BEACON_OLD: 'tm_adcs_beacon_old' / tm_adcs_beacon_old,
+    TM_ADCS_BEACON: 'tm_adcs_beacon' / tm_adcs_beacon,
+    TM_ADCS_BEACON_6_WHEELS: 'tm_adcs_beacon_6_wheels' / tm_adcs_beacon_6_wheels,
     CH_ADC_X1: 'ch_adc_X1' / ch_adc_X1,
     CH_ADC_X2: 'ch_adc_X2' / ch_adc_X2,
     CH_ADC_Y1: 'ch_adc_Y1' / ch_adc_Y1,
@@ -907,10 +1394,12 @@ tlm_map = {
     TEMP_CUR_Y2: 'temp_cur_Y2' / temp_cur_Y2,
     VERSION_SW: 'version_sw' / version_sw,
 
-    # other
-    IMG_START: 'ImgStart' / ImgStart,
-    IMG_SIZE: 'ImgSize' / ImgSize,
-    IMG_DATA: 'ImgData' / ImgData,
+}
+
+filetransfer = {
+    FILETRANSFER_INIT: 'filetransfer_init' / filetransfer_init,
+    FILETRANSFER_FILESIZE: 'filetransfer_filesize' / filetransfer_filesize,
+    FILETRANSFER_DATA: 'filetransfer_data' / filetransfer_data,
 }
 
 
@@ -919,7 +1408,7 @@ Data = construct.Struct(
     'sender' / Addr,
     'receiver' / Addr,
     'size' / construct.Int16ul,
-    'packet' / construct.Switch(construct.this.message, tlm_map, default=construct.Bytes(construct.this.size)),
+    'packet' / construct.Switch(construct.this.message, tlm_map | filetransfer, default=construct.Bytes(construct.this.size)),
 )
 
 Frame = construct.Struct(
@@ -950,20 +1439,20 @@ class UspImageReceiver(ImageReceiver):
     def push_data(self, data):
         packet = data.packet
 
-        if data.message == IMG_DATA:
+        if data.message == FILETRANSFER_DATA:
             img = self.get_image()
             with img.lock:
                 img.push_data(packet.offset, packet.data[:data.size - 5])
                 if packet.offset < img.first_data_offset:
                     img.first_data_offset = packet.offset
 
-        elif data.message == IMG_START:
+        elif data.message == FILETRANSFER_INIT:
             self.generate_fid(packet.file_name)
             img = self.get_image()
             with img.lock:
                 img.has_starter = 1
 
-        elif data.message == IMG_SIZE:
+        elif data.message == FILETRANSFER_FILESIZE:
             img = self.get_image()
             with img.lock:
                 img.open().truncate(packet.size)
@@ -976,115 +1465,81 @@ class UspImageReceiver(ImageReceiver):
 class UspProtocol:
     columns = 'msg-id',
     c_width = 60,
+
+    _regular_tmpl = {
+        'table': (
+            ('name', 'Name'),
+            ('desc', 'Description'),
+            ('current', 'Current, mA'),
+            ('voltage', 'Voltage, mV'),
+        ),
+        'flags': (
+            ('current_invalid', 'Current invalid'),
+            ('voltage_invalid', 'Voltage invalid'),
+        ),
+    }
+    _ack_tmpl = {
+        'table': (
+            ('name', 'Name'),
+            ('desc', 'Description'),
+            ('value', 'Value'),
+        ),
+    }
+    _ratesens_regular_tmpl = {
+        'table': (
+            ('name', 'Name'),
+            ('desc', 'Description'),
+            ('velocity', 'Velocity, deg/s'),
+            ('temperature', 'Temperature, °C'),
+        ),
+        'flags': (
+            ('counter', 'Counter'),
+            ('invalid', 'Data is not valid'),
+        ),
+    }
+    _magnsens_regular_tmpl = {
+        'table': (
+            ('name', 'Name'),
+            ('desc', 'Description'),
+            ('field', 'Magnetic field, nT'),
+            ('temperature', 'Temperature, °C'),
+        ),
+        'flags': (
+            ('counter', 'Counter'),
+            ('invalid', 'Data is not valid'),
+        ),
+    }
+    _vector_tmpl = {
+        'table': (
+            ('name', 'Name'),
+            ('desc', 'Description'),
+            ('vector', 'Direction, deg'),
+            ('temperature', 'Temperature, °C'),
+        ),
+        'flags': (
+            ('invalid', 'Data is not valid'),
+        ),
+    }
+    _zerolen_tmpl = {
+        'table': (
+            ('name', 'Name'),
+            ('desc', 'Description'),
+        ),
+    }
+
     tlm_table = {
-        'regular_common': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('current', 'Current'),
-                ('voltage', 'Voltage'),
-            ),
-            'flags': (
-                ('voltage_invalid', 'Voltage inval'),
-                ('current_invalid', 'Current inval'),
-            ),
-        },
-        'regular_x': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('current', 'Current'),
-                ('voltage', 'Voltage'),
-            ),
-            'flags': (
-                ('voltage_invalid', 'Voltage inval'),
-                ('current_invalid', 'Current inval'),
-            ),
-        },
-        'regular_y': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('current', 'Current'),
-                ('voltage', 'Voltage'),
-            ),
-            'flags': (
-                ('voltage_invalid', 'Voltage inval'),
-                ('current_invalid', 'Current inval'),
-            ),
-        },
-        'regular_z': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('current', 'Current'),
-                ('voltage', 'Voltage'),
-            ),
-            'flags': (
-                ('voltage_invalid', 'Voltage inval'),
-                ('current_invalid', 'Current inval'),
-            ),
-        },
-        'psu_regular0': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('current', 'Current'),
-                ('voltage', 'Voltage'),
-            ),
-            'flags': (
-                ('voltage_invalid', 'Voltage inval'),
-                ('current_invalid', 'Current inval'),
-            ),
-        },
-        'psu_regular1': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('current', 'Current'),
-                ('voltage', 'Voltage'),
-            ),
-            'flags': (
-                ('voltage_invalid', 'Voltage inval'),
-                ('current_invalid', 'Current inval'),
-            ),
-        },
-        'psu_regular2': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('current', 'Current'),
-                ('voltage', 'Voltage'),
-            ),
-            'flags': (
-                ('voltage_invalid', 'Voltage inval'),
-                ('current_invalid', 'Current inval'),
-            ),
-        },
-        'psu_regular3': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('current', 'Current'),
-                ('voltage', 'Voltage'),
-            ),
-            'flags': (
-                ('voltage_invalid', 'Voltage inval'),
-                ('current_invalid', 'Current inval'),
-            ),
-        },
-        'psu_regular4': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('current', 'Current'),
-                ('voltage', 'Voltage'),
-            ),
-            'flags': (
-                ('voltage_invalid', 'Voltage inval'),
-                ('current_invalid', 'Current inval'),
-            ),
-        },
+        'regular_common': _regular_tmpl,
+        'regular_x': _regular_tmpl,
+        'regular_y': _regular_tmpl,
+        'regular_z': _regular_tmpl,
+        'psu_regular0': _regular_tmpl,
+        'psu_regular1': _regular_tmpl,
+        'psu_regular2': _regular_tmpl,
+        'psu_regular3': _regular_tmpl,
+        'psu_regular4': _regular_tmpl,
+        'psu_regular5': _regular_tmpl,
+        'ack': _ack_tmpl,
+        'nack': _ack_tmpl,
         'Info': {
             'table': (
                 ('name', 'Name'),
@@ -1108,8 +1563,8 @@ class UspProtocol:
                 ('temperature1', 'Temperature #1'),
             ),
             'flags': (
-                ('temperature1_invalid', 'Temperature #1 inval'),
-                ('temperature0_invalid', 'Temperature #0 inval'),
+                ('temperature1_invalid', 'Temperature #1 invalid'),
+                ('temperature0_invalid', 'Temperature #0 invalid'),
             ),
         },
         'get_Payload_telemetry': {
@@ -1144,104 +1599,15 @@ class UspProtocol:
                 ('LastEvent_CH2_3', 'Last event Ch#2 H2M2'),
             ),
         },
-        'ars_X_vel': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('Velocity_X', 'Velocity, deg/s'),
-                ('Temp_X', 'Temperature, °C'),
-            ),
-            'flags': (
-                ('Valid_X', 'Data is not valid'),
-            ),
-        },
-        'ars_Y_vel': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('Velocity_Y', 'Velocity, deg/s'),
-                ('Temp_Y', 'Temperature, °C'),
-            ),
-            'flags': (
-                ('Valid_Y', 'Data is not valid'),
-            ),
-        },
-        'ars_Z_vel': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('Velocity_Z', 'Velocity, deg/s'),
-                ('Temp_Z', 'Temperature, °C'),
-            ),
-            'flags': (
-                ('Valid_Z', 'Data is not valid'),
-            ),
-        },
-        'mag_X': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('Field_X', 'Magnetic field, nT'),
-                ('Temp_X', 'Temperature, °C'),
-            ),
-            'flags': (
-                ('Valid_X', 'Data is not valid'),
-            ),
-        },
-        'mag_Y': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('Field_Y', 'Magnetic field, nT'),
-                ('Temp_Y', 'Temperature, °C'),
-            ),
-            'flags': (
-                ('Valid_Y', 'Data is not valid'),
-            ),
-        },
-        'mag_Z': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('Field_Z', 'Magnetic field, nT'),
-                ('Temp_Z', 'Temperature, °C'),
-            ),
-            'flags': (
-                ('Valid_Z', 'Data is not valid'),
-            ),
-        },
-        'Vector_X': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('Vect_X', 'X direction, deg'),
-                ('Temp_X', 'Temperature, °C'),
-            ),
-            'flags': (
-                ('Invalid_X', 'Data is valid'),
-            ),
-        },
-        'Vector_Y': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('Vect_Y', 'Y direction, deg'),
-                ('Temp_Y', 'Temperature, °C'),
-            ),
-            'flags': (
-                ('Invalid_Y', 'Data is valid'),
-            ),
-        },
-        'Vector_Z': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-                ('Vect_Z', 'Z direction, deg'),
-            ),
-            'flags': (
-                ('Invalid_Z', 'Data is valid'),
-            ),
-        },
+        'ratesens_regular_x': _ratesens_regular_tmpl,
+        'ratesens_regular_y': _ratesens_regular_tmpl,
+        'ratesens_regular_z': _ratesens_regular_tmpl,
+        'magnsens_regular_x': _magnsens_regular_tmpl,
+        'magnsens_regular_y': _magnsens_regular_tmpl,
+        'magnsens_regular_z': _magnsens_regular_tmpl,
+        'Vector_X': _vector_tmpl,
+        'Vector_Y': _vector_tmpl,
+        'Vector_Z': _vector_tmpl,
         'Brightness': {
             'table': (
                 ('name', 'Name'),
@@ -1282,12 +1648,12 @@ class UspProtocol:
             'table': (
                 ('name', 'Name'),
                 ('desc', 'Description'),
-                ('Usb1', 'SB #1 voltage, mV'),
-                ('Usb2', 'SB #2 voltage, mV'),
-                ('Usb3', 'SB #3 voltage, mV'),
-                ('Isb1', 'SB #1 current, mA'),
-                ('Isb2', 'SB #2 current, mA'),
-                ('Isb3', 'SB #3 current, mA'),
+                ('Usb1', 'Solar Panel #1 voltage, mV'),
+                ('Usb2', 'Solar Panel #2 voltage, mV'),
+                ('Usb3', 'Solar Panel #3 voltage, mV'),
+                ('Isb1', 'Solar Panel #1 current, mA'),
+                ('Isb2', 'Solar Panel #2 current, mA'),
+                ('Isb3', 'Solar Panel #3 current, mA'),
                 ('Iab', 'Battery current, mA'),
                 ('Ich1', 'Ch#1 current, mA'),
                 ('Ich2', 'Ch#2 current, mA'),
@@ -1298,21 +1664,21 @@ class UspProtocol:
                 ('t3_pw', 'Battery #3 temperature, °C'),
                 ('t4_pw', 'Battery #4 temperature, °C'),
                 ('Uab', 'Battery voltage, mV'),
-                ('reg_tel_id', 'Telemetry SN'),
-                ('Time', 'PS telemetry time'),
-                ('Nres', 'PS Reloads'),
+                ('reg_tel_id', 'PSS telemetry SN'),
+                ('Time', 'PSS telemetry time'),
+                ('Nres', 'PSS reset counter'),
                 ('FL', 'PS flags'),
                 ('t_amp', 'UHF amp temperature, °C'),
                 ('t_uhf', 'UHF temperature, °C'),
-                ('RSSIrx', 'RSSI Received, dBm'),
-                ('RSSIidle', 'RSSI Idle, dBm'),
-                ('Pf', 'Direct radiation power'),
-                ('Pb', 'Back radiation power'),
-                ('Nres_uhf', 'UHF reloads'),
+                ('RSSIrx', 'RX RSSI, dBm'),
+                ('RSSIidle', 'Idle RSSI, dBm'),
+                ('Pf', 'Forward wave power, dBm'),
+                ('Pb', 'Reflected wave power, dBm'),
+                ('Nres_uhf', 'UHF reset counter'),
                 ('FL_uhf', 'UHF flags'),
                 ('Time_uhf', 'UHF telemetry time'),
                 ('UpTime', 'Uptime'),
-                ('Current', 'UHF current, mA'),
+                ('Current', 'UHF consumption current, mA'),
                 ('Uuhf', 'UHF voltage, mV'),
             ),
             'flags': (
@@ -1332,6 +1698,10 @@ class UspProtocol:
                 ('Ich_limit3', 'Exceeding channel #3 current'),
                 ('Ich_limit2', 'Exceeding channel #2 current'),
                 ('Ich_limit1', 'Exceeding channel #1 current'),
+                ('Additional_channel_3_on', 'Aux Ch#3 ON'),
+                ('Additional_channel_2_on', 'Aux Ch#2 ON'),
+                ('Additional_channel_1_on', 'Aux Ch#1 ON'),
+                ('FSB', 'Power switch error'),
                 ('charger', 'Charger connected'),
             ),
         },
@@ -1378,54 +1748,38 @@ class UspProtocol:
                 ('LastEvent_CH2_3', 'Last event Ch#2 H2M2'),
             ),
         },
-        'TIME_REQUEST': {
+        'time_request': _zerolen_tmpl,
+        'uhf_beacon': {
             'table': (
                 ('name', 'Name'),
                 ('desc', 'Description'),
+                ('t_amp', 'UHF amp temperature, °C'),
+                ('t_uhf', 'UHF temperature, °C'),
+                ('RSSIrx', 'RX RSSI, dBm'),
+                ('RSSIidle', 'idle RSSI, dBm'),
+                ('Pf', 'Forward wave power, dBm'),
+                ('Pb', 'Reflected wave power, dBm'),
+                ('uhf_reset_counter', 'UHF reset counter'),
+                ('FL', 'UHF flags'),
+                ('Time', 'UHF time'),
+                ('UpTime', 'Uptime'),
+                ('RxBitrate', 'Uplink bitrate (Receive)'),
+                ('CurrentConsumption', 'UHF consumption current, mA'),
+                ('InputVoltage', 'UHF voltage, mV'),
+            ),
+            'flags': (
+                ('NumActiveSchedules', 'Number of Active Schedules in executor'),
+                ('ResetOccurredDuringExecution', 'Reboot occurred during schedule execution'),
+                ('BackupScheduleActive', 'Backup schedule execution in progress'),
             ),
         },
-        'DETECTOR_TRANSMITS': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-            ),
-        },
-        'DATA_MASSIVE_ADDR_RPL': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-            ),
-        },
-        'DATA_EVENT_ADDR_RPL': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-            ),
-        },
-        'DATA_MONITOR_ADDR_RPL': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-            ),
-        },
-        'DATA_MASSIVE_RPL': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-            ),
-        },
-        'DATA_EVENT_RPL': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-            ),
-        },
-        'DATA_MONITOR_RPL': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-            ),
-        },
+        'detector_transmits': _zerolen_tmpl,
+        'data_massive_addr_rpl': _zerolen_tmpl,
+        'data_event_addr_rpl': _zerolen_tmpl,
+        'data_monitor_addr_rpl': _zerolen_tmpl,
+        'data_massive_rpl': _zerolen_tmpl,
+        'data_event_rpl': _zerolen_tmpl,
+        'data_monitor_rpl': _zerolen_tmpl,
         'get_Payload_FW_MSG': {
             'table': (
                 ('name', 'Name'),
@@ -1435,42 +1789,12 @@ class UspProtocol:
                 ('Release_Number', 'Release Number'),
             ),
         },
-        'NO_MONITOR_DATA': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-            ),
-        },
-        'NO_EVENT_DATA': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-            ),
-        },
-        'NO_MASSIVE_DATA': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-            ),
-        },
-        'COMPL_MONITOR_DATA': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-            ),
-        },
-        'COMPL_EVENT_DATA': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-            ),
-        },
-        'COMPL_MASSIVE_DATA': {
-            'table': (
-                ('name', 'Name'),
-                ('desc', 'Description'),
-            ),
-        },
+        'no_monitor_data': _zerolen_tmpl,
+        'no_event_data': _zerolen_tmpl,
+        'no_massive_data': _zerolen_tmpl,
+        'compl_monitor_data': _zerolen_tmpl,
+        'compl_event_data': _zerolen_tmpl,
+        'compl_massive_data': _zerolen_tmpl,
         'get_Payload_CURRENT_CONFIG': {
             'table': (
                 ('name', 'Name'),
@@ -1510,26 +1834,26 @@ class UspProtocol:
             'table': (
                 ('name', 'Name'),
                 ('desc', 'Description'),
-                ('VTG_S1', 'Input #1 voltage, mV'),
-                ('VTG_S2', 'Input #2 voltage, mV'),
-                ('VTG_S3', 'Input #3 voltage, mV'),
-                ('CUR_S1', 'Input #1 current, mA'),
-                ('CUR_S2', 'Input #2 current, mA'),
-                ('CUR_S3', 'Input #3 current, mA'),
+                ('VTG_S1', 'Solar Panel #1 voltage, mV'),
+                ('VTG_S2', 'Solar Panel #2 voltage, mV'),
+                ('VTG_S3', 'Solar Panel #3 voltage, mV'),
+                ('CUR_S1', 'Solar Panel #1 current, mA'),
+                ('CUR_S2', 'Solar Panel #2 current, mA'),
+                ('CUR_S3', 'Solar Panel #3 current, mA'),
                 ('CUR_BAT', 'Battery current, mA'),
-                ('CUR_S1O', 'Output #1 current, mA'),
-                ('CUR_S2O', 'Output #2 current, mA'),
-                ('CUR_S3O', 'Output #3 current, mA'),
-                ('CUR_S4O', 'Output #4 current, mA'),
+                ('CUR_S1O', 'Channel #1 current, mA'),
+                ('CUR_S2O', 'Channel #2 current, mA'),
+                ('CUR_S3O', 'Channel #3 current, mA'),
+                ('CUR_S4O', 'Channel #4 current, mA'),
                 ('TMP_BAT1', 'Battery #1 temperature, °C'),
                 ('TMP_BAT2', 'Battery #2 temperature, °C'),
                 ('TMP_BAT3', 'Battery #3 temperature, °C'),
                 ('TMP_BAT4', 'Battery #4 temperature, °C'),
                 ('VBAT', 'Battery voltage, mV'),
-                ('REC_ID', 'Telemetry SN'),
-                ('Time', 'Time'),
-                ('launch_number', 'Launches'),
-                ('reset_reason', 'Reset reason'),
+                ('REC_ID', 'PSS Telemetry SN'),
+                ('Time', 'PSS Time'),
+                ('launch_number', 'PSS reset counter'),
+                ('reset_reason', 'PSS Reset reason'),
             ),
             'flags': (
                 ('VTG_BAT_CRIT', 'Critical battery voltage'),
@@ -1548,10 +1872,10 @@ class UspProtocol:
                 ('ICH_FAULT_3', 'Ch#3 Fault'),
                 ('ICH_FAULT_2', 'Ch#2 Fault'),
                 ('ICH_FAULT_1', 'Ch#1 Fault'),
-                ('Additional_channel_3_on', 'Additional Ch#3 ON'),
-                ('Additional_channel_2_on', 'Additional Ch#2 ON'),
-                ('Additional_channel_1_on', 'Additional Ch#1 ON'),
-                ('FSB', 'Switch Error'),
+                ('Additional_channel_3_on', 'Aux Ch#3 ON'),
+                ('Additional_channel_2_on', 'Aux Ch#2 ON'),
+                ('Additional_channel_1_on', 'Aux Ch#1 ON'),
+                ('FSB', 'Power switch error'),
                 ('CHAGER', 'Charger connected'),
             ),
         },
@@ -1568,15 +1892,19 @@ class UspProtocol:
                 ('CUR_LIM2', 'Ch#2 current limit'),
                 ('CUR_LIM3', 'Ch#3 current limit'),
                 ('CUR_LIM4', 'Ch#4 current limit'),
-                ('DEV_ADDR', 'Device address'),
-                ('SRC_ADDR', 'Source address'),
+                ('DEV_ADDR', 'Device UniCAN address'),
+                ('SRC_ADDR', 'Base station UniCAN address'),
                 ('TEL_PER', 'Regular telemetry period, ms'),
                 ('ETEL_PER', 'Extended telemetry period, s'),
                 ('REC_ID', 'Packet SN'),
-                ('ST_DELAY', 'Startup delay'),
-                ('SW_VER', 'PPS firmware version'),
+                ('ST_DELAY', 'Startup delay, s'),
+                ('SW_VER', 'MCU firmware version'),
+                ('DEPLOY_START_TIMER', 'Deploy start timer'),
+                ('DEPLOY_STOP_TIMER', 'Deploy stop timer'),
+                ('DEPLOY_MODE', 'Deploy mode'),
             ),
         },
+        'acknowledge' : _zerolen_tmpl,
         'overcurrent': {
             'table': (
                 ('name', 'Name'),
@@ -1592,6 +1920,312 @@ class UspProtocol:
                 ('Ch1Status', 'Ch#1 status'),
                 ('Ch2Status', 'Ch#2 status'),
                 ('Ch3Status', 'Ch#3 status'),
+            ),
+        },
+        'regular_telemetry6u': {
+            'table': (
+                ('name', 'Name'),
+                ('desc', 'Description'),
+                ('Usb1', 'Solar Panel #1 voltage, mV'),
+                ('Usb2', 'Solar Panel #2 voltage, mV'),
+                ('Usb3', 'Solar Panel #3 voltage, mV'),
+                ('Isb1', 'Solar Panel #1 current, mA'),
+                ('Isb2', 'Solar Panel #2 current, mA'),
+                ('Isb3', 'Solar Panel #3 current, mA'),
+                ('Iab', 'Battery current, mA'),
+                ('Uab', 'Battery voltage, mV'),
+                ('Uab1', 'Voltage on cell #1, mV'),
+                ('Uab2', 'Voltage on cell #2, mV'),
+                ('t1_pw', 'Battery #1 temperature, °C'),
+                ('t2_pw', 'Battery #2 temperature, °C'),
+                ('capacity', 'Capacity'),
+                ('reg_tel_id', 'PSS telemetry number'),
+                ('Time', 'PSS telemetry time'),
+                ('ps_reset_counter', 'PSS reset counter'),
+                ('FL', 'PS flags'),
+            ),
+            'flags': (
+                ('ch1_status', 'Ch#1 Status'),
+                ('ch2_status', 'Ch#2 Status'),
+                ('ch3_status', 'Ch#3 Status'),
+                ('ch4_status', 'Ch#4 Status'),
+                ('ch5_status', 'Ch#5 Status'),
+                ('ch6_status', 'Ch#6 Status'),
+                ('ch7_status', 'Ch#7 Status'),
+                ('ch8_status', 'Ch#8 Status'),
+                ('ch9_status', 'Ch#9 Status'),
+                ('ch10_status', 'Ch#10 Status'),
+                ('ch11_status', 'Ch#11 Status'),
+                ('ch12_status', 'Ch#12 Status'),
+                ('ch13_status', 'Ch#13 Status'),
+                ('ch14_status', 'Ch#14 Status'),
+                ('ch15_status', 'Ch#15 Status'),
+                ('ch16_status', 'Ch#16 Status'),
+                ('ch17_status', 'Ch#17 Status'),
+                ('ch18_status', 'Ch#18 Status'),
+                ('ch19_status', 'Ch#19 Status'),
+                ('ch20_status', 'Ch#20 Status'),
+                ('ch21_status', 'Ch#21 Status'),
+                ('ch22_status', 'Ch#22 Status'),
+                ('ch23_status', 'Ch#23 Status'),
+                ('ch24_status', 'Ch#24 Status'),
+                ('ch25_status', 'Ch#25 Status'),
+                ('ch26_status', 'Ch#26 Status'),
+                ('ch27_status', 'Ch#27 Status'),
+                ('ch28_status', 'Ch#28 Status'),
+                ('ch29_status', 'Ch#29 Status'),
+                ('ch30_status', 'Ch#30 Status'),
+                ('Tab_min', 'Minimal battery Temperature'),
+                ('Tab_max', 'Maximal battery Temperature'),
+                ('heater1_on', 'Heater #1 ON'),
+                ('heater2_on', 'Heater #2 ON'),
+                ('heater1_manual', 'Heater #1 manual'),
+                ('heater2_manual', 'Heater #2 manual'),
+                ('Uab_min', 'Minimal battery voltage'),
+                ('Uab_crit', 'Critical battery voltage'),
+                ('Ich_limit1', 'Exceeding channel #1 current'),
+                ('Ich_limit2', 'Exceeding channel #2 current'),
+                ('Ich_limit3', 'Exceeding channel #3 current'),
+                ('Ich_limit4', 'Exceeding channel #4 current'),
+                ('channelon1', 'Ch#1 ON'),
+                ('channelon2', 'Ch#2 ON'),
+                ('channelon3', 'Ch#3 ON'),
+                ('channelon4', 'Ch#4 ON'),
+                ('charger', 'Charger connected'),
+                ('FSB', 'Power switch error'),
+                ('AuxCH1_enabled_flag', 'Aux Ch#1 ON'),
+                ('AuxCH2_enabled_flag', 'Aux Ch#2 ON'),
+                ('AuxCH3_enabled_flag', 'Aux Ch#3 ON'),
+            ),
+        },
+        'ps_regular_telemetry_5ch': {
+            'table': (
+                ('name', 'Name'),
+                ('desc', 'Description'),
+                ('VTG_SOL1', 'Solar Panel #1 Voltage, mV'),
+                ('VTG_SOL2', 'Solar Panel #2 Voltage, mV'),
+                ('VTG_SOL3', 'Solar Panel #3 Voltage, mV'),
+                ('CUR_SOL1', 'Solar Panel #1 Current, mA'),
+                ('CUR_SOL2', 'Solar Panel #2 Current, mA'),
+                ('CUR_SOL3', 'Solar Panel #3 Current, mA'),
+                ('CUR_BAT', 'Battery Current, mA'),
+                ('CUR_PCH1', 'Ch#1 Current, mA'),
+                ('CUR_PCH2', 'Ch#2 Current, mA'),
+                ('CUR_PCH3', 'Ch#3 Current, mA'),
+                ('CUR_PCH4', 'Ch#4 Current, mA'),
+                ('CUR_PCH5', 'Ch#5 Current, mA'),
+                ('TMP_BAT1', 'Battery #1 temperature, °C'),
+                ('TMP_BAT2', 'Battery #2 temperature, °C'),
+                ('TMP_BAT3', 'Battery #3 temperature, °C'),
+                ('TMP_BAT4', 'Battery #4 temperature, °C'),
+                ('VBAT', 'Battery voltage, mV'),
+                ('REC_ID', 'PSS telemetry SN'),
+                ('Time', 'PSS telemetry time'),
+                ('ps_reset_counter', 'PSS reset counter'),
+                ('reset_reason', 'PS reset reason'),
+            ),
+            'flags': (
+                ('Tab_min', 'Minimal battery Temperature'),
+                ('Tab_max', 'Maximal battery Temperature'),
+                ('heater1_on', 'Heater #1 ON'),
+                ('heater2_on', 'Heater #2 ON'),
+                ('heater1_manual', 'Heater #1 manual'),
+                ('heater2_manual', 'Heater #2 manual'),
+                ('Uab_min', 'Minimal battery voltage'),
+                ('Uab_crit', 'Critical battery voltage'),
+                ('Ich_limit1', 'Exceeding channel #1 current'),
+                ('Ich_limit2', 'Exceeding channel #2 current'),
+                ('Ich_limit3', 'Exceeding channel #3 current'),
+                ('Ich_limit4', 'Exceeding channel #4 current'),
+                ('Ich_limit5', 'Exceeding channel #5 current'),
+                ('channelon1', 'Ch#1 ON'),
+                ('channelon2', 'Ch#2 ON'),
+                ('channelon3', 'Ch#3 ON'),
+                ('channelon4', 'Ch#4 ON'),
+                ('channelon5', 'Ch#5 ON'),
+                ('charger', 'Charger connected'),
+                ('FSB', 'Power switch error'),
+                ('AuxCH1_enabled_flag', 'Aux Ch#1 ON'),
+                ('AuxCH2_enabled_flag', 'Aux Ch#2 ON'),
+                ('AuxCH3_enabled_flag', 'Aux Ch#3 ON'),
+            ),
+        },
+        'tm_adcs_beacon_old': {
+            'table': (
+                ('name', 'Name'),
+                ('desc', 'Description'),
+                ('Time', 'ECI time'),
+                ('eci_quat_w', 'ECI quat w'),
+                ('eci_quat_vect_x', 'ECI quat vect x'),
+                ('eci_quat_vect_y', 'ECI quat vect y'),
+                ('eci_quat_vect_z', 'ECI quat vect z'),
+                ('eci_ave_x', 'ECI ave x'),
+                ('eci_ave_y', 'ECI ave y'),
+                ('eci_ave_z', 'ECI ave z'),
+                ('orb_time', 'ORB time'),
+                ('orb_quat_w', 'ORB quat w'),
+                ('orb_quat_vect_x', 'ORB quat vect x'),
+                ('orb_quat_vect_y', 'ORB quat vect y'),
+                ('orb_quat_vect_z', 'ORB quat vect z'),
+                ('orb_ave_x', 'ORB ave x'),
+                ('orb_ave_y', 'ORB ave y'),
+                ('orb_ave_z', 'ORB ave z'),
+                ('forced_time', 'Forced time'),
+                ('forced_quat_w', 'Forced quat w'),
+                ('forced_quat_vect_x', 'Forced quat vect x'),
+                ('forced_quat_vect_y', 'Forced quat vect y'),
+                ('forced_quat_vect_z', 'Forced quat vect z'),
+                ('forced_ave_x', 'Forced ave x'),
+                ('forced_ave_y', 'Forced ave y'),
+                ('forced_ave_z', 'Forced ave z'),
+                ('ss_invalids', 'SS invalids'),
+                ('wheel_invalids', 'Wheel invalids'),
+            ),
+            'flags': (
+                ('eci_policy', 'ECI policy'),
+                ('eci_invalid', 'ECI invalid'),
+                ('orb_policy', 'ORB policy'),
+                ('orb_invalid', 'ORB invalid'),
+                ('forced_policy', 'Forced policy'),
+                ('forced_invalid', 'Forced invalid'),
+                ('mfs_invalid', 'MFS invalid'),
+                ('avs_invalid', 'AVS invalid'),
+            ),
+        },
+        'tm_adcs_beacon': {
+            'table': (
+                ('name', 'Name'),
+                ('desc', 'Description'),
+                ('Time', 'Current system time'),
+                ('uptime', 'Uptime'),
+                ('eci_quat_w', 'ECI quat w'),
+                ('eci_quat_vect_x', 'ECI quat vect x'),
+                ('eci_quat_vect_y', 'ECI quat vect y'),
+                ('eci_quat_vect_z', 'ECI quat vect z'),
+                ('eci_AV_x', 'ECI X Angular velocity, deg/s'),
+                ('eci_AV_y', 'ECI Y Angular velocity, deg/s'),
+                ('eci_AV_z', 'ECI Z Angular velocity, deg/s'),
+                ('orb_quat_w', 'ORB quat w'),
+                ('orb_quat_vect_x', 'ORB quat vect x'),
+                ('orb_quat_vect_y', 'ORB quat vect y'),
+                ('orb_quat_vect_z', 'ORB quat vect z'),
+                ('orb_AV_x', 'ORB X Angular velocity, deg/s'),
+                ('orb_AV_y', 'ORB Y Angular velocity, deg/s'),
+                ('orb_AV_z', 'ORB Z Angular velocity, deg/s'),
+                ('eci_forced_quat_w', 'ECI forced quat w'),
+                ('eci_forced_quat_vect_x', 'ECI forced quat vect x'),
+                ('eci_forced_quat_vect_y', 'ECI forced quat vect y'),
+                ('eci_forced_quat_vect_z', 'ECI forced quat vect z'),
+                ('eci_forced_AV_x', 'ECI forced X Angular velocity, deg/s'),
+                ('eci_forced_AV_y', 'ECI forced Y Angular velocity, deg/s'),
+                ('eci_forced_AV_z', 'ECI forced Z Angular velocity, deg/s'),
+                ('latitude', 'Latitude, deg'),
+                ('longitude', 'Longitude, deg'),
+                ('altitude', 'Altitude, m'),
+                ('adcs_task_type', 'Current task type'),
+                ('adcs_task_quantity', 'Tasks quantity in scheduler'),
+                ('wheel_rpm_x_plus', 'Wheels X+ angular velocity, rpm'),
+                ('wheel_rpm_x_minus', 'Wheels X- angular velocity, rpm'),
+                ('wheel_rpm_y_plus', 'Wheels Y+ angular velocity, rpm'),
+                ('wheel_rpm_y_minus', 'Wheels Y- angular velocity, rpm'),
+            ),
+            'flags': (
+                ('eci_policy', 'ECI policy'),
+                ('eci_invalid', 'ECI invalid'),
+                ('orb_policy', 'ORB policy'),
+                ('orb_invalid', 'ORB invalid'),
+                ('eci_forced_policy', 'ECI forced policy'),
+                ('eci_forced_invalid', 'ECI forced invalid'),
+                ('ballistics_policy', 'Ballistics policy'),
+                ('gnss_invalid', 'GNSS invalid'),
+                ('auto_ballistics_polity', 'Auto ballistics policy'),
+                ('auto_control_policy', 'Auto control policy'),
+                ('ss_active', 'Active sun sensor'),
+                ('ss_invalid_x_plus', 'X+ Sun sensors invalid'),
+                ('ss_invalid_x_minus', 'X- Sun sensors invalid'),
+                ('ss_invalid_y_plus', 'Y+ Sun sensors invalid'),
+                ('ss_invalid_y_minus', 'Y- Sun sensors invalid'),
+                ('ss_invalid_z_plus', 'Z+ Sun sensors invalid'),
+                ('ss_invalid_z_minus', 'Z- Sun sensors invalid'),
+                ('ss_invalid_extra', 'Extra Sun sensors invalid'),
+                ('star_tracker_invalid', 'Star tracker invalid'),
+                ('avs_invalid', 'AVS invalid'),
+                ('mfs_invalid', 'MFS invalid'),
+                ('wheel_invalid_x_plus', 'Wheels X+ invalid'),
+                ('wheel_invalid_x_minus', 'Wheels X- invalid'),
+                ('wheel_invalid_y_plus', 'Wheels Y+ invalid'),
+                ('wheel_invalid_y_minus', 'Wheels Y- invalid'),
+                ('reset_reason', 'Last reset reason'),
+            ),
+        },
+        'tm_adcs_beacon_6_wheels': {
+            'table': (
+                ('name', 'Name'),
+                ('desc', 'Description'),
+                ('Time', 'Current system time'),
+                ('uptime', 'Uptime'),
+                ('eci_quat_w', 'ECI quat w'),
+                ('eci_quat_vect_x', 'ECI quat vect x'),
+                ('eci_quat_vect_y', 'ECI quat vect y'),
+                ('eci_quat_vect_z', 'ECI quat vect z'),
+                ('eci_AV_x', 'ECI X Angular velocity, deg/s'),
+                ('eci_AV_y', 'ECI Y Angular velocity, deg/s'),
+                ('eci_AV_z', 'ECI Z Angular velocity, deg/s'),
+                ('orb_quat_w', 'ORB quat w'),
+                ('orb_quat_vect_x', 'ORB quat vect x'),
+                ('orb_quat_vect_y', 'ORB quat vect y'),
+                ('orb_quat_vect_z', 'ORB quat vect z'),
+                ('orb_AV_x', 'ORB X Angular velocity, deg/s'),
+                ('orb_AV_y', 'ORB Y Angular velocity, deg/s'),
+                ('orb_AV_z', 'ORB Z Angular velocity, deg/s'),
+                ('eci_forced_quat_w', 'ECI forced quat w'),
+                ('eci_forced_quat_vect_x', 'ECI forced quat vect x'),
+                ('eci_forced_quat_vect_y', 'ECI forced quat vect y'),
+                ('eci_forced_quat_vect_z', 'ECI forced quat vect z'),
+                ('eci_forced_AV_x', 'ECI forced X Angular velocity, deg/s'),
+                ('eci_forced_AV_y', 'ECI forced Y Angular velocity, deg/s'),
+                ('eci_forced_AV_z', 'ECI forced Z Angular velocity, deg/s'),
+                ('latitude', 'Latitude, deg'),
+                ('longitude', 'Longitude, deg'),
+                ('altitude', 'Altitude, m'),
+                ('adcs_task_type', 'Current task type'),
+                ('adcs_task_quantity', 'Tasks quantity in scheduler'),
+                ('wheel_rpm_1', 'Wheels #1 angular velocity, rpm'),
+                ('wheel_rpm_2', 'Wheels #2 angular velocity, rpm'),
+                ('wheel_rpm_3', 'Wheels #3 angular velocity, rpm'),
+                ('wheel_rpm_4', 'Wheels #4 angular velocity, rpm'),
+                ('wheel_rpm_5', 'Wheels #5 angular velocity, rpm'),
+                ('wheel_rpm_6', 'Wheels #6 angular velocity, rpm'),
+                ('reset_reason', 'Last reset reason'),
+            ),
+            'flags': (
+                ('eci_policy', 'ECI policy'),
+                ('eci_invalid', 'ECI invalid'),
+                ('orb_policy', 'ORB policy'),
+                ('orb_invalid', 'ORB invalid'),
+                ('eci_forced_policy', 'ECI forced policy'),
+                ('eci_forced_invalid', 'ECI forced invalid'),
+                ('ballistics_policy', 'Ballistics policy'),
+                ('gnss_invalid', 'GNSS invalid'),
+                ('auto_ballistics_polity', 'Auto ballistics policy'),
+                ('auto_control_policy', 'Auto control policy'),
+                ('ss_active', 'Active sun sensor'),
+                ('ss_invalid_x_plus', 'X+ Sun sensors invalid'),
+                ('ss_invalid_x_minus', 'X- Sun sensors invalid'),
+                ('ss_invalid_y_plus', 'Y+ Sun sensors invalid'),
+                ('ss_invalid_y_minus', 'Y- Sun sensors invalid'),
+                ('ss_invalid_z_plus', 'Z+ Sun sensors invalid'),
+                ('ss_invalid_z_minus', 'Z- Sun sensors invalid'),
+                ('ss_invalid_extra', 'Extra Sun sensors invalid'),
+                ('star_tracker_invalid', 'Star tracker invalid'),
+                ('avs_invalid', 'AVS invalid'),
+                ('mfs_invalid', 'MFS invalid'),
+                ('wheel_invalid_1', 'Wheels #1 invalid'),
+                ('wheel_invalid_2', 'Wheels #2 invalid'),
+                ('wheel_invalid_3', 'Wheels #3 invalid'),
+                ('wheel_invalid_4', 'Wheels #4 invalid'),
+                ('wheel_invalid_5', 'Wheels #5 invalid'),
+                ('wheel_invalid_6', 'Wheels #6 invalid'),
             ),
         },
         'ch_adc_X1': {
@@ -1684,7 +2318,7 @@ class UspProtocol:
         for i in data.usp.data:
             p_data = i.packet
 
-            if i.message in (IMG_DATA, IMG_START, IMG_SIZE):
+            if i.message in filetransfer:
                 ty = 'img'
                 p_data = self.ir.push_data(i), self.ir.cur_img
 

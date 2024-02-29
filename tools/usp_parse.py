@@ -18,12 +18,13 @@ class Device:
 
 
 class Packet:
-    def __init__(self, name, desc, id, len):
+    def __init__(self, name, desc, id, len, type):
         self.name = name.strip().replace(' ', '_').replace('.', '_')
         self.desc = desc or name
         self.id = id
         self.len = len
         self.fields = []
+        self.type = type
 
     def add_field(self, field):
         self.fields.append(field)
@@ -38,8 +39,9 @@ class Packet:
     def generate(self):
         main_lines = [
             f'{self.name} = construct.Struct(',
-            f'    \'name\' / construct.Computed(\'{self.name}\'),',
-            f'    \'desc\' / construct.Computed(\'{self.desc}\'),',
+            f'    \'_name\' / construct.Computed({self.name!r}),',
+            f'    \'name\' / construct.Computed({self.name!r}),',
+            f'    \'desc\' / construct.Computed({self.desc!r}),',
         ]
         flags = []
 
@@ -115,8 +117,10 @@ class Packet:
 
 class Field:
     def __init__(self, name, desc, type, off, len, byteorder):
-        if name.lower().startswith('reserv'):
+        if 'reserv' in name.lower():
             name = '_' + name
+        if type == 'file':
+            type = 'data'
         self.name = name.strip().replace(' ', '_').replace('.', '_')
         self.desc = desc or name
         self.type = type
@@ -124,26 +128,32 @@ class Field:
         self.len = len
         self.byteorder = byteorder
         self.is_flag = 0
-        self.is_time = 'time' in name.lower() and type.endswith('int') and len == 32
+        self.is_time = (type == 'time_t') or ('time' in name.lower() and type.endswith('int') and len in (32, 64))
 
     def generate(self):
         bo = self.byteorder == 'BE' and 'b' or 'l'
         nam = self.name
-        if nam.lower().startswith('reserv'):
-            nam = '_' + self.name
+        # if nam.lower().startswith('reserv'):
+        #     nam = '_' + self.name
         ty = self.type[0]
         if ty == 'u':
             si = 'u'
-        elif ty == 'i':
+        elif ty in 'it':
             si = 's'
         else:
             si = ''
 
         # tys = ''
         if self.type == 'string':
-            tys = f'construct.PaddedString({self.len}, \'utf8\')'
+            if self.len:
+                tys = f'construct.PaddedString({self.len}, \'utf-8\')'
+            else:
+                tys = f'construct.GreedyString(\'utf-8\')'
         elif self.type == 'data':
-            tys = f'construct.Bytes({self.len})'
+            if self.len:
+                tys = f'construct.Bytes({self.len})'
+            else:
+                tys = 'construct.GreedyBytes'
         elif nam[0] == '_' or self.type == 'bit' or self.len % 8:
             self.is_flag = 1
             if self.len == 1:
@@ -161,6 +171,7 @@ class Field:
 
 
 types = set()
+ptypes = set()
 
 
 def parse_file(fp):
@@ -176,9 +187,11 @@ def parse_file(fp):
         pack_id = int(pack_id, pack_id.startswith('0x') and 16 or 10)
         pack_name = pack.find('PacName', ns).text
         pack_desc = pack.find('PacDesc', ns).text
+        pack_type = pack.find('PacType', ns).text
         data_len = int(pack.find('DataLen', ns).text)
-        p = Packet(pack_name, pack_desc, pack_id, data_len)
+        p = Packet(pack_name, pack_desc, pack_id, data_len, pack_type)
         d.add_packet(p)
+        ptypes.add(pack_type)
 
         for field in pack.findall('Field', ns):
             f_type = field.find('FldType', ns).text
@@ -197,8 +210,8 @@ def parse_file(fp):
 
 
 if __name__ == '__main__':
-    dn = 'SX-TLM-Viewer-v217.rc1-linux64-ru/resources/devices/'
-    out_fn = 'usp.py'
+    dn = 'resources/devices/'
+    out_fn = 'usp2.py'
 
     packets = []
     for fn in pathlib.Path(dn).iterdir():
