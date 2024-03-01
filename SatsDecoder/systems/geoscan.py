@@ -88,7 +88,7 @@ _frame = construct.Struct(
 class GeoscanImageReceiver(ImageReceiver):
     MARKER_IMG = 0x0001, 0x0002
     CMD_IMG_START = 0x0901
-    CMD_IMG_FRAME = 0x0905
+    CMD_IMG_FRAME = 0x0905, 0x0920
 
     def __init__(self, outdir):
         super().__init__(outdir, '.jpg')
@@ -113,36 +113,38 @@ class GeoscanImageReceiver(ImageReceiver):
             self._miss_cnt += 1
             return
 
+        off = (data.subsystem_num << 16) | data.offset
+
         if data.mtype == self.CMD_IMG_START:
             img = self.get_image(1)
 
             with img.lock:
                 if data.data.startswith(b'\xff\xd8'):
-                    img.has_soi = data.offset
+                    img.has_soi = off
                 img.has_starter = 1
-                img.base_offset = data.offset
+                img.base_offset = off
                 img.first_data_offset = data.offset = 0
 
-                img.push_data(data.offset, data.data[:data.dlen - 6])
+                img.push_data(off, data.data[:data.dlen - 6])
 
-        elif data.mtype == self.CMD_IMG_FRAME:
+        elif data.mtype in self.CMD_IMG_FRAME:
             force = data.data.startswith(b'\xff\xd8')
             img = self.get_image(force)
             with img.lock:
                 if force:
-                    img.base_offset = img.has_soi = data.offset
+                    img.base_offset = img.has_soi = off
 
-                x = data.offset - img.base_offset
+                x = off - img.base_offset
                 if x < 0:
                     img = self.force_new()
                     img.base_offset = img.BASE_OFFSET
-                    x = data.offset - img.base_offset
-                data.offset = x
+                    x = off - img.base_offset
+                off = x
                 if x < img.first_data_offset:
                     img.first_data_offset = x
 
                 x = data.data[:data.dlen - 6]
-                img.push_data(data.offset, x)
+                img.push_data(off, x)
                 # if self.is_last_data(x) and not self.merge_mode:
                 if self.is_last_data(x):
                     img.flush()
