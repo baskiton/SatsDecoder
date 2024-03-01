@@ -1403,12 +1403,14 @@ filetransfer = {
 }
 
 
+_msg_map = tlm_map.copy()
+_msg_map.update(filetransfer)
 Data = construct.Struct(
     'message' / Addr,
     'sender' / Addr,
     'receiver' / Addr,
     'size' / construct.Int16ul,
-    'packet' / construct.Switch(construct.this.message, tlm_map | filetransfer, default=construct.Bytes(construct.this.size)),
+    'packet' / construct.Switch(construct.this.message, _msg_map, default=construct.Bytes(construct.this.size)),
 )
 
 Frame = construct.Struct(
