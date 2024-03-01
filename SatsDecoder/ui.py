@@ -286,6 +286,7 @@ class DataViewFrame(ttk.LabelFrame):
 
 
 class DecoderFrame(ttk.Frame):
+    STOP_EVT = '<<STOP>>'
     decoders = {
         'geoscan': systems.GeoscanProtocol,
         'usp': systems.UspProtocol,
@@ -344,6 +345,7 @@ class DecoderFrame(ttk.Frame):
         self.history_frame = HistoryFrame(self)
         self.history_frame.grid(column=0, row=1, sticky=tk.NSEW, padx=2, pady=2)
         self.bind(self.history_frame.EVT_SEL, self.fill_data)
+        self.bind(self.STOP_EVT, self.stop)
 
         # data view frame
         self.dv_frame = DataViewFrame(self)
@@ -371,7 +373,7 @@ class DecoderFrame(ttk.Frame):
             self.out_dir_v.set(d)
 
     def con(self):
-        self.stop(1) if self.sk else self._start()
+        self.stop() if self.sk else self._start()
 
     def set_merge_mode(self):
         self.decoder.ir.set_merge_mode(self.merge_mode_v.get())
@@ -381,17 +383,16 @@ class DecoderFrame(ttk.Frame):
         self.dv_frame.set_img(img, 1)
         self.history_frame.put('img', self.proto, img)
 
-    def stop(self, is_main=0):
+    def stop(self, _=None):
         with self.sk_lock:
             if self.sk:
                 s = self.sk
                 self.sk = 0
                 s.close()
 
-        if is_main:
-            if self.thr and self.thr.is_alive():
-                self.thr.join(0)
-                self.thr = 0
+        if self.thr and self.thr.is_alive():
+            self.thr.join(0)
+            self.thr = 0
         self.con_btn.config(text='Connect')
         self.server_e.config(state=tk.NORMAL)
         self.port_e.config(state=tk.NORMAL)
@@ -472,7 +473,8 @@ class DecoderFrame(ttk.Frame):
                 messagebox.showerror(message='%s: %s' % (self.name, e))
                 break
 
-        self.stop()
+        if self.sk:
+            self.event_generate(self.STOP_EVT, when='tail')
 
 
 class App(ttk.Frame):
@@ -518,7 +520,7 @@ class App(ttk.Frame):
 
     def exit(self, evt=None):
         for name, df in self.tabs.items():
-            df.stop(1)
+            df.stop()
             self.config.set(name, 'ip', df.server_v.get())
             self.config.set(name, 'port', df.port_v.get())
             self.config.set(name, 'outdir', df.out_dir_v.get())
