@@ -36,7 +36,7 @@ class TlmCommonTable(ttk.Treeview):
 
         self.flags = {}
 
-        f = font.nametofont('TkDefaultFont', self)
+        f = tk_nametofont('TkDefaultFont', self)
         w = 0
         for k, v in vals.items():
             x = ''
@@ -60,7 +60,7 @@ class TlmCommonTable(ttk.Treeview):
         self.configure(xscrollcommand=self.hsb.set)
 
     def fill(self, tlm, fw_max=10):
-        f = font.nametofont('TkDefaultFont', self)
+        f = tk_nametofont('TkDefaultFont', self)
         for k, v in tlm.items():
             if k.startswith('flags'):
                 fw_max = self.fill(v, fw_max)
@@ -106,6 +106,14 @@ class TlmCommonFrame(ttk.Frame):
 
 def bytes2hex(data):
     return data.hex(*((' ',) if sys.version_info >= (3, 8, 0) else ()))
+
+
+def tk_nametofont(name, root=None):
+    """
+    Override `tk.font.nametofont`
+    in python<3.10 `root` keyword is not exist
+    """
+    return font.Font(name=name, exists=True, root=root)
 
 
 seqs_map = {
