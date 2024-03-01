@@ -546,8 +546,8 @@ beacon = construct.Struct(
     'FL' / construct.Hex(construct.Int8ul),  # Флаги PS.
     't_amp' / construct.Int8sl,  # Температура усилителя УКВ (гр. С)
     't_uhf' / construct.Int8sl,  # Температура УКВ (гр. С)
-    'RSSIrx' / construct.Int8sl,  # RSSI при приеме
-    'RSSIidle' / construct.Int8sl,  # RSSI в ожидании
+    'RSSIrx' / common.LinearAdapter(-1, construct.Int8ul),  # RSSI при приеме
+    'RSSIidle' / common.LinearAdapter(-1, construct.Int8ul),  # RSSI в ожидании
     'Pf' / construct.Int8sl,  # Мощность прямого излучения
     'Pb' / construct.Int8sl,  # Мощность обратного излучения
     'Nres_uhf' / construct.Int8ul,  # Количество перезагрузок УКВ
@@ -622,8 +622,8 @@ uhf_beacon = construct.Struct(
     'desc' / construct.Computed('UHF Beacon'),
     't_amp' / construct.Int8sl,  # UHF amp temperature, °C
     't_uhf' / construct.Int8sl,  # UHF temperature, °C
-    'RSSIrx' / construct.Int8sl,  # RX RSSI (-dBm)
-    'RSSIidle' / construct.Int8sl,  # idle RSSI (-dBm)
+    'RSSIrx' / common.LinearAdapter(-1, construct.Int8ul),  # RX RSSI (-dBm)
+    'RSSIidle' / common.LinearAdapter(-1, construct.Int8ul),  # idle RSSI (-dBm)
     'Pf' / construct.Int8sl,  # Forward wave power(dBm)
     'Pb' / construct.Int8sl,  # Reflected wave power(dBm)
     'uhf_reset_counter' / construct.Int8ul,  # UHF reset counter
