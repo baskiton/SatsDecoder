@@ -123,7 +123,7 @@ class GeoscanImageReceiver(ImageReceiver):
                     img.has_soi = off
                 img.has_starter = 1
                 img.base_offset = off
-                img.first_data_offset = data.offset = 0
+                img.first_data_offset = off = 0
 
                 img.push_data(off, data.data[:data.dlen - 6])
 
