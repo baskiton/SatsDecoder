@@ -1415,7 +1415,7 @@ Data = construct.Struct(
 
 Frame = construct.Struct(
     'data' / construct.GreedyRange(Data),
-    'lost' / construct.GreedyBytes
+    '_tail' / construct.GreedyBytes
 )
 
 usp = construct.Struct(
@@ -1423,6 +1423,8 @@ usp = construct.Struct(
     'ax25' / construct.If(lambda this: bool(this.ax25), common.ax25_header),
     'usp' / construct.If(lambda this: (bool(this.ax25) and this.ax25.pid == 0xF0), Frame)
 )
+
+usp_range = construct.GreedyRange(usp)
 
 
 def usp_get_sender_callsign(tlm):
@@ -2312,23 +2314,25 @@ class UspProtocol:
     def get_sender_callsign(data):
         return common.ax25_get_sender_callsign(data.ax25)
 
-    def recognize(self, data):
-        data = usp.parse(data)
-        if not data.usp:
-            return
+    def recognize(self, bb):
+        while bb:
+            data = usp.parse(bb)
+            if not data.usp:
+                return
 
-        for i in data.usp.data:
-            p_data = i.packet
+            bb = data.usp._tail
+            for i in data.usp.data:
+                p_data = i.packet
 
-            if i.message in filetransfer:
-                ty = 'img'
-                p_data = self.ir.push_data(i), self.ir.cur_img
+                if i.message in filetransfer:
+                    ty = 'img'
+                    p_data = self.ir.push_data(i), self.ir.cur_img
 
-            elif i.message in tlm_map:
-                ty = 'tlm'
-                p_data = data, p_data
+                elif i.message in tlm_map:
+                    ty = 'tlm'
+                    p_data = data, p_data
 
-            else:
-                ty = 'raw'
+                else:
+                    ty = 'raw'
 
-            yield ty, self.get_sender_callsign(data), '0x%04X' % i.message, p_data
+                yield ty, self.get_sender_callsign(data), '0x%04X' % i.message, p_data

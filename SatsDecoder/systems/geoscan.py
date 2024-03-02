@@ -164,6 +164,7 @@ class GeoscanImageReceiver(ImageReceiver):
 
 
 class GeoscanProtocol:
+    PACKETSIZE = 64
     columns = ()
     c_width = ()
     tlm_table = {
@@ -200,25 +201,29 @@ class GeoscanProtocol:
     def get_sender_callsign(data):
         return common.ax25_get_sender_callsign(data.ax25)
 
-    def recognize(self, data):
-        tlm = geoscan.parse(data)
-        name = self.get_sender_callsign(tlm) or 'geoscan'
+    def recognize(self, data: bytes):
+        while data:
+            raw_packet, data = data[:self.PACKETSIZE], data[self.PACKETSIZE:]
+            tlm = geoscan.parse(raw_packet)
+            name = self.get_sender_callsign(tlm) or 'geoscan'
 
-        if tlm.geoscan:
-            yield 'tlm', name, (tlm, tlm.geoscan)
-            return
+            if tlm.geoscan:
+                yield 'tlm', name, (tlm, tlm.geoscan)
+                continue
 
-        x = self.ir.push_data(data)
-        if x:
-            if x != 2:
-                self.last_fn = self.ir.cur_img.fn
-            yield 'img', name, (x, self.ir.cur_img)
-            return
+            x = self.ir.push_data(raw_packet)
+            if x:
+                if x != 2:
+                    self.last_fn = self.ir.cur_img.fn
+                yield 'img', name, (x, self.ir.cur_img)
+                continue
 
-        try:
-            frame = _frame.parse(data)
-        except construct.ConstructError:
-            yield 'raw', name, data
-            return
+            try:
+                frame = _frame.parse(raw_packet)
+            except construct.ConstructError:
+                yield 'raw', name, raw_packet
+                continue
+
+            yield 'frame', name, f'{str(frame)}\n\nHex:\n{utils.bytes2hex(raw_packet)}'
 
         yield 'frame', name, f'{str(frame)}\n\nHex:\n{utils.bytes2hex(data)}'

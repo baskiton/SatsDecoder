@@ -11,6 +11,7 @@ if __name__ == '__main__':
     for proto in PROTOCOLS:
         d[proto] = {'ip': '127.0.0.1',
                     'port': '8000',
+                    'connmode': '0',
                     'merge mode': 'off',
                     'outdir': str(HOMEDIR / proto)}
     cp.read_dict(d)

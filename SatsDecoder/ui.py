@@ -297,8 +297,7 @@ class DecoderFrame(ttk.Frame):
         self.config = config
         self.proto = proto
         self.name = name or proto
-        self.sk = self.thr = 0
-        self.sk_lock = threading.Lock()
+        self.sk = self.thr = self.frame_off = 0
         self.decoder = self.decoders[proto](self.config.get(proto, 'outdir'))
 
         self.grid(column=0, row=0, sticky=tk.NSEW)
@@ -322,7 +321,7 @@ class DecoderFrame(ttk.Frame):
         self.server_v = tk.StringVar(self.ctrl_frame, self.config.get(proto, 'ip'))
         self.port_v = tk.StringVar(self.ctrl_frame, self.config.get(proto, 'port'))
 
-        ttk.Label(self.ctrl_frame, text='Server:').grid(column=0, row=1, sticky=tk.E, pady=3)
+        ttk.Label(self.ctrl_frame, text='Address:').grid(column=0, row=1, sticky=tk.E, pady=3)
         self.server_e = ttk.Entry(self.ctrl_frame, textvariable=self.server_v)
         self.server_e.grid(column=1, row=1, sticky=tk.EW, pady=3)
 
@@ -332,6 +331,13 @@ class DecoderFrame(ttk.Frame):
 
         self.con_btn = ttk.Button(self.ctrl_frame, text='Connect', command=self.con)
         self.con_btn.grid(column=4, row=1, sticky=tk.EW, pady=3, padx=3)
+
+        ttk.Label(self.ctrl_frame, text='Conn:').grid(column=0, row=2, sticky=tk.E, pady=3)
+        self.conn_mode = ttk.Combobox(self.ctrl_frame, values=('AGWPE Client', 'TCP Client', 'TCP Server'), state='readonly')
+        self.conn_mode.bind('<<ComboboxSelected>>', self.named_conn_btn)
+        self.conn_mode.current(self.config.getint(proto, 'connmode'))
+        self.named_conn_btn()
+        self.conn_mode.grid(column=1, row=2, sticky=tk.EW, pady=3)
 
         self.merge_mode_v = tk.IntVar(self.ctrl_frame, self.config.getboolean(proto, 'merge mode'))
         self.merge_mode_ckb = ttk.Checkbutton(self.ctrl_frame, text='Merge mode',
@@ -350,6 +356,14 @@ class DecoderFrame(ttk.Frame):
         # data view frame
         self.dv_frame = DataViewFrame(self)
         self.dv_frame.grid(column=1, row=0, rowspan=2, sticky=tk.NSEW, padx=2, pady=2)
+
+    def named_conn_btn(self, _=None, **kw):
+        is_server = self.conn_mode.current() == 2
+        if 'd' in kw:
+            txt = is_server and 'Stop' or 'Disonnect'
+        else:
+            txt = is_server and 'Start' or 'Connect'
+        self.con_btn.config(text=txt)
 
     def fill_data(self, evt=None):
         x = self.history_frame.get_selected()
@@ -384,29 +398,37 @@ class DecoderFrame(ttk.Frame):
         self.history_frame.put('img', self.proto, img)
 
     def stop(self, _=None):
-        with self.sk_lock:
-            if self.sk:
-                s = self.sk
-                self.sk = 0
-                s.close()
+        if self.sk:
+            s = self.sk
+            self.sk = 0
+            s.close()
 
         if self.thr and self.thr.is_alive():
             self.thr.join(0)
             self.thr = 0
-        self.con_btn.config(text='Connect')
+        self.named_conn_btn()
         self.server_e.config(state=tk.NORMAL)
         self.port_e.config(state=tk.NORMAL)
         self.out_dir_e.config(state=tk.NORMAL)
         self.out_dir_btn.config(state=tk.NORMAL)
+        self.conn_mode.config(state='readonly')
 
     def _start(self):
+        self.is_server = self.conn_mode.current() == 2
         try:
+            self.frame_off = 0
             s = sk.socket(sk.AF_INET, sk.SOCK_STREAM)
-            s.connect((self.server_v.get(), int(self.port_v.get())))
             s.settimeout(0.1)
+            if self.is_server:
+                s.bind((self.server_v.get(), int(self.port_v.get())))
+                s.listen(1)
+            else:
+                s.connect((self.server_v.get(), int(self.port_v.get())))
+                if self.conn_mode.current() == 0:
+                    self.frame_off = 37
+                    s.send(AGWPE_CON)
 
             self.sk = s
-            self.sk.send(AGWPE_CON)
 
         except (ConnectionError, OSError) as e:
             messagebox.showerror(message='%s: %s' % (self.name, e.strerror))
@@ -415,66 +437,88 @@ class DecoderFrame(ttk.Frame):
             messagebox.showerror(message='%s: %s' % (self.name, e.args))
 
         else:
-            self.con_btn.config(text='Disconnect')
+            self.named_conn_btn(d=1)
             self.server_e.config(state=tk.DISABLED)
             self.port_e.config(state=tk.DISABLED)
             self.out_dir_e.config(state=tk.DISABLED)
             self.out_dir_btn.config(state=tk.DISABLED)
+            self.conn_mode.config(state=tk.DISABLED)
 
             self.decoder.ir.set_outdir(self.out_dir_v.get())
             self.decoder.ir.set_merge_mode(self.merge_mode_v.get())
 
-            self.thr = threading.Thread(target=self._receive)
+            self.thr = threading.Thread(target=self.is_server and self._server or self._client)
             self.thr.start()
 
-    def _receive(self):
+    def _server(self):
         while self.sk:
             try:
-                with self.sk_lock:
-                    frame = self.sk.recv(4096)
+                conn, addr = self.sk.accept()
+                conn.settimeout(0.1)
+                with conn:
+                    while self.sk:
+                        if self._receive(conn):
+                            break
             except (sk.timeout, TimeoutError, AttributeError):
                 continue
             except OSError as e:
                 if e.errno != errno.EBADF:
                     messagebox.showerror(message='%s: %s' % (self.name, e))
                 break
-
-            if not frame:
-                messagebox.showwarning(message='%s: Connection lost' % self.name)
-                break
-
-            try:
-                data = frame[37:]
-                for i in self.decoder.recognize(data):
-                    args = i
-                    ty, name, *_, packet = i
-                    date = 0
-
-                    if ty == 'img':
-                        ir_ret, img = packet
-                        self.dv_frame.set_img(img)
-                        args = args[:-1] + (img,)
-
-                    elif ty == 'tlm':
-                        packet, tlm = packet
-                        date = getattr(tlm, 'Time', dt.datetime.utcnow())
-                        name = ('%s_%s_%s_%s.txt' % (name, self.proto, tlm._name, date)).replace(
-                            ' ', '_').replace(':', '-')
-                        fp = pathlib.Path(self.out_dir_v.get()) / name
-                        args = args[:-1] + (tlm, fp)
-
-                        with fp.open('w') as f:
-                            f.write(utils.bytes2hex(data))
-                            f.write('\n\n')
-                            f.write(str(packet))
-
-                    self.history_frame.put(*args, date=date)
-            except Exception as e:
-                messagebox.showerror(message='%s: %s' % (self.name, e))
-                break
-
         if self.sk:
             self.event_generate(self.STOP_EVT, when='tail')
+
+    def _client(self):
+        while self.sk:
+            if self._receive(self.sk):
+                break
+        if self.sk:
+            self.event_generate(self.STOP_EVT, when='tail')
+
+    def _receive(self, conn):
+        try:
+            frame = conn.recv(4096)
+        except (sk.timeout, TimeoutError, AttributeError):
+            return
+        except OSError as e:
+            if e.errno != errno.EBADF:
+                messagebox.showerror(message='%s: %s' % (self.name, e))
+            return 1
+
+        if not frame:
+            if not self.is_server:
+                messagebox.showwarning(message='%s: Connection lost' % self.name)
+            return 1
+
+        try:
+            data = frame[self.frame_off:]
+            for i in self.decoder.recognize(data):
+                args = i
+                ty, name, *_, packet = i
+                date = 0
+
+                if ty == 'img':
+                    ir_ret, img = packet
+                    self.dv_frame.set_img(img)
+                    args = args[:-1] + (img,)
+
+                elif ty == 'tlm':
+                    packet, tlm = packet
+                    date = getattr(tlm, 'Time', dt.datetime.utcnow())
+                    name = ('%s_%s_%s_%s.txt' % (name, self.proto, tlm._name, date)).replace(
+                        ' ', '_').replace(':', '-')
+                    fp = pathlib.Path(self.out_dir_v.get()) / name
+                    args = args[:-1] + (tlm, fp)
+
+                    with fp.open('w') as f:
+                        f.write(utils.bytes2hex(data))
+                        f.write('\n\n')
+                        f.write(str(packet))
+
+                self.history_frame.put(*args, date=date)
+        except Exception as e:
+            messagebox.showerror(message='%s: %s' % (self.name, e))
+            return 1
 
 
 class App(ttk.Frame):
@@ -525,6 +569,7 @@ class App(ttk.Frame):
             self.config.set(name, 'port', df.port_v.get())
             self.config.set(name, 'outdir', df.out_dir_v.get())
             self.config.set(name, 'merge mode', str(df.merge_mode_v.get()))
+            self.config.set(name, 'connmode', str(df.conn_mode.current()))
 
         self.config.set('main', 'pos', self.master.winfo_geometry())
         self.config.set('info', 'version', __version__)
