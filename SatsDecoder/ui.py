@@ -43,7 +43,7 @@ class HistoryFrame(ttk.LabelFrame):
         self.table = ttk.Treeview(self, columns='date type ' + ' '.join(master.decoder.columns),
                                   selectmode='browse', show='tree headings')
         # self.table.column('#0', anchor='e')
-        self.table.column('#0', width=80, stretch=tk.NO)
+        self.table.column('#0', width=110, stretch=tk.NO)
         self.table.heading('date', text='Date')
         self.table.column('date', stretch=tk.NO)
         self.table.heading('type', text='Type')

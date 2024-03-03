@@ -79,10 +79,10 @@ class ImageReceiver:
     def cur_img(self):
         return self.images.get(self.current_fid)
 
-    def get_image(self, force_new=0):
+    def get_image(self, force_new=0, **kwargs):
         fid = self.current_fid
         if force_new or not fid:
-            fid = self.generate_fid()
+            fid = self.generate_fid(**kwargs)
         return self.images.get(fid) or self.new_file(fid)
 
     def set_outdir(self, outdir):
@@ -92,15 +92,12 @@ class ImageReceiver:
     def set_merge_mode(self, val):
         self.merge_mode = val
 
-    def generate_fid(self, *args):
+    def generate_fid(self, *args, **kwargs):
         raise NotImplementedError
 
-    def force_new(self, *args):
-        img = self.images.pop(self.current_fid, None)
-        if img:
-            img.close()
+    def force_new(self, *args, **kwargs):
         self.current_fid = 0
-        return self.new_file(self.generate_fid(*args))
+        return self.new_file(self.generate_fid(*args, **kwargs))
 
     def new_file(self, fid):
         fn = self.outdir / fid
