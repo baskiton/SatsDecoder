@@ -306,5 +306,3 @@ class GeoscanProtocol:
                 continue
 
             yield 'frame', name, f'{str(frame)}\n\nHex:\n{utils.bytes2hex(raw_packet)}'
-
-        yield 'frame', name, f'{str(frame)}\n\nHex:\n{utils.bytes2hex(data)}'
