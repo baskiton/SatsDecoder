@@ -40,6 +40,7 @@ class MulAdapter(construct.Adapter):
 geoscan_frame = construct.Struct(
     '_name' / construct.Computed('beacon'),
     'name' / construct.Computed('Beacon'),
+
     'Time' / common.UNIXTimestampAdapter(construct.Int32ul),
     'Iab' / MulAdapter(0.0766, construct.Int16ul),      # mA
     'Isp' / MulAdapter(0.03076, construct.Int16ul),     # mA
@@ -47,15 +48,16 @@ geoscan_frame = construct.Struct(
     'Uab_per' / MulAdapter(0.00006928, construct.Int16ul),   # V
     'Uab_sum' / MulAdapter(0.00013856, construct.Int16ul),   # V
 
-    'Tx_plus' / construct.Int8ul,   # deg C
-    'Tx_minus' / construct.Int8ul,  # deg C
-    'Ty_plus' / construct.Int8ul,   # deg C
-    'Ty_minus' / construct.Int8ul,  # deg C
-    'Tz_plus' / construct.Int8ul,   # undef
-    'Tz_minus' / construct.Int8ul,  # deg C
-    'Tab1' / construct.Int8ul,      # deg C
-    'Tab2' / construct.Int8ul,      # deg C
-    'CPU_load' / construct.Int8ul,  # %
+    'Tx_plus' / construct.Int8sl,   # deg C
+    'Tx_minus' / construct.Int8sl,  # deg C
+    'Ty_plus' / construct.Int8sl,   # deg C
+    'Ty_minus' / construct.Int8sl,  # deg C
+    'Tz_plus' / construct.Int8sl,   # undef
+    'Tz_minus' / construct.Int8sl,  # deg C
+    'Tab1' / construct.Int8sl,      # deg C
+    'Tab2' / construct.Int8sl,      # deg C
+
+    'CPU_load' / MulAdapter(0.390625, construct.Int8ul),  # %
     'Nres_osc' / SubAdapter(7476, construct.Int16ul),
     'Nres_CommU' / SubAdapter(1505, construct.Int16ul),
     'RSSI' / SubAdapter(99, construct.Int8ul),  # dBm
@@ -63,14 +65,55 @@ geoscan_frame = construct.Struct(
     'pad' / construct.GreedyBytes
 )
 
+
+stratosat_frame = construct.Struct(
+    '_name' / construct.Computed('stratosat'),
+    'name' / construct.Computed('Beacon'),
+
+    'Time' / common.UNIXTimestampAdapter(construct.Int32ul),
+    'Iab' / MulAdapter(0.0766, construct.Int16ul),      # mA
+    'Isp' / MulAdapter(0.03076, construct.Int16ul),     # mA
+
+    'Uab_per' / MulAdapter(0.00006928, construct.Int16ul),   # V
+    'Uab_sum' / MulAdapter(0.00013856, construct.Int16ul),   # V
+
+    'Ichrg' / MulAdapter(0.03076, construct.Int32ul),  # mA
+    'Itotal' / MulAdapter(0.0766, construct.Int32ul),  # mA
+
+    'Tx_plus' / construct.Int8sl,   # deg C
+    'Tx_minus' / construct.Int8sl,  # deg C
+    'Ty_plus' / construct.Int8sl,   # deg C
+    'Ty_minus' / construct.Int8sl,  # deg C
+    'Tz_plus' / construct.Int8sl,   # undef
+    'Tz_minus' / construct.Int8sl,  # deg C
+    'Tab1' / construct.Int8sl,      # deg C
+    'Tab2' / construct.Int8sl,      # deg C
+
+    'orient' / construct.Hex(construct.Enum(construct.Int8ul, Off=0, On=1)),
+    'CPU_load' / MulAdapter(0.390625, construct.Int8ul),  # %
+    'Nres_osc' / SubAdapter(7476, construct.Int16ul),
+    'Nres_CommU' / SubAdapter(1505, construct.Int16ul),
+    'RSSI' / SubAdapter(99, construct.Int8ul),  # dBm
+
+    'Rx' / construct.Int16ul,
+    'Tx' / construct.Int16ul,
+
+    'pad' / construct.GreedyBytes
+)
+
+frames_map = {
+    'RS20S': geoscan_frame,
+    'RS52S': stratosat_frame,
+}
+
 geoscan = construct.Struct(
     'ax25' / construct.Peek(common.ax25_header),
     'ax25' / construct.If(lambda this: (bool(this.ax25)
                                         and this.ax25.addresses[0].callsign == u'BEACON'),
                           common.ax25_header),
-    'geoscan' / construct.If(lambda this: (bool(this.ax25)
+    'packet' / construct.If(lambda this: (bool(this.ax25)
                                            and this.ax25.pid == 0xF0),
-                             geoscan_frame),
+                             construct.Switch(construct.this.ax25.addresses[1].callsign, frames_map, default=geoscan_frame)),
 )
 
 
@@ -84,9 +127,22 @@ _frame = construct.Struct(
     'data' / construct.Bytes(56)
 )
 
+# mtypes
+GEOSKAN_IMG = 0x0001
+STRATOSAT_IMG = 0x0002
+
+marker_names = {
+    GEOSKAN_IMG: 'geoscan-img',
+    STRATOSAT_IMG: 'stratosat-img',
+}
+
+
+def get_marker_name(marker):
+    return marker_names.get(marker, 'geoscan-common')
+
 
 class GeoscanImageReceiver(ImageReceiver):
-    MARKER_IMG = 0x0001, 0x0002
+    MARKERS = GEOSKAN_IMG, STRATOSAT_IMG
     CMD_IMG_START = 0x0901
     CMD_IMG_FRAME = 0x0905, 0x0920
 
@@ -104,12 +160,7 @@ class GeoscanImageReceiver(ImageReceiver):
         return super().force_new()
 
     def push_data(self, data):
-        try:
-            data = _frame.parse(data)
-        except construct.ConstructError:
-            return
-
-        if data.marker not in self.MARKER_IMG:
+        if data.marker not in self.MARKERS:
             self._miss_cnt += 1
             return
 
@@ -191,6 +242,34 @@ class GeoscanProtocol:
                 ('pad', 'pad'),
             )
         },
+        'stratosat': {
+            'table': (
+                ('name', 'Name'),
+                ('Time', 'Time'),
+                ('Iab', 'Current total, mA'),
+                ('Isp', 'Current SP, mA'),
+                ('Uab_per', 'Voltage per battery, V'),
+                ('Uab_sum', 'Voltage total, V'),
+                ('Ichrg', 'Current of Charger, mA'),
+                ('Itotal', 'Current amount, mA'),
+                ('Tx_plus', 'Temperature SP X+, °C'),
+                ('Tx_minus', 'Temperature SP X-, °C'),
+                ('Ty_plus', 'Temperature SP Y+, °C'),
+                ('Ty_minus', 'Temperature SP Y-, °C'),
+                ('Tz_plus', 'Temperature SP Z+, °C'),
+                ('Tz_minus', 'Temperature SP Z-, °C'),
+                ('Tab1', 'Temperature battery #1, °C'),
+                ('Tab2', 'Temperature battery #2, °C'),
+                ('orient', 'Orientation'),
+                ('CPU_load', 'CPU load, %'),
+                ('Nres_osc', 'Reloads spacecraft'),
+                ('Nres_CommU', 'Reloads CommU'),
+                ('RSSI', 'RSSI, dBm'),
+                ('Rx', 'Rx packets'),
+                ('Tx', 'Tx packets'),
+                ('pad', 'pad'),
+            )
+        },
     }
 
     def __init__(self, outdir):
@@ -205,23 +284,24 @@ class GeoscanProtocol:
         while data:
             raw_packet, data = data[:self.PACKETSIZE], data[self.PACKETSIZE:]
             tlm = geoscan.parse(raw_packet)
-            name = self.get_sender_callsign(tlm) or 'geoscan'
+            name = self.get_sender_callsign(tlm)
 
-            if tlm.geoscan:
-                yield 'tlm', name, (tlm, tlm.geoscan)
-                continue
-
-            x = self.ir.push_data(raw_packet)
-            if x:
-                if x != 2:
-                    self.last_fn = self.ir.cur_img.fn
-                yield 'img', name, (x, self.ir.cur_img)
+            if tlm.packet:
+                yield 'tlm', name, (tlm, tlm.packet)
                 continue
 
             try:
                 frame = _frame.parse(raw_packet)
             except construct.ConstructError:
-                yield 'raw', name, raw_packet
+                yield 'raw', get_marker_name(None), raw_packet
+                continue
+
+            name = get_marker_name(frame.marker)
+            x = self.ir.push_data(frame)
+            if x:
+                if x != 2:
+                    self.last_fn = self.ir.cur_img.fn
+                yield 'img', name, (x, self.ir.cur_img)
                 continue
 
             yield 'frame', name, f'{str(frame)}\n\nHex:\n{utils.bytes2hex(raw_packet)}'
