@@ -423,6 +423,7 @@ class DecoderFrame(ttk.Frame):
                 s.setsockopt(sk.SOL_SOCKET, sk.SO_REUSEADDR, 1)
                 s.bind((self.server_v.get(), int(self.port_v.get())))
                 s.listen()
+
             else:
                 s.connect((self.server_v.get(), int(self.port_v.get())))
                 if self.conn_mode.current() == 0:
@@ -453,45 +454,37 @@ class DecoderFrame(ttk.Frame):
             self.thr.start()
 
     def _server(self):
-        poller = select.poll()
-        sk_fd = self.sk.fileno()
-        poller.register(sk_fd, select.POLLIN)
+        srv_fd = self.sk.fileno()
+        r = {srv_fd: self.sk}
 
-        conns = {}
         while self.sk:
-            x = dict(poller.poll(100))
-            if x.pop(sk_fd, 0):
+            ss = set(select.select(r, [], [], 0.1)[0])
+            if srv_fd in ss:
+                ss.discard(srv_fd)
                 try:
                     conn, addr = self.sk.accept()
                     conn.setblocking(0)
-                    fd = conn.fileno()
-                    poller.register(fd, select.POLLIN)
-                    conns[fd] = conn
+                    r[conn.fileno()] = conn
                 except AttributeError:
                     break
 
-            for fd in x:
-                conn = conns.get(fd)
-                if not conn:
-                    # unreachable?
-                    poller.unregister(fd)
-                elif self._receive(conn):
-                    poller.unregister(fd)
-                    conn.close()
-                    conns.pop(fd)
+            for s in ss:
+                if self._receive(r[s]):
+                    r.pop(s)
+                    r[s].close()
 
-        for conn in conns.values():
+        r.pop(srv_fd, 0)
+        for conn in r.values():
             conn.close()
 
         if self.sk:
             self.event_generate(self.STOP_EVT, when='tail')
 
     def _client(self):
-        poller = select.poll()
-        poller.register(self.sk, select.POLLIN)
+        r = {self.sk}
 
         while self.sk:
-            if poller.poll(100) and self._receive(self.sk):
+            if select.select(r, [], [], 0.1)[0] and self._receive(self.sk):
                 break
 
         if self.sk:
@@ -503,8 +496,8 @@ class DecoderFrame(ttk.Frame):
         except AttributeError:
             return 1
         except OSError as e:
-            if e.errno != errno.EBADF:
-                messagebox.showerror(message='%s: %s' % (self.name, e))
+            if e.errno != errno.EBADF and conn.fileno() != -1:
+                messagebox.showerror(message='%s: %s (%s)' % (self.name, e, conn))
             return 1
 
         if not frame:
