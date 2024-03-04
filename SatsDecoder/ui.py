@@ -5,6 +5,7 @@ import io
 import json
 import pathlib
 import re
+import select
 import socket as sk
 import threading
 import tkinter as tk
@@ -418,16 +419,17 @@ class DecoderFrame(ttk.Frame):
         try:
             self.frame_off = 0
             s = sk.socket(sk.AF_INET, sk.SOCK_STREAM)
-            s.settimeout(0.1)
             if self.is_server:
+                s.setsockopt(sk.SOL_SOCKET, sk.SO_REUSEADDR, 1)
                 s.bind((self.server_v.get(), int(self.port_v.get())))
-                s.listen(1)
+                s.listen()
             else:
                 s.connect((self.server_v.get(), int(self.port_v.get())))
                 if self.conn_mode.current() == 0:
                     self.frame_off = 37
                     s.send(AGWPE_CON)
 
+            s.setblocking(0)
             self.sk = s
 
         except (ConnectionError, OSError) as e:
@@ -447,39 +449,59 @@ class DecoderFrame(ttk.Frame):
             self.decoder.ir.set_outdir(self.out_dir_v.get())
             self.decoder.ir.set_merge_mode(self.merge_mode_v.get())
 
-            self.thr = threading.Thread(target=self.is_server and self._server or self._client)
+            self.thr = threading.Thread(target=self.is_server and self._server or self._client, daemon=1)
             self.thr.start()
 
     def _server(self):
+        poller = select.poll()
+        sk_fd = self.sk.fileno()
+        poller.register(sk_fd, select.POLLIN)
+
+        conns = {}
         while self.sk:
-            try:
-                conn, addr = self.sk.accept()
-                conn.settimeout(0.1)
-                with conn:
-                    while self.sk:
-                        if self._receive(conn):
-                            break
-            except (sk.timeout, TimeoutError, AttributeError):
-                continue
-            except OSError as e:
-                if e.errno != errno.EBADF:
-                    messagebox.showerror(message='%s: %s' % (self.name, e))
-                break
+            x = dict(poller.poll(100))
+            if x.pop(sk_fd, 0):
+                try:
+                    conn, addr = self.sk.accept()
+                    conn.setblocking(0)
+                    fd = conn.fileno()
+                    poller.register(fd, select.POLLIN)
+                    conns[fd] = conn
+                except AttributeError:
+                    break
+
+            for fd in x:
+                conn = conns.get(fd)
+                if not conn:
+                    # unreachable?
+                    poller.unregister(fd)
+                elif self._receive(conn):
+                    poller.unregister(fd)
+                    conn.close()
+                    conns.pop(fd)
+
+        for conn in conns.values():
+            conn.close()
+
         if self.sk:
             self.event_generate(self.STOP_EVT, when='tail')
 
     def _client(self):
+        poller = select.poll()
+        poller.register(self.sk, select.POLLIN)
+
         while self.sk:
-            if self._receive(self.sk):
+            if poller.poll(100) and self._receive(self.sk):
                 break
+
         if self.sk:
             self.event_generate(self.STOP_EVT, when='tail')
 
     def _receive(self, conn):
         try:
             frame = conn.recv(4096)
-        except (sk.timeout, TimeoutError, AttributeError):
-            return
+        except AttributeError:
+            return 1
         except OSError as e:
             if e.errno != errno.EBADF:
                 messagebox.showerror(message='%s: %s' % (self.name, e))
