@@ -470,8 +470,7 @@ class DecoderFrame(ttk.Frame):
 
             for s in ss:
                 if self._receive(r[s]):
-                    r.pop(s)
-                    r[s].close()
+                    r.pop(s).close()
 
         r.pop(srv_fd, 0)
         for conn in r.values():
