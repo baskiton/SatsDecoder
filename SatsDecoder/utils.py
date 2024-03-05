@@ -65,10 +65,11 @@ class TlmCommonTable(ttk.Treeview):
             if k.startswith('flags'):
                 fw_max = self.fill(v, fw_max)
             elif not k.startswith('_'):
-                self.set(k, 'val', str(v))
-                x = f.measure(str(v))
-                if x > fw_max:
-                    fw_max = x
+                if self.exists(k):
+                    self.set(k, 'val', str(v))
+                    x = f.measure(str(v))
+                    if x > fw_max:
+                        fw_max = x
 
         self.column('val', minwidth=fw_max + 10)
         return fw_max

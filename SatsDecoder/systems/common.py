@@ -60,6 +60,14 @@ class UNIXTimestampAdapter(construct.Adapter):
         return dt.datetime.utcfromtimestamp(obj)
 
 
+class TimeDeltaAdapter(construct.Adapter):
+    def _encode(self, obj, context, path=None):
+        return round(obj.total_seconds())
+
+    def _decode(self, obj, context, path=None):
+        return dt.timedelta(seconds=obj)
+
+
 class AffineAdapter(construct.Adapter):
     def __init__(self, c, a, *args, **kwargs):
         self.c = c
@@ -78,3 +86,12 @@ class LinearAdapter(AffineAdapter):
     def __init__(self, c, *args, **kwargs):
         super().__init__(c, 0, *args, **kwargs)
         # return AffineAdapter.__init__(self, c, 0, *args, **kwargs)
+
+
+class EvalAdapter(construct.Adapter):
+    def __init__(self, xfunc, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.xfunc = xfunc
+
+    def _decode(self, x, ctx, path=None):
+        return eval(self.xfunc)

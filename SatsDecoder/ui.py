@@ -43,16 +43,17 @@ class HistoryFrame(ttk.LabelFrame):
         self.vals = {}
         self.table = ttk.Treeview(self, columns='date type ' + ' '.join(master.decoder.columns),
                                   selectmode='browse', show='tree headings')
+        f = utils.tk_nametofont('TkDefaultFont', self.table)
         # self.table.column('#0', anchor='e')
         self.table.column('#0', width=110, stretch=tk.NO)
         self.table.heading('date', text='Date')
-        self.table.column('date', stretch=tk.NO)
+        self.table.column('date', stretch=tk.NO, width=f.measure('8888088088088088088'))
         self.table.heading('type', text='Type')
-        self.table.column('type', stretch=tk.NO, width=40)
+        self.table.column('type', stretch=tk.NO, width=f.measure('WWW'))
 
         for c, w in zip(master.decoder.columns, master.decoder.c_width):
             self.table.heading(c, text=c.capitalize())
-            self.table.column(c, width=w, stretch=tk.NO)
+            self.table.column(c, width=f.measure(c), stretch=tk.NO)
         self.table.column(self.table['columns'][-1], stretch=tk.YES)
 
         self.table.bind('<<TreeviewSelect>>', self.item_select)
@@ -71,7 +72,8 @@ class HistoryFrame(ttk.LabelFrame):
     def clear(self):
         self.table.delete(*self.table.get_children())
         self.vals.clear()
-        self.master.decoder.ir.clear()
+        if self.master.decoder.ir:
+            self.master.decoder.ir.clear()
         self.master.event_generate(self.EVT_SEL, when='tail')
 
     def item_select(self, evt=None):
@@ -291,6 +293,7 @@ class DecoderFrame(ttk.Frame):
     decoders = {
         'geoscan': systems.GeoscanProtocol,
         'usp': systems.UspProtocol,
+        'sonate-2': systems.SonateProtocol,
     }
 
     def __init__(self, master, config, proto, name=None):
@@ -391,12 +394,14 @@ class DecoderFrame(ttk.Frame):
         self.stop() if self.sk else self._start()
 
     def set_merge_mode(self):
-        self.decoder.ir.set_merge_mode(self.merge_mode_v.get())
+        if self.decoder.ir:
+            self.decoder.ir.set_merge_mode(self.merge_mode_v.get())
 
     def new_img(self):
-        img = self.decoder.ir.force_new()
-        self.dv_frame.set_img(img, 1)
-        self.history_frame.put('img', self.proto, img)
+        if self.decoder.ir:
+            img = self.decoder.ir.force_new()
+            self.dv_frame.set_img(img, 1)
+            self.history_frame.put('img', self.proto, img)
 
     def stop(self, _=None):
         if self.sk:
@@ -447,8 +452,9 @@ class DecoderFrame(ttk.Frame):
             self.out_dir_btn.config(state=tk.DISABLED)
             self.conn_mode.config(state=tk.DISABLED)
 
-            self.decoder.ir.set_outdir(self.out_dir_v.get())
-            self.decoder.ir.set_merge_mode(self.merge_mode_v.get())
+            if self.decoder.ir:
+                self.decoder.ir.set_outdir(self.out_dir_v.get())
+                self.decoder.ir.set_merge_mode(self.merge_mode_v.get())
 
             self.thr = threading.Thread(target=self.is_server and self._server or self._client, daemon=1)
             self.thr.start()
@@ -524,6 +530,7 @@ class DecoderFrame(ttk.Frame):
                     fp = pathlib.Path(self.out_dir_v.get()) / name
                     args = args[:-1] + (tlm, fp)
 
+                    fp.parent.mkdir(parents=True, exist_ok=True)
                     with fp.open('w') as f:
                         f.write(utils.bytes2hex(data))
                         f.write('\n\n')
@@ -531,7 +538,7 @@ class DecoderFrame(ttk.Frame):
 
                 self.history_frame.put(*args, date=date)
         except Exception as e:
-            messagebox.showerror(message='%s: %s' % (self.name, e))
+            messagebox.showerror(message='xxx %s: %s' % (self.name, e))
             return 1
 
 

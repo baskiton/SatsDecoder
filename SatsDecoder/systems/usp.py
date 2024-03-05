@@ -8,14 +8,6 @@ from SatsDecoder.systems.image_receiver import ImageReceiver
 __all__ = 'UspProtocol',
 
 
-class TimeDeltaAdapter(construct.Adapter):
-    def _encode(self, obj, context, path=None):
-        return round(obj.total_seconds())
-
-    def _decode(self, obj, context, path=None):
-        return dt.timedelta(seconds=obj)
-
-
 Addr = construct.Hex(construct.Int16ul)
 RegTemp = common.LinearAdapter(100, construct.Int16sl)
 Voltage = common.LinearAdapter(1000, construct.Int16ul)
@@ -553,7 +545,7 @@ beacon = construct.Struct(
     'Nres_uhf' / construct.Int8ul,  # Количество перезагрузок УКВ
     'FL_uhf' / construct.Hex(construct.Int8ul),  # Флаги УКВ
     'Time_uhf' / common.UNIXTimestampAdapter(construct.Int32sl),  # Время последней телеметрии УКВ
-    'UpTime' / TimeDeltaAdapter(construct.Int32ul),  # Uptime в секундах
+    'UpTime' / common.TimeDeltaAdapter(construct.Int32ul),  # Uptime в секундах
     'Current' / construct.Int16ul,  # Ток потребления УКВ
     'Uuhf' / construct.Int16sl,  # Напряжение УКВ (мВ)
 )
@@ -629,7 +621,7 @@ uhf_beacon = construct.Struct(
     'uhf_reset_counter' / construct.Int8ul,  # UHF reset counter
     'FL' / construct.Hex(construct.Int8ul),  # UHF flags
     'Time' / common.UNIXTimestampAdapter(construct.Int32sl),  # UHF timestamp
-    'UpTime' / TimeDeltaAdapter(construct.Int32ul),  # Uptime(sec)
+    'UpTime' / common.TimeDeltaAdapter(construct.Int32ul),  # Uptime(sec)
     'RxBitrate' / construct.Int32ul,  # Uplink bitrate (Receive)
     'CurrentConsumption' / construct.Int16ul,  # UHF consumption current
     'InputVoltage' / construct.Int16sl,  # UHF voltage(mV)
@@ -1113,7 +1105,7 @@ tm_adcs_beacon = construct.Struct(
     'name' / construct.Computed('TM ADCS beacon'),
     'desc' / construct.Computed('TM ADCS beacon'),
     'Time' / common.UNIXTimestampAdapter(construct.Int64sl),  # Current system time.
-    'uptime' / TimeDeltaAdapter(construct.Int32ul),  # Time from last reboot, [sec].
+    'uptime' / common.TimeDeltaAdapter(construct.Int32ul),  # Time from last reboot, [sec].
     'eci_quat_w' / construct.Float32l,  # Value
     'eci_quat_vect_x' / construct.Float32l,  # Value
     'eci_quat_vect_y' / construct.Float32l,  # Value
@@ -1177,7 +1169,7 @@ tm_adcs_beacon_6_wheels = construct.Struct(
     'name' / construct.Computed('TM ADCS beacon 6 wheels'),
     'desc' / construct.Computed('TM ADCS beacon 6 wheels'),
     'Time' / common.UNIXTimestampAdapter(construct.Int64sl),  # Current system time.
-    'uptime' / TimeDeltaAdapter(construct.Int32ul),  # Time from last reboot, [sec].
+    'uptime' / common.TimeDeltaAdapter(construct.Int32ul),  # Time from last reboot, [sec].
     'eci_quat_w' / construct.Float32l,  # Value
     'eci_quat_vect_x' / construct.Float32l,  # Value
     'eci_quat_vect_y' / construct.Float32l,  # Value
