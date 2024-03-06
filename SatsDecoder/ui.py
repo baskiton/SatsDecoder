@@ -47,7 +47,7 @@ class HistoryFrame(ttk.LabelFrame):
         # self.table.column('#0', anchor='e')
         self.table.column('#0', width=110, stretch=tk.NO)
         self.table.heading('date', text='Date')
-        self.table.column('date', stretch=tk.NO, width=f.measure('8888088088088088088'))
+        self.table.column('date', stretch=tk.NO, width=f.measure('88880880880880880880888888'))
         self.table.heading('type', text='Type')
         self.table.column('type', stretch=tk.NO, width=f.measure('WWW'))
 
