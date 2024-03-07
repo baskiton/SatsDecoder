@@ -655,7 +655,7 @@ class App(ttk.Frame):
         frame.grid(column=0, row=0, sticky=tk.NSEW)
 
         ttk.Label(frame, text=f'SatsDecoder v{__version__}').grid(columnspan=2)
-        ttk.Label(frame, text='MIT License\nCopyright (c) 2024 Alexander Baskikh\n', justify='center').grid(columnspan=2, rowspan=3)
+        ttk.Label(frame, text='GPL-3.0, MIT licenses\nCopyright (c) 2024 Alexander Baskikh\n', justify='center').grid(columnspan=2, rowspan=3)
 
         links = (
             ('GitHub page:', 'https://github.com/baskiton/SatsDecoder'),
