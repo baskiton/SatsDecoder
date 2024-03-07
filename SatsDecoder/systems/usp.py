@@ -2,7 +2,7 @@ import datetime as dt
 
 import construct
 
-from SatsDecoder.systems import common
+from SatsDecoder.systems import ax25, common
 from SatsDecoder.systems.image_receiver import ImageReceiver
 
 __all__ = 'UspProtocol',
@@ -1411,16 +1411,12 @@ Frame = construct.Struct(
 )
 
 usp = construct.Struct(
-    'ax25' / construct.Peek(common.ax25_header),
-    'ax25' / construct.If(lambda this: bool(this.ax25), common.ax25_header),
+    'ax25' / construct.Peek(ax25.ax25_header),
+    'ax25' / construct.If(lambda this: bool(this.ax25), ax25.ax25_header),
     'usp' / construct.If(lambda this: (bool(this.ax25) and this.ax25.pid == 0xF0), Frame)
 )
 
 usp_range = construct.GreedyRange(usp)
-
-
-def usp_get_sender_callsign(tlm):
-    return common.ax25_get_sender_callsign(tlm.ax25)
 
 
 class UspImageReceiver(ImageReceiver):
@@ -2304,7 +2300,7 @@ class UspProtocol:
 
     @staticmethod
     def get_sender_callsign(data):
-        return common.ax25_get_sender_callsign(data.ax25)
+        return ax25.get_sender_callsign(data.ax25)
 
     def recognize(self, bb):
         while bb:
