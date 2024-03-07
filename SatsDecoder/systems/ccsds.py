@@ -1,7 +1,13 @@
+#  Copyright (c) 2024. Alexander Baskikh
+#
+#  MIT License (MIT), http://opensource.org/licenses/MIT
+#  Full license can be found in the LICENSE-MIT file
+#
+#  SPDX-License-Identifier: MIT
+
 import construct
 
-from SatsDecoder import utils
-from SatsDecoder.systems import common
+from SatsDecoder.systems import ax25, common
 
 
 # Transfer Frame
@@ -86,14 +92,13 @@ sp_frame = construct.Struct(
 )
 
 
-import sys
 def parse_transfer_frame(data):
-    ax25 = common.ax25.parse(data)
-    if ax25.header.pid != 0xF0:
+    _ax25 = ax25.ax25.parse(data)
+    if _ax25.header.pid != 0xF0:
         return
 
-    sz = len(ax25.info) - 8
-    tf = tf_hdr.parse(ax25.info)
+    sz = len(_ax25.info) - 8
+    tf = tf_hdr.parse(_ax25.info)
     if tf.FHP == 0x7FF:
         tf.FHP = 0
 
@@ -101,9 +106,9 @@ def parse_transfer_frame(data):
     if tf.OCFF == 1:
         sz -= 4
 
-    ax25.info = transfer_frame.parse(ax25.info, size=sz)
+    _ax25.info = transfer_frame.parse(_ax25.info, size=sz)
 
-    return ax25
+    return _ax25
 
 
 sp_packets = construct.Struct(

@@ -1,9 +1,16 @@
+#  Copyright (c) 2024. Alexander Baskikh
+#
+#  MIT License (MIT), http://opensource.org/licenses/MIT
+#  Full license can be found in the LICENSE-MIT file
+#
+#  SPDX-License-Identifier: MIT
+
 import datetime as dt
 
 import construct
 
 from SatsDecoder import utils
-from SatsDecoder.systems import common
+from SatsDecoder.systems import ax25, common
 from SatsDecoder.systems.image_receiver import ImageReceiver
 
 __all__ = 'GeoscanProtocol',
@@ -107,10 +114,10 @@ frames_map = {
 }
 
 geoscan = construct.Struct(
-    'ax25' / construct.Peek(common.ax25_header),
+    'ax25' / construct.Peek(ax25.ax25_header),
     'ax25' / construct.If(lambda this: (bool(this.ax25)
                                         and this.ax25.addresses[0].callsign == u'BEACON'),
-                          common.ax25_header),
+                          ax25.ax25_header),
     'packet' / construct.If(lambda this: (bool(this.ax25)
                                            and this.ax25.pid == 0xF0),
                              construct.Switch(construct.this.ax25.addresses[1].callsign, frames_map, default=geoscan_frame)),
@@ -279,7 +286,7 @@ class GeoscanProtocol:
 
     @staticmethod
     def get_sender_callsign(data):
-        return common.ax25_get_sender_callsign(data.ax25)
+        return ax25.get_sender_callsign(data.ax25)
 
     def recognize(self, data: bytes):
         while data:

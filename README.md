@@ -73,3 +73,16 @@ I recommend to use a virtual environment
     ```
 
 The result build can be found in the `dist` folder
+
+
+### Licensing
+SatsDecoder is licensed under GPL-3.0-or-later. It contains third-party code
+licensed as GPL-3.0-or-later, but the majority of the codebase is licensed as MIT
+
+
+### Contributing
+Contributions to SatsDecoder must be licensed as MIT.  
+The "main" branch is the release branch.  
+New branches must be created from "dev".  
+All PRs must be into "dev".  
+Python code must be compliant or close to the PEP-8.  

@@ -1,6 +1,13 @@
+#  Copyright (c) 2024. Alexander Baskikh
+#
+#  MIT License (MIT), http://opensource.org/licenses/MIT
+#  Full license can be found in the LICENSE-MIT file
+#
+#  SPDX-License-Identifier: MIT
+
 import construct
 
-from SatsDecoder.systems import ccsds, common
+from SatsDecoder.systems import ax25, ccsds, common
 
 __all__ = 'SonateProtocol',
 
@@ -8524,7 +8531,7 @@ class SonateProtocol:
 
     @staticmethod
     def get_sender_callsign(data):
-        return common.ax25_get_sender_callsign(data.header)
+        return ax25.get_sender_callsign(data.header)
 
     def recognize(self, bb):
         frame = ccsds.parse_space_packet(bb)
