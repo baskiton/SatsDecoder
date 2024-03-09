@@ -15,6 +15,8 @@ from SatsDecoder.systems.image_receiver import ImageReceiver
 
 __all__ = 'GeoscanProtocol',
 
+proto_name = 'geoscan'
+
 # GEOSCAN Telemetry Protocol
 # https://download.geoscan.aero/site-files/%D0%9F%D1%80%D0%BE%D1%82%D0%BE%D0%BA%D0%BE%D0%BB%20%D0%BF%D0%B5%D1%80%D0%B5%D0%B4%D0%B0%D1%87%D0%B8%20%D1%82%D0%B5%D0%BB%D0%B5%D0%BC%D0%B5%D1%82%D1%80%D0%B8%D0%B8.pdf
 # (https://download.geoscan.aero/site-files/Протокол передачи телеметрии.pdf)

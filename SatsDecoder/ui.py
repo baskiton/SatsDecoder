@@ -29,7 +29,7 @@ import PIL.Image
 import PIL.ImageFile
 import PIL.ImageTk
 
-from SatsDecoder import AGWPE_CON, PROTOCOLS, RES, systems, utils
+from SatsDecoder import AGWPE_CON, RES, systems, utils
 from SatsDecoder.version import __version__
 
 
@@ -297,11 +297,6 @@ class DataViewFrame(ttk.LabelFrame):
 
 class DecoderFrame(ttk.Frame):
     STOP_EVT = '<<STOP>>'
-    decoders = {
-        'geoscan': systems.GeoscanProtocol,
-        'usp': systems.UspProtocol,
-        'sonate-2': systems.SonateProtocol,
-    }
 
     def __init__(self, master, config, proto, name=None):
         super().__init__(master)
@@ -309,7 +304,7 @@ class DecoderFrame(ttk.Frame):
         self.proto = proto
         self.name = name or proto
         self.sk = self.thr = self.frame_off = 0
-        self.decoder = self.decoders[proto](self.config.get(proto, 'outdir'))
+        self.decoder = systems.PROTOCOLS[proto](self.config.get(proto, 'outdir'))
 
         self.grid(column=0, row=0, sticky=tk.NSEW)
         self.columnconfigure(1, weight=1)
@@ -581,7 +576,7 @@ class App(ttk.Frame):
         self.notebook.rowconfigure(0, weight=1)
 
         self.tabs = {}
-        for proto in PROTOCOLS:
+        for proto in systems.PROTOCOLS:
             f = DecoderFrame(self.notebook, config, proto)
             self.notebook.add(f, text=proto)
             self.tabs[f.name] = f

@@ -17,6 +17,8 @@ from SatsDecoder import utils
 
 __all__ = 'Ax25Protocol',
 
+proto_name = 'ax25'
+
 
 class CallsignAdapter(construct.Adapter):
     def _encode(self, obj, context, path=None):
@@ -64,9 +66,6 @@ def get_callsign(ax25_hdr, idx):
 
 
 def get_sender_callsign(ax25_hdr):
-    if ax25_hdr:
-        x = ax25_hdr.addresses[1]
-        return '%s-%s' % (x.callsign, x.ssid.ssid)
     return get_callsign(ax25_hdr, 1)
 
 

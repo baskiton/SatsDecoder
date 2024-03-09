@@ -14,6 +14,8 @@ from SatsDecoder.systems.image_receiver import ImageReceiver
 
 __all__ = 'UspProtocol',
 
+proto_name = 'usp'
+
 
 Addr = construct.Hex(construct.Int16ul)
 RegTemp = common.LinearAdapter(100, construct.Int16sl)

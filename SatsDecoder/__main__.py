@@ -7,7 +7,8 @@
 
 import configparser
 
-from SatsDecoder import CONFIG, HOMEDIR, PROTOCOLS, ui
+from SatsDecoder import CONFIG, HOMEDIR, ui
+from SatsDecoder.systems import PROTOCOLS
 from SatsDecoder.version import __version__
 
 
