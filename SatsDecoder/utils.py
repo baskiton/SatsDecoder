@@ -13,7 +13,9 @@ from tkinter import ttk, font
 
 class Dict(dict):
     def __getattr__(self, name):
-        return super().__getattr__(name) if name.startswith('__') else self[name]
+        if name.startswith('__') or name not in self:
+            return super().__getattr__(name)
+        return self[name]
 
     def __setattr__(self, name, value):
         if name.startswith('__'):
