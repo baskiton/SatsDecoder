@@ -8,7 +8,7 @@
 import sys
 import tkinter as tk
 
-from tkinter import ttk, font
+from tkinter import ttk, font, messagebox
 
 
 class Dict(dict):
@@ -112,6 +112,135 @@ class TlmCommonFrame(ttk.Frame):
         table.hsb.grid(column=0, row=1, sticky=tk.NSEW)
 
         self.tlm_name_l.config(text=filename)
+
+
+class DynamicNotebook(ttk.Notebook):
+    """
+    A ttk Notebook with close buttons on each tab and `new` button to create tabs,
+    also reorder tabs by drag & drop
+    From: https://stackoverflow.com/a/39459376
+          https://stackoverflow.com/a/71861284
+          https://stackoverflow.com/a/69224344
+
+    """
+
+    __initialized = 0
+
+    def __init__(self, master, new_tab_fn, **kw):
+        if not self.__initialized:
+            self.__initialize_style()
+            self.__inititialized = 1
+
+        kw['style'] = 'DynamicNotebook'
+        ttk.Notebook.__init__(self, master, **kw)
+        self._create_new_tab = new_tab_fn
+
+        self._active = None
+
+        self.add(ttk.Frame(), text='+')
+
+        self.bind('<ButtonPress-1>', self._press_action, '+')
+        self.bind('<ButtonPress-2>', self._press_action, '+')
+        self.bind('<ButtonRelease-1>', self._release_action)
+        self.bind('<ButtonRelease-2>', self._release_action)
+        self.bind('<<NotebookTabChanged>>', self._tab_action)
+        self.bind('<B1-Motion>', self._reorder)
+
+    def add(self, child, **kw):
+        idx = len(self.tabs())
+        if idx:
+            return self.insert(idx - 1, child, **kw)
+        return super().add(child, **kw)
+
+    def _press_action(self, evt=None):
+        """Called when the button is pressed over the close button"""
+
+        _id = self.identify(evt.x, evt.y)
+        if _id and len(self.tabs()) == 1 and evt.num == 1:
+            self._tab_action()
+
+        elif (evt.num == 2 and _id) or 'close' in _id:
+            index = self.index('@%d,%d' % (evt.x, evt.y))
+            self.state(['pressed'])
+            self._active = index
+            return 'break'
+
+
+    def _release_action(self, evt=None):
+        """Called when the button is released"""
+        if not self.instate(['pressed']):
+            return
+
+        _id = self.identify(evt.x, evt.y)
+        if not ((evt.num == 2 and _id) or 'close' in _id):
+            # user moved the mouse off of the close button
+            self.state(['!pressed'])
+            return
+
+        clo_idx = self.index('@%d,%d' % (evt.x, evt.y))
+        if (clo_idx != len(self.tabs()) - 1
+                and self._active == clo_idx
+                and messagebox.askyesno('Close tab?', 'Are you sure you want to close the tab?')):
+            cur_idx = self.tabs().index(self._last_selected)
+            if clo_idx == cur_idx and cur_idx == len(self.tabs()) - 2:
+                if cur_idx:
+                    cur_idx -= 1
+                self.select(cur_idx)
+            self.forget(clo_idx)
+            self.event_generate('<<NotebookTabClosed>>')
+
+        self.state(['!pressed'])
+        self._active = None
+
+    def _tab_action(self, evt=None):
+        self._last_selected = self.select()
+        if self._last_selected == self.tabs()[-1]:
+            index = len(self.tabs()) - 1
+            x = self._create_new_tab()
+            if not x:
+                return
+            frame, name = x
+            self.insert(index, frame, text=name)
+            self.select(index)
+
+    def _reorder(self, evt=None):
+        try:
+            self.insert(self.index(f'@{evt.x},{evt.y}'), child=self.select())
+        except tk.TclError:
+            pass
+
+    @classmethod
+    def __initialize_style(cls):
+        style = ttk.Style()
+        cls._images = (
+            # normal
+            tk.PhotoImage(data='R0lGODlhCAAIAMIAAAAAADs7O4+Pj9nZ2QAAAAAAAAAAAAAAACH5BAEKAAQALAAAAAAIAAgAAAMV'
+                               'GDBEA0qNJyGw7AmxmuaZhWEU5kEJADs='),
+            # pressed
+            tk.PhotoImage(data='R0lGODlhCAAIAMIAAAAAADs7O4+Pj9nZ2QAAAAAAAAAAAAAAACH5BAEKAAMALAAAAAAIAAgAAAMU'
+                               'GCAzAkqJJyGwjMqml7MYRmEclAAAOw=='),
+            # active
+            # tk.PhotoImage(data='R0lGODlhCAAIAMIAAAAAAP/SAP/bNNnZ2QAAAAAAAAAAAAAAACH5BAEKAAQALAAAAAAIAAgAAAMV'
+            #                    'GDBEA0qNJyGw7AmxmuaZhWEU5kEJADs='),
+        )
+
+        style.element_create('close', 'image', cls._images[0],
+                             ('active', 'pressed', '!disabled', cls._images[1]),
+                             # ('active', '!disabled', self.images[2]),
+                             border=8, sticky='')
+        style.layout('DynamicNotebook', [('DynamicNotebook.client', dict(sticky=tk.NSEW))])
+        style.layout('DynamicNotebook.Tab', [
+            ('DynamicNotebook.tab', dict(
+                sticky=tk.NSEW, children=[
+                    ('DynamicNotebook.padding', dict(side=tk.TOP, sticky=tk.NSEW, children=[
+                        ('DynamicNotebook.focus', dict(side=tk.TOP, sticky=tk.NSEW, children=[
+                            ('DynamicNotebook.label', dict(side=tk.LEFT, sticky='')),
+                            ('DynamicNotebook.close', dict(side=tk.LEFT, sticky='')),
+                        ]))
+                    ]))
+                ]
+            ))
+        ])
 
 
 def bytes2hex(data):

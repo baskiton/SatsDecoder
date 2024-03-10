@@ -29,11 +29,84 @@ import PIL.Image
 import PIL.ImageFile
 import PIL.ImageTk
 
-from SatsDecoder import AGWPE_CON, RES, systems, utils
+from SatsDecoder import AGWPE_CON, HOMEDIR, RES, systems, utils
 from SatsDecoder.version import __version__
 
 
 PIL.ImageFile.LOAD_TRUNCATED_IMAGES = 1
+
+
+class NewTabDialog(tk.Toplevel):
+    default_config = {
+        'ip': '127.0.0.1',
+        'port': 8000,
+        'connmode': 0,
+        'merge mode': 0,
+    }
+
+    def __init__(self, master, existing_names):
+        super().__init__(master)
+        self.transient(master)
+        self.focus_set()
+        self.wait_visibility()
+        self.grab_set()
+        self.resizable(width=False, height=False)
+        self.title('Select New Decoder')
+
+        self.cfg = self.default_config.copy()
+        self.existing_names = existing_names
+
+        self.opt_frame = ttk.Frame(self, padding=(3, 3, 3, 3))
+        self.opt_frame.grid(column=0, row=0, sticky=tk.NSEW, padx=2, pady=2)
+
+        ttk.Label(self.opt_frame, text='Protocol:').grid(column=0, row=0, sticky=tk.E, pady=3)
+        self.proto = ttk.Combobox(self.opt_frame, state='readonly', values=tuple(systems.PROTOCOLS.keys()))
+        self.proto.current(0)
+        self.proto.grid(column=1, row=0, sticky=tk.EW, pady=3)
+
+        ttk.Label(self.opt_frame, text='Name:').grid(column=0, row=1, sticky=tk.E, pady=3)
+        self.name_v = tk.StringVar(self.opt_frame)
+        self.name = ttk.Entry(self.opt_frame, textvariable=self.name_v)
+        self.name.grid(column=1, row=1, sticky=tk.EW, pady=3)
+
+        self.update()
+
+        self.btns_frame = ttk.Frame(self.opt_frame)
+        self.btns_frame.grid(column=0, row=2, columnspan=2, sticky=tk.EW)
+        self.btns_frame.columnconfigure((0, 1), weight=1)
+
+        self.ok_btn = ttk.Button(self.btns_frame, text='Ok', command=self.ok)
+        self.ok_btn.grid(column=0, row=0, pady=3)
+
+        self.cancel_btn = ttk.Button(self.btns_frame, text='Cancel', command=self.exit)
+        self.cancel_btn.grid(column=1, row=0, pady=3)
+
+        self.update()
+
+    def get_name(self):
+        return self.name_v.get()
+
+    def ok(self):
+        name = self.get_name()
+        if not name:
+            messagebox.showerror(message='The "Name" field cannot be empty')
+            return
+        if name in self.existing_names:
+            messagebox.showerror(message='This Name already exists')
+            return
+        if name in ('+',):  # invalid names
+            messagebox.showerror(message='Invalid name')
+            return
+
+        self.cfg['proto'] = self.proto.get()
+        self.cfg['outdir'] = str(HOMEDIR / name)
+        self.exit(1)
+
+    def exit(self, ok=0):
+        self.grab_release()
+        self.destroy()
+        if not ok:
+            self.cfg = {}
 
 
 class HistoryFrame(ttk.LabelFrame):
@@ -298,13 +371,13 @@ class DataViewFrame(ttk.LabelFrame):
 class DecoderFrame(ttk.Frame):
     STOP_EVT = '<<STOP>>'
 
-    def __init__(self, master, config, proto, name=None):
+    def __init__(self, master, config, name):
         super().__init__(master)
         self.config = config
-        self.proto = proto
-        self.name = name or proto
+        self.proto = config.get('proto', name)
+        self.name = name
         self.sk = self.thr = self.frame_off = 0
-        self.decoder = systems.PROTOCOLS[proto](self.config.get(proto, 'outdir'))
+        self.decoder = systems.PROTOCOLS[self.proto](config.get('outdir'))
 
         self.grid(column=0, row=0, sticky=tk.NSEW)
         self.columnconfigure(1, weight=1)
@@ -312,20 +385,20 @@ class DecoderFrame(ttk.Frame):
         self.rowconfigure(1, weight=1)
 
         # ctrl frame
-        self.ctrl_frame = ttk.LabelFrame(self, text='Options', padding=(3, 3, 3, 3))
+        self.ctrl_frame = ttk.LabelFrame(self, text='%s' % self.proto.upper(), padding=(3, 3, 3, 3))
         self.ctrl_frame.grid(column=0, row=0, sticky=tk.NSEW, padx=2, pady=2)
         self.ctrl_frame.columnconfigure(1, weight=1)
         self.ctrl_frame.columnconfigure(4, weight=1)
 
-        self.out_dir_v = tk.StringVar(self.ctrl_frame, self.config.get(proto, 'outdir'))
+        self.out_dir_v = tk.StringVar(self.ctrl_frame, config.get('outdir'))
         self.out_dir_e = ttk.Entry(self.ctrl_frame, textvariable=self.out_dir_v, state=tk.NORMAL)
         self.out_dir_e.grid(column=0, columnspan=4, row=0, sticky=tk.EW, pady=3)
 
         self.out_dir_btn = ttk.Button(self.ctrl_frame, text='Out Dir', command=self.set_out_dir)
         self.out_dir_btn.grid(column=4, row=0, sticky=tk.EW, pady=3, padx=3)
 
-        self.server_v = tk.StringVar(self.ctrl_frame, self.config.get(proto, 'ip'))
-        self.port_v = tk.StringVar(self.ctrl_frame, self.config.get(proto, 'port'))
+        self.server_v = tk.StringVar(self.ctrl_frame, config.get('ip'))
+        self.port_v = tk.StringVar(self.ctrl_frame, config.get('port'))
 
         ttk.Label(self.ctrl_frame, text='Address:').grid(column=0, row=1, sticky=tk.E, pady=3)
         self.server_e = ttk.Entry(self.ctrl_frame, textvariable=self.server_v)
@@ -341,11 +414,11 @@ class DecoderFrame(ttk.Frame):
         ttk.Label(self.ctrl_frame, text='Conn:').grid(column=0, row=2, sticky=tk.E, pady=3)
         self.conn_mode = ttk.Combobox(self.ctrl_frame, values=('AGWPE Client', 'TCP Client', 'TCP Server'), state='readonly')
         self.conn_mode.bind('<<ComboboxSelected>>', self.named_conn_btn)
-        self.conn_mode.current(self.config.getint(proto, 'connmode'))
+        self.conn_mode.current(int(config.get('connmode')))
         self.named_conn_btn()
         self.conn_mode.grid(column=1, row=2, sticky=tk.EW, pady=3)
 
-        self.merge_mode_v = tk.IntVar(self.ctrl_frame, self.config.getboolean(proto, 'merge mode'))
+        self.merge_mode_v = tk.IntVar(self.ctrl_frame, int(config.get('merge mode')))
         self.merge_mode_ckb = ttk.Checkbutton(self.ctrl_frame, text='Merge mode',
                                               variable=self.merge_mode_v, command=self.set_merge_mode)
         self.merge_mode_ckb.grid(column=2, columnspan=2, row=2, sticky=tk.EW, pady=3)
@@ -552,8 +625,8 @@ class App(ttk.Frame):
 
         self.config = config
 
-        if self.config.has_option('main', 'pos'):
-            self.master.geometry(self.config.get('main', 'pos'))
+        if config.has_option('main', 'pos'):
+            self.master.geometry(config.get('main', 'pos'))
 
         self.master.protocol("WM_DELETE_WINDOW", self.exit)
         self.master.option_add('*tearOff', tk.FALSE)
@@ -570,33 +643,69 @@ class App(ttk.Frame):
         self.master.bind('<F1>', self.about)
 
         # Notebook frame
-        self.notebook = ttk.Notebook(self)
+        # self.notebook = ttk.Notebook(self)
+        self.notebook = utils.DynamicNotebook(self, self.create_new_tab)
         self.notebook.grid(column=0, row=0, sticky=tk.NSEW)
         self.notebook.columnconfigure(0, weight=1)
         self.notebook.rowconfigure(0, weight=1)
 
         self.tabs = {}
-        for proto in systems.PROTOCOLS:
-            f = DecoderFrame(self.notebook, config, proto)
-            self.notebook.add(f, text=proto)
+
+        x = dict(config.items())
+        for s in config.default_section, 'main', 'info':
+            x.pop(s)
+
+        for name, cfg in x.items():
+            f = DecoderFrame(self.notebook, cfg, name)
+            self.notebook.add(f, text=name)
             self.tabs[f.name] = f
+
+        self.notebook.select(0)
+        self.notebook.bind('<<NotebookTabClosed>>', self.close_tab)
 
         #####
         self.update()
         self.master.minsize(600, 400)
 
+    def close_tab(self, evt=None):
+        tabs = {str(df): (n, df) for n, df in self.tabs.items()}
+        dels = set(tabs) - set(self.notebook.tabs())
+        for i in dels:
+            n, df = tabs[i]
+            self.close_df(n, df)
+            self.tabs.pop(n, 0)
+            self.config.remove_section(n)
+
+    def create_new_tab(self):
+        w = NewTabDialog(self, self.tabs)
+        self.wait_window(w)
+
+        if not w.cfg:
+            return
+
+        f = DecoderFrame(self.notebook, w.cfg, w.get_name())
+        self.tabs[f.name] = f
+        return f, f.name
+
     def exit(self, evt=None):
         for name, df in self.tabs.items():
-            df.stop()
-            self.config.set(name, 'ip', df.server_v.get())
-            self.config.set(name, 'port', df.port_v.get())
-            self.config.set(name, 'outdir', df.out_dir_v.get())
-            self.config.set(name, 'merge mode', str(df.merge_mode_v.get()))
-            self.config.set(name, 'connmode', str(df.conn_mode.current()))
+            self.close_df(name, df)
 
         self.config.set('main', 'pos', self.master.winfo_geometry())
         self.config.set('info', 'version', __version__)
         self.quit()
+
+    def close_df(self, name, df):
+        df.stop()
+        if not self.config.has_section(name):
+            self.config.add_section(name)
+
+        self.config.set(name, 'proto', df.proto)
+        self.config.set(name, 'ip', df.server_v.get())
+        self.config.set(name, 'port', df.port_v.get())
+        self.config.set(name, 'outdir', df.out_dir_v.get())
+        self.config.set(name, 'merge mode', str(df.merge_mode_v.get()))
+        self.config.set(name, 'connmode', str(df.conn_mode.current()))
 
     def about(self, evt=None):
         seq = queue.Queue(5)
@@ -641,6 +750,7 @@ class App(ttk.Frame):
         about = tk.Toplevel(self)
         about.transient(self)
         about.focus_set()
+        about.wait_visibility()
         about.grab_set()
         about.resizable(width=False, height=False)
         about.title('About')

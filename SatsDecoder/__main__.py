@@ -7,8 +7,7 @@
 
 import configparser
 
-from SatsDecoder import CONFIG, HOMEDIR, ui
-from SatsDecoder.systems import PROTOCOLS
+from SatsDecoder import CONFIG, ui
 from SatsDecoder.version import __version__
 
 
@@ -16,12 +15,6 @@ if __name__ == '__main__':
     cp = configparser.ConfigParser()
     d = {'main': {},
          'info': {'version': __version__}}
-    for proto in PROTOCOLS:
-        d[proto] = {'ip': '127.0.0.1',
-                    'port': '8000',
-                    'connmode': '0',
-                    'merge mode': 'off',
-                    'outdir': str(HOMEDIR / proto)}
     cp.read_dict(d)
     cp.read(CONFIG)
 
