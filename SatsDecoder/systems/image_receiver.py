@@ -13,9 +13,11 @@ import threading
 class Image:
     BASE_OFFSET = 0     # old 4     # old 16384     # old 32768
 
-    def __init__(self, fn):
+    def __init__(self, fn, date=0):
         self.fn = fn
         self.f = None
+        self.packets = 0
+        self.date = date
         self.base_offset = self.BASE_OFFSET
         self.first_data_offset = math.inf
         self.has_starter = self.has_soi = 0
@@ -72,6 +74,15 @@ class Image:
             f.truncate()
             f.flush()
 
+    def shift_image(self, n):
+        f = self.open()
+        data = f.read()
+        f.seek(0)
+        f.truncate()
+        f.seek(n)
+        f.write(data)
+        f.flush()
+
 
 class ImageReceiver:
     def __init__(self, outdir, suff=None):
@@ -81,6 +92,7 @@ class ImageReceiver:
         self.images = {}
         self.merge_mode = 0
         self.current_fid = None
+        self.last_date = 0
 
     @property
     def cur_img(self):
@@ -111,11 +123,11 @@ class ImageReceiver:
         if self.suff:
             fn = fn.with_suffix(self.suff)
 
-        img = self.images.get(fid)
-        if img:
-            img.close()
+        # img = self.images.get(fid)
+        # if img:
+        #     img.close()
 
-        img = Image(fn)
+        img = Image(fn, self.last_date)
         self.images[fid] = img
         return img
 

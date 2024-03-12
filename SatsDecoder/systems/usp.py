@@ -1434,6 +1434,7 @@ class UspImageReceiver(ImageReceiver):
 
     def generate_fid(self, fname='unknown'):
         if not (self.current_fid and self.merge_mode):
+            self.last_date = dt.datetime.now()
             self.current_fid = fname
         return self.current_fid
 

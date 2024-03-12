@@ -162,8 +162,9 @@ class GeoscanImageReceiver(ImageReceiver):
 
     def generate_fid(self, marker=None):
         if not (self.current_fid and self.merge_mode):
+            self.last_date = now = dt.datetime.now()
             pfx = get_marker_name(marker).split('-')[0]
-            self.current_fid = f'{pfx.upper()}_{dt.datetime.now()}'.replace(' ', '_').replace(':', '-')
+            self.current_fid = f'{pfx.upper()}_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
         return self.current_fid
 
     def force_new(self, *args, **kwargs):
@@ -290,7 +291,7 @@ class GeoscanProtocol:
     def get_sender_callsign(data):
         return ax25.get_sender_callsign(data.ax25)
 
-    def recognize(self, data: bytes):
+    def recognize(self, data):
         while data:
             raw_packet, data = data[:self.PACKETSIZE], data[self.PACKETSIZE:]
             tlm = geoscan.parse(raw_packet)

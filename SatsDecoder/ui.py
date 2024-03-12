@@ -596,6 +596,7 @@ class DecoderFrame(ttk.Frame):
                     ir_ret, img = packet
                     self.dv_frame.set_img(img)
                     args = args[:-1] + (img,)
+                    date = img.date
 
                 elif ty == 'tlm':
                     packet, tlm = packet
