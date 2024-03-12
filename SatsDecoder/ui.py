@@ -254,7 +254,7 @@ class CanvasFrame(ttk.Frame):
 
         i = 0
         try:
-            i = PIL.Image.open(img.f)
+            i = PIL.Image.open(img.open())
             if i.size != self.canvas_sz:
                 self.canvas.config(width=i.width, height=i.height)
                 self.canvas_sz = i.size
