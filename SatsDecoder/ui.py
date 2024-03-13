@@ -373,7 +373,11 @@ class DecoderFrame(ttk.Frame):
 
     def __init__(self, master, config, name):
         super().__init__(master)
-        self.config = config
+
+        x = NewTabDialog.default_config.copy()
+        x.update(config)
+
+        self.config = config = x
         self.proto = config.get('proto', name)
         self.name = name
         self.sk = self.thr = self.frame_off = 0
