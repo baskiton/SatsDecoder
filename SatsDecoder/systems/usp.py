@@ -1039,7 +1039,7 @@ tm_adcs_beacon_old = construct.Struct(
     '_name' / construct.Computed('tm_adcs_beacon_old'),
     'name' / construct.Computed('TM ADCS beacon old'),
     'desc' / construct.Computed('TM ADCS beacon old'),
-    'Time' / common.UNIXTimestampAdapter(construct.Int64sl),  # Value
+    'Time' / common.UNIXTimestampUsAdapter(construct.Int64sl),  # Value
     'eci_quat_w' / construct.Float32l,  # Value
     'eci_quat_vect_x' / construct.Float32l,  # Value
     'eci_quat_vect_y' / construct.Float32l,  # Value
@@ -1048,7 +1048,7 @@ tm_adcs_beacon_old = construct.Struct(
     'eci_ave_y' / construct.Float32l,  # Value
     'eci_ave_z' / construct.Float32l,  # Value
     'flags0' / tm_adcs_beacon_old_flags0,
-    'orb_time' / common.UNIXTimestampAdapter(construct.Int64sl),  # Value
+    'orb_time' / common.UNIXTimestampUsAdapter(construct.Int64sl),  # Value
     'orb_quat_w' / construct.Float32l,  # Value
     'orb_quat_vect_x' / construct.Float32l,  # Value
     'orb_quat_vect_y' / construct.Float32l,  # Value
@@ -1057,7 +1057,7 @@ tm_adcs_beacon_old = construct.Struct(
     'orb_ave_y' / construct.Float32l,  # Value
     'orb_ave_z' / construct.Float32l,  # Value
     'flags1' / tm_adcs_beacon_old_flags1,
-    'forced_time' / common.UNIXTimestampAdapter(construct.Int64sl),  # Value
+    'forced_time' / common.UNIXTimestampUsAdapter(construct.Int64sl),  # Value
     'forced_quat_w' / construct.Float32l,  # Value
     'forced_quat_vect_x' / construct.Float32l,  # Value
     'forced_quat_vect_y' / construct.Float32l,  # Value
@@ -1113,7 +1113,7 @@ tm_adcs_beacon = construct.Struct(
     '_name' / construct.Computed('tm_adcs_beacon'),
     'name' / construct.Computed('TM ADCS beacon'),
     'desc' / construct.Computed('TM ADCS beacon'),
-    'Time' / common.UNIXTimestampAdapter(construct.Int64sl),  # Current system time.
+    'Time' / common.UNIXTimestampUsAdapter(construct.Int64sl),  # Current system time.
     'uptime' / common.TimeDeltaAdapter(construct.Int32ul),  # Time from last reboot, [sec].
     'eci_quat_w' / construct.Float32l,  # Value
     'eci_quat_vect_x' / construct.Float32l,  # Value
@@ -1177,7 +1177,7 @@ tm_adcs_beacon_6_wheels = construct.Struct(
     '_name' / construct.Computed('tm_adcs_beacon_6_wheels'),
     'name' / construct.Computed('TM ADCS beacon 6 wheels'),
     'desc' / construct.Computed('TM ADCS beacon 6 wheels'),
-    'Time' / common.UNIXTimestampAdapter(construct.Int64sl),  # Current system time.
+    'Time' / common.UNIXTimestampUsAdapter(construct.Int64sl),  # Current system time.
     'uptime' / common.TimeDeltaAdapter(construct.Int32ul),  # Time from last reboot, [sec].
     'eci_quat_w' / construct.Float32l,  # Value
     'eci_quat_vect_x' / construct.Float32l,  # Value

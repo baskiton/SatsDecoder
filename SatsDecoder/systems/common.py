@@ -21,6 +21,14 @@ class UNIXTimestampAdapter(construct.Adapter):
         return dt.datetime.utcfromtimestamp(obj)
 
 
+class UNIXTimestampUsAdapter(construct.Adapter):
+    def _encode(self, obj, context, path=None):
+        return round(obj.timestamp() * 1000000)
+
+    def _decode(self, obj, context, path=None):
+        return dt.datetime.utcfromtimestamp(obj / 1000000)
+
+
 class TimeDeltaAdapter(construct.Adapter):
     def _encode(self, obj, context, path=None):
         return round(obj.total_seconds())
