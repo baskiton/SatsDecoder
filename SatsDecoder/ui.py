@@ -514,6 +514,7 @@ class DecoderFrame(ttk.Frame):
 
     def _start(self):
         self.is_server = self.conn_mode.current() == 2
+        self.is_raw_tcp = 1
         try:
             self.frame_off = 0
             s = sk.socket(sk.AF_INET, sk.SOCK_STREAM)
@@ -525,6 +526,7 @@ class DecoderFrame(ttk.Frame):
             else:
                 s.connect((self.server_v.get(), int(self.port_v.get())))
                 if self.conn_mode.current() == 0:
+                    self.is_raw_tcp = 0
                     self.frame_off = 37
                     s.send(AGWPE_CON)
 
@@ -588,12 +590,30 @@ class DecoderFrame(ttk.Frame):
         if self.sk:
             self.event_generate(self.STOP_EVT, when='tail')
 
+    @staticmethod
+    def _recvall(conn, n):
+        ret = bytearray()
+        while len(ret) < n:
+            x = conn.recv(n - len(ret))
+            if not x:
+                return b''
+            ret.extend(x)
+        return ret
+
     def _receive(self, conn):
         try:
-            frame = conn.recv(4096)
+            if not self.is_raw_tcp:
+                frame = conn.recv(4096)
+            else:
+                frame_sz = frame = self._recvall(conn, 4)
+                if frame_sz:
+                    frame_sz, = struct.unpack('!I', frame_sz)
+                    frame = self._recvall(conn, frame_sz)
         except AttributeError:
             return 1
         except OSError as e:
+            if e.errno == errno.EAGAIN:
+                return
             if e.errno != errno.EBADF and conn.fileno() != -1:
                 messagebox.showerror(message='%s: %s (%s)' % (self.name, e, conn))
             return 1
