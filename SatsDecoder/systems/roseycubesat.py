@@ -85,6 +85,7 @@ class RoseyImageReceiver(ImageReceiver):
             decoder_name='raw',
             args=('L',),
         )
+        img.first_data_offset = 0
         return img
 
     def push_data(self, data):
