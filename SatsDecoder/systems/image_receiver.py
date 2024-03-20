@@ -22,6 +22,8 @@ class Image:
         self.first_data_offset = math.inf
         self.has_starter = self.has_soi = 0
         self.lock = threading.Lock()
+        self.mode = 'file'
+        self.mode_kw = {}
         self.open()
 
     def open(self):

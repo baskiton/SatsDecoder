@@ -9,6 +9,7 @@ import sys
 
 from SatsDecoder.systems.ax25 import *
 from SatsDecoder.systems.geoscan import *
+from SatsDecoder.systems.roseycubesat import *
 from SatsDecoder.systems.sharjahsat import *
 from SatsDecoder.systems.sonate2 import *
 from SatsDecoder.systems.usp import *
@@ -20,6 +21,7 @@ for i in (
         'sonate2',
         'ax25',
         'sharjahsat',
+        'roseycubesat',
         ):
     m = getattr(sys.modules['SatsDecoder.systems'], i)
     for n in dir(m):

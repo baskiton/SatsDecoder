@@ -14,6 +14,7 @@ import pathlib
 import re
 import select
 import socket as sk
+import struct
 import threading
 import tkinter as tk
 import urllib
@@ -254,7 +255,20 @@ class CanvasFrame(ttk.Frame):
 
         i = 0
         try:
-            i = PIL.Image.open(img.open())
+            with img.lock:
+                f = img.open()
+                if img.mode == 'file':
+                    i = PIL.Image.open(f)
+                elif img.mode == 'bytes':
+                    kw = img.mode_kw
+                    f.seek(0, 0)
+                    i = PIL.Image.frombytes(
+                        kw['mode'],
+                        kw['size'],
+                        f.read(),
+                        kw['decoder_name'],
+                        *kw['args'],
+                    )
             if i.size != self.canvas_sz:
                 self.canvas.config(width=i.width, height=i.height)
                 self.canvas_sz = i.size
