@@ -112,16 +112,34 @@ class NewTabDialog(tk.Toplevel):
 
 class HistoryFrame(ttk.LabelFrame):
     EVT_SEL = '<<hist.select>>'
+    FILTERS = 'tlm', 'img', 'raw', 'frame'
 
-    def __init__(self, master):
+    def __init__(self, master, config):
         super().__init__(master, text='History', padding=(3, 3, 3, 3))
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
 
-        self.clear_btn = ttk.Button(self, text='clear', command=self.clear)
-        self.clear_btn.grid(sticky=tk.NW)
+        self.ctrl_frame = ttk.Frame(self)
+        self.ctrl_frame.columnconfigure(0, weight=1)
+        self.ctrl_frame.columnconfigure(1, weight=1)
+        self.ctrl_frame.grid(sticky=tk.NSEW)
+
+        self.clear_btn = ttk.Button(self.ctrl_frame, text='clear', command=self.clear)
+        self.clear_btn.grid(sticky=tk.W, column=0, row=0)
+
+        self.filter_btn = ttk.Menubutton(self.ctrl_frame, text='Filter')
+        self.filter_menu = tk.Menu(self.filter_btn, tearoff=0)
+        self.filter_btn.configure(menu=self.filter_menu)
+        self.filter_btn.grid(sticky=tk.E, column=1, row=0)
+        self.filters = {}
+        filters = config.get('filter', ';'.join(self.FILTERS)).split(';')
+        for filt in self.FILTERS:
+            self.filters[filt] = tk.IntVar(self, value=(filt in filters))
+            self.filter_menu.add_checkbutton(label=filt, variable=self.filters[filt],
+                                             onvalue=1, offvalue=0, command=self.apply_filter)
 
         self.vals = {}
+        self.detached_vals = set()
         self.table = ttk.Treeview(self, columns='date type ' + ' '.join(master.decoder.columns),
                                   selectmode='browse', show='tree headings')
         f = utils.tk_nametofont('TkDefaultFont', self.table)
@@ -153,9 +171,23 @@ class HistoryFrame(ttk.LabelFrame):
     def clear(self):
         self.table.delete(*self.table.get_children())
         self.vals.clear()
+        self.detached_vals.clear()
         if self.master.decoder.ir:
             self.master.decoder.ir.clear()
         self.master.event_generate(self.EVT_SEL, when='tail')
+
+    def apply_filter(self):
+        for i, parent, tag in self.detached_vals.copy():
+            if self.filters[tag].get():
+                self.detached_vals.discard(i)
+                self.table.reattach(i, parent, -1)
+
+        for parent in self.table.get_children():
+            for i in self.table.get_children(parent):
+                tag = self.table.item(i)['values'][1]
+                if not self.filters[tag].get():
+                    self.detached_vals.add((i, parent, tag))
+                    self.table.detach(i)
 
     def item_select(self, evt=None):
         self.master.event_generate(self.EVT_SEL, when='tail', x=evt.x, y=evt.y)
@@ -195,8 +227,13 @@ class HistoryFrame(ttk.LabelFrame):
             self.vals[date] = iid
 
         self.vals[iid] = args[len(self.master.decoder.columns):]
-        self.table.selection_set(iid)
-        self.table.see(iid)
+        if self.filters[tag].get():
+            self.table.selection_set(iid)
+            self.table.see(iid)
+        else:
+            self.detached_vals.add((iid, parent_iid, tag))
+            self.table.detach(iid)
+            self.table.update()
 
 
 class CanvasFrame(ttk.Frame):
@@ -445,7 +482,7 @@ class DecoderFrame(ttk.Frame):
         self.new_btn.grid(column=4, row=2, sticky=tk.EW, pady=3, padx=3)
 
         # history frame
-        self.history_frame = HistoryFrame(self)
+        self.history_frame = HistoryFrame(self, config)
         self.history_frame.grid(column=0, row=1, sticky=tk.NSEW, padx=2, pady=2)
         self.bind(self.history_frame.EVT_SEL, self.fill_data)
         self.bind(self.STOP_EVT, self.stop)
@@ -695,7 +732,13 @@ class App(ttk.Frame):
             x.pop(s)
 
         for name, cfg in x.items():
-            f = DecoderFrame(self.notebook, cfg, name)
+            try:
+                f = DecoderFrame(self.notebook, cfg, name)
+            except KeyError:
+                # messagebox.showwarning(message='Unknown proto: `%s`. Skip and delete' % cfg.get('proto'))
+                self.config.remove_section(name)
+                continue
+
             self.notebook.add(f, text=name)
             self.tabs[f.name] = f
 
@@ -745,6 +788,7 @@ class App(ttk.Frame):
         self.config.set(name, 'outdir', df.out_dir_v.get())
         self.config.set(name, 'merge mode', str(df.merge_mode_v.get()))
         self.config.set(name, 'connmode', str(df.conn_mode.current()))
+        self.config.set(name, 'filter', str(';'.join(k for k, v in df.history_frame.filters.items() if v.get())))
 
     def about(self, evt=None):
         seq = queue.Queue(5)
