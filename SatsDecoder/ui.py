@@ -15,6 +15,7 @@ import re
 import select
 import socket as sk
 import struct
+import sys
 import threading
 import tkinter as tk
 import urllib
@@ -631,9 +632,14 @@ class DecoderFrame(ttk.Frame):
     def _recvall(conn, n):
         ret = bytearray()
         while len(ret) < n:
-            x = conn.recv(n - len(ret))
-            if not x:
-                return b''
+            try:
+                x = conn.recv(n - len(ret))
+                if not x:
+                    return b''
+            except OSError as e:
+                if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK, sys.platform == 'win32' and errno.WSAEWOULDBLOCK):
+                    continue
+                raise
             ret.extend(x)
         return ret
 
@@ -649,9 +655,9 @@ class DecoderFrame(ttk.Frame):
         except AttributeError:
             return 1
         except OSError as e:
-            if e.errno == errno.EAGAIN:
+            if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK, sys.platform == 'win32' and errno.WSAEWOULDBLOCK):
                 return
-            if e.errno != errno.EBADF and conn.fileno() != -1:
+            if e.errno not in (errno.EBADF, sys.platform == 'win32' and errno.WSAEBADF) and conn.fileno() != -1:
                 messagebox.showerror(message='%s: %s (%s)' % (self.name, e, conn))
             return 1
 
