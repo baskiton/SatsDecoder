@@ -355,7 +355,7 @@ class DataViewFrame(ttk.LabelFrame):
             if mode == 'RAW':
                 data = utils.bytes2hex(data)
             else:   # ASCII
-                data = data.decode('ascii', 'replace')
+                data = data.decode('ascii', 'replace').replace('\0', '\u25A1')
 
         self.clear()
 

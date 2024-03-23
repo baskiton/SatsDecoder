@@ -8,6 +8,7 @@
 import sys
 
 from SatsDecoder.systems.ax25 import *
+from SatsDecoder.systems.csp import *
 from SatsDecoder.systems.geoscan import *
 from SatsDecoder.systems.roseycubesat import *
 from SatsDecoder.systems.sharjahsat import *
@@ -20,6 +21,8 @@ for i in (
         'usp',
         'sonate2',
         'ax25',
+        'csp',
+        'roseycubesat',
         'sharjahsat',
         'roseycubesat',
         ):
