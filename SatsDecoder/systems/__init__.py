@@ -14,6 +14,7 @@ from SatsDecoder.systems.roseycubesat import *
 from SatsDecoder.systems.sharjahsat import *
 from SatsDecoder.systems.sonate2 import *
 from SatsDecoder.systems.usp import *
+from SatsDecoder.systems.wtc_simba import *
 
 PROTOCOLS = {}
 for i in (
@@ -24,7 +25,7 @@ for i in (
         'csp',
         'roseycubesat',
         'sharjahsat',
-        'roseycubesat',
+        'wtc_simba',
         ):
     m = getattr(sys.modules['SatsDecoder.systems'], i)
     for n in dir(m):
