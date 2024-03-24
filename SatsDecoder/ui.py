@@ -139,6 +139,7 @@ class HistoryFrame(ttk.LabelFrame):
             self.filter_menu.add_checkbutton(label=filt, variable=self.filters[filt],
                                              onvalue=1, offvalue=0, command=self.apply_filter)
 
+        self.order = {}
         self.vals = {}
         self.detached_vals = set()
         self.table = ttk.Treeview(self, columns='date type ' + ' '.join(master.decoder.columns),
@@ -147,7 +148,7 @@ class HistoryFrame(ttk.LabelFrame):
         # self.table.column('#0', anchor='e')
         self.table.column('#0', width=110, stretch=tk.NO)
         self.table.heading('date', text='Date')
-        self.table.column('date', stretch=tk.NO, width=f.measure('88880880880880880880888888'))
+        self.table.column('date', stretch=tk.NO, width=f.measure('8888-88-88 88:88:88.888'))
         self.table.heading('type', text='Type')
         self.table.column('type', stretch=tk.NO, width=f.measure('WWW'))
 
@@ -171,6 +172,7 @@ class HistoryFrame(ttk.LabelFrame):
 
     def clear(self):
         self.table.delete(*self.table.get_children())
+        self.order.clear()
         self.vals.clear()
         self.detached_vals.clear()
         if self.master.decoder.ir:
@@ -178,10 +180,11 @@ class HistoryFrame(ttk.LabelFrame):
         self.master.event_generate(self.EVT_SEL, when='tail')
 
     def apply_filter(self):
+        to_move = set()
         for i, parent, tag in self.detached_vals.copy():
             if self.filters[tag].get():
                 self.detached_vals.discard(i)
-                self.table.reattach(i, parent, -1)
+                to_move.add(i)
 
         for parent in self.table.get_children():
             for i in self.table.get_children(parent):
@@ -189,6 +192,11 @@ class HistoryFrame(ttk.LabelFrame):
                 if not self.filters[tag].get():
                     self.detached_vals.add((i, parent, tag))
                     self.table.detach(i)
+
+        for parent, order in self.order.items():
+            for idx, i in enumerate(order):
+                if i in to_move:
+                    self.table.move(i, parent, idx)
 
     def item_select(self, evt=None):
         self.master.event_generate(self.EVT_SEL, when='tail', x=evt.x, y=evt.y)
@@ -226,6 +234,7 @@ class HistoryFrame(ttk.LabelFrame):
             iid = self.table.insert(parent_iid, 'end', tags=(tag,),
                                     values=[date, tag, *vals])
             self.vals[date] = iid
+            self.order.setdefault(parent_iid, []).append(iid)
 
         self.vals[iid] = args[len(self.master.decoder.columns):]
         if self.filters[tag].get():
