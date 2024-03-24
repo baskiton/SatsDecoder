@@ -26,6 +26,7 @@ import webbrowser
 
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 
+import numpy as np
 import PIL
 import PIL.Image
 import PIL.ImageFile
@@ -250,8 +251,9 @@ class CanvasFrame(ttk.Frame):
     def __init__(self, master):
         super().__init__(master)
         self.rowconfigure(1, weight=1)
-        self.active_img = None
+        self.active_img = self.active_pil_img = None
         self.cnv_img_id = tk.ALL
+        self._imgtk = 0
 
         self.image_starter = ttk.Label(self, text='STARTER', foreground='red')
         self.image_starter.grid(column=0, row=0, sticky=tk.E, padx=0)
@@ -283,10 +285,20 @@ class CanvasFrame(ttk.Frame):
 
         self.canvas_sz = 420, 420
         self.canvas = tk.Canvas(self, width=self.canvas_sz[0], height=self.canvas_sz[1])
-        self.canvas.grid(columnspan=8, sticky=tk.NSEW, pady=3)
+        self.canvas.grid(row=1, columnspan=8, sticky=tk.NSEW, pady=3)
 
-        self.image_name_l = ttk.Label(self)
-        self.image_name_l.grid(columnspan=8, sticky=tk.SW, pady=3)
+        self.tail_frame = ttk.Frame(self)
+        self.tail_frame.columnconfigure(0, weight=1)
+        self.tail_frame.grid(row=2, columnspan=8, sticky=tk.NSEW, pady=3)
+
+        self.image_name_l = ttk.Label(self.tail_frame)
+        self.image_name_l.grid(sticky=tk.SW, row=0, column=0)
+
+        self.demosaic_btn = ttk.Button(self.tail_frame, text='Demosaicing', command=self.demosaicing, state=tk.DISABLED)
+        self.demosaic_btn.grid(row=0, column=1)
+
+        self.save_btn = ttk.Button(self.tail_frame, text='Save as', command=self.save_as)
+        self.save_btn.grid(row=0, column=2)
 
     def fill_canvas(self, img, force=0):
         if not (force or (self.active_img and self.active_img.fn == img.fn)):
@@ -299,8 +311,8 @@ class CanvasFrame(ttk.Frame):
         self.image_offset_v.set(img.base_offset)
         self.first_data_off_v.set(img.first_data_offset)
         self.strip_btn.config(state=img.first_data_offset and tk.NORMAL or tk.DISABLED)
+        self.demosaic_btn.config(state=img.mosaic and tk.NORMAL or tk.DISABLED)
 
-        i = 0
         try:
             with img.lock:
                 f = img.open()
@@ -316,23 +328,12 @@ class CanvasFrame(ttk.Frame):
                         kw['decoder_name'],
                         *kw['args'],
                     )
-            if i.size != self.canvas_sz:
-                self.canvas.config(width=i.width, height=i.height)
-                self.canvas_sz = i.size
-                self.canvas.update()
-                # self.master.minsize(self.winfo_width(), self.winfo_height())
-            _imgtk = PIL.ImageTk.PhotoImage(i)
-            to_del, self.cnv_img_id = self.cnv_img_id, self.canvas.create_image(0, 0, anchor=tk.NW, image=_imgtk)
-            self.canvas.delete(to_del)
-            self._imgtk = _imgtk
+            self.draw_image(i)
 
         except PIL.UnidentifiedImageError:
             self.canvas.delete(tk.ALL)
         except:
             pass
-
-        if i:
-            i.close()
 
     def strip_file(self):
         if self.active_img:
@@ -340,6 +341,43 @@ class CanvasFrame(ttk.Frame):
             self.active_img.rebase_offset()
 
             self.fill_canvas(self.active_img, 1)
+
+    def demosaicing(self):
+        if not self.active_pil_img:
+            return
+
+        method, mode = self.active_img.mosaic.split(';')
+        if method == 'bayer':
+            data = np.array(self.active_pil_img.getdata(), np.uint8)
+            self.draw_image(PIL.Image.fromarray(utils.bayer2rgb(data, mode, *self.active_pil_img.size), 'RGB'))
+
+        self.demosaic_btn.config(state=tk.DISABLED)
+
+    def save_as(self):
+        fn = pathlib.Path(self.active_img.fn)
+        fn = filedialog.asksaveasfilename(
+            defaultextension='.png', confirmoverwrite=True,
+            filetypes=[('Images', ['*.png', '*.jpg']), ('All files', '*.*')],
+            initialdir=fn.parent, initialfile=fn.with_suffix('.png').name)
+        if fn:
+            self.active_pil_img.save(fn)
+
+    def draw_image(self, i):
+        if i.size != self.canvas_sz:
+            self.canvas.config(width=i.width, height=i.height)
+            self.canvas_sz = i.size
+            self.canvas.update()
+            # self.master.minsize(self.winfo_width(), self.winfo_height())
+
+        del self._imgtk
+        _imgtk = PIL.ImageTk.PhotoImage(i)
+        to_del, self.cnv_img_id = self.cnv_img_id, self.canvas.create_image(0, 0, anchor=tk.NW, image=_imgtk)
+        self.canvas.delete(to_del)
+        self._imgtk = _imgtk
+
+        if self.active_pil_img:
+            self.active_pil_img.close()
+        self.active_pil_img = i
 
 
 class DataViewFrame(ttk.LabelFrame):

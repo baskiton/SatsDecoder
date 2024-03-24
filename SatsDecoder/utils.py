@@ -10,6 +10,8 @@ import tkinter as tk
 
 from tkinter import ttk, font, messagebox
 
+import numpy as np
+
 
 class Dict(dict):
     def __getattr__(self, name):
@@ -253,6 +255,74 @@ def tk_nametofont(name, root=None):
     in python<3.10 `root` keyword is not exist
     """
     return font.Font(name=name, exists=True, root=root)
+
+
+def bayer2rgb(data, mode, w, h):
+    in_dtype = data.dtype
+    ow, oh = w // 2, h // 2
+    data = data.reshape((h, w))
+    layers = (
+        data[0::2, 0::2],  # rows 0,2,4,6 columns 0,2,4,6
+        data[0::2, 1::2],  # rows 0,2,4,6 columns 1,3,5,7
+        data[1::2, 0::2],  # rows 1,3,5,7 columns 0,2,4,6
+        data[1::2, 1::2],  # rows 1,3,5,7 columns 1,3,5,7
+    )
+
+    if mode == 'rggb':
+        r, g0, g1, b = layers
+    elif mode == 'gbrg':
+        g0, b, r, g1 = layers
+    elif mode == 'grbg':
+        g0, r, b, g1 = layers
+    elif mode == 'bggr':
+        b, g0, g1, r = layers
+    else:
+        raise ValueError('Invali mode')
+
+    zh = np.full((oh, ow), np.nan, np.float32)
+    zv = np.full((oh, w), np.nan, np.float32)
+
+    if mode == 'rggb':
+        layers = [r, g0, g1, b]
+    elif mode == 'gbrg':
+        layers = [g0, b, r, g1]
+    elif mode == 'grbg':
+        layers = [g0, r, b, g1]
+    elif mode == 'bggr':
+        layers = [b, g0, g1, r]
+
+    x = np.dstack((layers[0], zh)).reshape(layers[0].shape[0], -1)
+    layers[0] = np.stack((x, zv), 1).reshape(-1, x.shape[1])
+
+    x = np.dstack((zh, layers[1])).reshape(layers[1].shape[0], -1)
+    layers[1] = np.stack((x, zv), 1).reshape(-1, x.shape[1])
+
+    x = np.dstack((layers[2], zh)).reshape(layers[2].shape[0], -1)
+    layers[2] = np.stack((zv, x), 1).reshape(-1, x.shape[1])
+
+    x = np.dstack((zh, layers[3])).reshape(layers[3].shape[0], -1)
+    layers[3] = np.stack((zv, x), 1).reshape(-1, x.shape[1])
+
+    zh = np.full((1, w), np.nan, np.float32)
+    zv = np.full((h + 2, 1), np.nan, np.float32)
+    for i, l in enumerate(layers):
+        a = np.hstack((zv, np.vstack((zh, l, zh)), zv))
+        n = a.ndim
+        w = np.lib.stride_tricks.sliding_window_view(a, (3, 3))
+        layers[i] = np.nansum(w, axis=(n, n + 1)) / np.count_nonzero(~np.isnan(w), axis=(n, n + 1))
+
+    if mode == 'rggb':
+        r, g0, g1, b = layers
+    elif mode == 'gbrg':
+        g0, b, r, g1 = layers
+    elif mode == 'grbg':
+        g0, r, b, g1 = layers
+    elif mode == 'bggr':
+        b, g0, g1, r = layers
+
+    g = g0 // 2 + g1 // 2
+
+    return np.dstack((r, g, b)).astype(in_dtype)
 
 
 seqs_map = {

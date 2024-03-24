@@ -21,6 +21,7 @@ class Image:
         self.base_offset = self.BASE_OFFSET
         self.first_data_offset = math.inf
         self.has_starter = self.has_soi = 0
+        self.mosaic = 0
         self.lock = threading.Lock()
         self.mode = 'file'
         self.mode_kw = {}

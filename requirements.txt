@@ -1,2 +1,3 @@
 Pillow
 construct
+numpy

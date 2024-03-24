@@ -66,7 +66,7 @@ class RoseyImageReceiver(ImageReceiver):
     MAX_PACKETS = 2160
 
     def __init__(self, outdir):
-        super().__init__(outdir, '.bin')
+        super().__init__(outdir, '.raw')
         self.prev_off = 0
 
     def generate_fid(self):
@@ -86,6 +86,7 @@ class RoseyImageReceiver(ImageReceiver):
             args=('L',),
         )
         img.first_data_offset = 0
+        img.mosaic = 'bayer;grbg'
         return img
 
     def push_data(self, data):
