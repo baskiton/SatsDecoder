@@ -10,6 +10,7 @@ import sys
 from SatsDecoder.systems.ax25 import *
 from SatsDecoder.systems.csp import *
 from SatsDecoder.systems.geoscan import *
+from SatsDecoder.systems.lucky7 import *
 from SatsDecoder.systems.roseycubesat import *
 from SatsDecoder.systems.sharjahsat import *
 from SatsDecoder.systems.sonate2 import *
@@ -23,6 +24,7 @@ for i in (
         'sonate2',
         'ax25',
         'csp',
+        'lucky7',
         'roseycubesat',
         'sharjahsat',
         'wtc_simba',
