@@ -515,7 +515,7 @@ class DecoderFrame(ttk.Frame):
         self.con_btn.grid(column=4, row=1, sticky=tk.EW, pady=3, padx=3)
 
         ttk.Label(self.ctrl_frame, text='Conn:').grid(column=0, row=2, sticky=tk.E, pady=3)
-        self.conn_mode = ttk.Combobox(self.ctrl_frame, values=('AGWPE Client', 'TCP Client', 'TCP Server'), state='readonly')
+        self.conn_mode = ttk.Combobox(self.ctrl_frame, values=tuple(utils.con_mode_names.values()), state='readonly')
         self.conn_mode.bind('<<ComboboxSelected>>', self.named_conn_btn)
         self.conn_mode.current(int(config.get('connmode')))
         self.named_conn_btn()
@@ -540,12 +540,14 @@ class DecoderFrame(ttk.Frame):
         self.dv_frame.grid(column=1, row=0, rowspan=2, sticky=tk.NSEW, padx=2, pady=2)
 
     def named_conn_btn(self, _=None, **kw):
-        is_server = self.conn_mode.current() == 2
-        if 'd' in kw:
-            txt = is_server and 'Stop' or 'Disonnect'
-        else:
-            txt = is_server and 'Start' or 'Connect'
-        self.con_btn.config(text=txt)
+        m = utils.ConnMode(self.conn_mode.current())
+        d = {
+            utils.ConnMode.AGWPE_CLI: ('Connect', 'Disconnect'),
+            utils.ConnMode.TCP_CLI: ('Connect', 'Disconnect'),
+            utils.ConnMode.TCP_SRV: ('Start', 'Stop'),
+            utils.ConnMode.HEX: ('Run', 'Stop'),
+        }
+        self.con_btn.config(text=d[m]['d' in kw])
 
     def fill_data(self, evt=None):
         x = self.history_frame.get_selected()
@@ -569,7 +571,10 @@ class DecoderFrame(ttk.Frame):
             self.out_dir_v.set(d)
 
     def con(self):
-        self.stop() if self.sk else self._start()
+        if utils.ConnMode(self.conn_mode.current()) == utils.ConnMode.HEX:
+            self._hex_values()
+        else:
+            self.stop() if self.sk else self._start()
 
     def set_merge_mode(self):
         if self.decoder.ir:
@@ -597,8 +602,47 @@ class DecoderFrame(ttk.Frame):
         self.out_dir_btn.config(state=tk.NORMAL)
         self.conn_mode.config(state='readonly')
 
+    def _hex_values(self):
+        ask_hex = tk.Toplevel(self)
+        ask_hex.transient(self)
+        ask_hex.focus_set()
+        ask_hex.wait_visibility()
+        ask_hex.grab_set()
+        ask_hex.title('About')
+
+        def _finish(ok=0):
+            if ok:
+                for line in text_e.get(1.0, 'end').splitlines():
+                    try:
+                        x = bytes.fromhex(line)
+                    except ValueError:
+                        continue
+                    if x and self.feed(x):
+                        break
+
+            ask_hex.grab_release()
+            ask_hex.destroy()
+
+        frame = ttk.Frame(ask_hex)
+        frame.grid(column=0, row=0, sticky=tk.NSEW)
+
+        text_e = tk.Text(frame)
+        text_e.grid(column=0, row=0, sticky=tk.NSEW)
+
+        btns_frame = ttk.Frame(frame, padding=(3, 3, 3, 3))
+        btns_frame.grid(columnspan=2, sticky=tk.EW)
+        btns_frame.columnconfigure((0, 1), weight=1)
+
+        ok_btn = ttk.Button(btns_frame, text='Ok', command=lambda: _finish(1))
+        ok_btn.grid(column=0, row=0)
+
+        cancel_btn = ttk.Button(btns_frame, text='Cancel', command=_finish)
+        cancel_btn.grid(column=1, row=0)
+
+        ask_hex.update()
+
     def _start(self):
-        self.is_server = self.conn_mode.current() == 2
+        self.is_server = utils.ConnMode(self.conn_mode.current()) == utils.ConnMode.TCP_SRV
         self.is_raw_tcp = 1
         try:
             self.frame_off = 0
@@ -610,7 +654,7 @@ class DecoderFrame(ttk.Frame):
 
             else:
                 s.connect((self.server_v.get(), int(self.port_v.get())))
-                if self.conn_mode.current() == 0:
+                if utils.ConnMode(self.conn_mode.current()) == utils.ConnMode.AGWPE_CLI:
                     self.is_raw_tcp = 0
                     self.frame_off = 37
                     s.send(AGWPE_CON)
@@ -713,6 +757,9 @@ class DecoderFrame(ttk.Frame):
                 messagebox.showwarning(message='%s: Connection lost' % self.name)
             return 1
 
+        return self.feed(frame)
+
+    def feed(self, frame):
         try:
             data = frame[self.frame_off:]
             for i in self.decoder.recognize(data):
@@ -742,7 +789,7 @@ class DecoderFrame(ttk.Frame):
 
                 self.history_frame.put(*args, date=date)
         except Exception as e:
-            messagebox.showerror(message='xxx %s: %s' % (self.name, e))
+            messagebox.showerror(message='feed %s: %s' % (self.name, e))
             return 1
 
 

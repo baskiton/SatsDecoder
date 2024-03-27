@@ -5,12 +5,28 @@
 #
 #  SPDX-License-Identifier: MIT
 
+import enum
 import sys
 import tkinter as tk
 
 from tkinter import ttk, font, messagebox
 
 import numpy as np
+
+
+class ConnMode(enum.IntEnum):
+    AGWPE_CLI = 0
+    TCP_CLI = 1
+    TCP_SRV = 2
+    HEX = 3
+
+
+con_mode_names = {
+    ConnMode.AGWPE_CLI: 'AGWPE Client',
+    ConnMode.TCP_CLI: 'TCP Client',
+    ConnMode.TCP_SRV: 'TCP Server',
+    ConnMode.HEX: 'HEX values',
+}
 
 
 class Dict(dict):
