@@ -21,12 +21,12 @@ PROTOCOLS = {}
 for i in (
         'geoscan',
         'usp',
-        'sonate2',
         'ax25',
         'csp',
         'lucky7',
         'roseycubesat',
         'sharjahsat',
+        'sonate2',
         'wtc_simba',
         ):
     m = getattr(sys.modules['SatsDecoder.systems'], i)

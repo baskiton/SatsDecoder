@@ -11,6 +11,8 @@ First, download, setup and run soundmodem
 https://r4uab.ru/settings-soundmodem/  
 * geoscan: [1](https://r4uab.ru/program/modem/geoscan.zip)
 * usp: [1](http://viewnok.sputnix.ru/lib/exe/fetch.php?media=gmskusp.zip), [2](http://uz7.ho.ua/gmskusp.zip)
+* lucky-7: [1](http://uz7.ho.ua/lucky7.zip)
+* other: [1](http://uz7.ho.ua/packetradio.htm)
 
 To start decoding, run SatsDecoder, select protocol tab and press "Connect" button. Play FM demodulated signal
 and wait for result.
@@ -32,6 +34,27 @@ and wait for result.
 The following protocols are currently supported:
 * `GEOSCAN` - [Geoscan platform](https://download.geoscan.aero/site-files/%D0%9F%D1%80%D0%BE%D1%82%D0%BE%D0%BA%D0%BE%D0%BB%20%D0%BF%D0%B5%D1%80%D0%B5%D0%B4%D0%B0%D1%87%D0%B8%20%D1%82%D0%B5%D0%BB%D0%B5%D0%BC%D0%B5%D1%82%D1%80%D0%B8%D0%B8.pdf)
 * `USP` - [Unified SPUTNIX protocol](https://sputnix.ru/tpl/docs/amateurs/%D0%9E%D0%BF%D0%B8%D1%81%D0%B0%D0%BD%D0%B8%D0%B5%20%D0%BF%D1%80%D0%BE%D1%82%D0%BE%D0%BA%D0%BE%D0%BB%D0%B0%20USP%20v1.04.pdf)
+* `AX.25`
+* `CSP` - [Cubesat Space Protocol](https://github.com/libcsp/libcsp)
+* `Lucky-7` - [Lucky-7 Satellite protocol](https://www.lucky7satellite.org/radioamateurs)
+* `RoseyCubeSat`
+* `SharjahSat`
+* `Sonate-2` - [Sonate-2 protocol](https://www.informatik.uni-wuerzburg.de/en/aerospaceinfo/mitarbeiter/kayal/forschungsprojekte/sonate-2/information-for-radio-amateurs/)
+* `WTCSimba` - [WildTrackCube-SIMBA](https://www.s5lab.space/index.php/decoding-simba/)
+
+#### Data Sources
+Various data source types are available in the `Conn` combobox:
+* `AGWPE Client` - to connect to soundmodems
+* `HEX values` - per-line decoding of data transmitted as a HEX string
+* `TCP Client` - TCP socket as client
+* `TCP Server` - TCP socket as server
+  * ATTENTION!!! For TCP types, the data provider ensures that the header is sent before the main data:  
+    ```C
+    struct header {  
+        uint32_t len;  // data length
+    }
+    ```
+    Byte order: Network (big-endian)
 
 ![](doc/Screenshot.jpg)
 

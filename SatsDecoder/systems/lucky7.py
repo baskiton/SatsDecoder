@@ -17,6 +17,11 @@ __all__ = 'Lucky7Protocol',
 
 proto_name = 'lucky-7'
 
+"""
+https://www.lucky7satellite.org/radioamateurs
+https://www.lucky7satellite.org/download/Lucky-7_-_Amateur_Radio_Information.pdf
+"""
+
 ang_rate_enum = construct.Enum(construct.Int16sb, **{'Gyro off': 0x07d1})
 voltage = common.LinearAdapter(50, construct.Int8ub)
 
