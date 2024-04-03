@@ -608,7 +608,7 @@ class DecoderFrame(ttk.Frame):
         ask_hex.focus_set()
         ask_hex.wait_visibility()
         ask_hex.grab_set()
-        ask_hex.title('About')
+        ask_hex.title('HEX')
 
         def _finish(ok=0):
             if ok:
