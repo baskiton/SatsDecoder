@@ -14,6 +14,7 @@ from SatsDecoder.systems.lucky7 import *
 from SatsDecoder.systems.roseycubesat import *
 from SatsDecoder.systems.sharjahsat import *
 from SatsDecoder.systems.sonate2 import *
+from SatsDecoder.systems.starlink_vhf import *
 from SatsDecoder.systems.usp import *
 from SatsDecoder.systems.wtc_simba import *
 
@@ -27,6 +28,7 @@ for i in (
         'roseycubesat',
         'sharjahsat',
         'sonate2',
+        'starlink_vhf',
         'wtc_simba',
         ):
     m = getattr(sys.modules['SatsDecoder.systems'], i)

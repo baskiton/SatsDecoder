@@ -5,6 +5,7 @@
 #
 #  SPDX-License-Identifier: MIT
 
+import datetime as dt
 import enum
 import sys
 import tkinter as tk
@@ -339,6 +340,57 @@ def bayer2rgb(data, mode, w, h):
     g = g0 // 2 + g1 // 2
 
     return np.dstack((r, g, b)).astype(in_dtype)
+
+
+_GPS_BORN = dt.datetime(1980, 1, 6) + dt.timedelta(seconds=19)
+
+def gps_to_utc(week, sec):
+    """
+    https://hpiers.obspm.fr/eop-pc/index.php?index=TAI-UTC_tab&lang=en
+    """
+
+    x = _GPS_BORN + dt.timedelta(weeks=week)
+    # leaked seconds
+    if x < dt.datetime(year=1981, month=7, day=1):
+        sec -= 19
+    elif x < dt.datetime(year=1982, month=7, day=1):
+        sec -= 20
+    elif x < dt.datetime(year=1983, month=7, day=1):
+        sec -= 21
+    elif x < dt.datetime(year=1985, month=7, day=1):
+        sec -= 22
+    elif x < dt.datetime(year=1988, month=1, day=1):
+        sec -= 23
+    elif x < dt.datetime(year=1990, month=1, day=1):
+        sec -= 24
+    elif x < dt.datetime(year=1991, month=1, day=1):
+        sec -= 25
+    elif x < dt.datetime(year=1992, month=7, day=1):
+        sec -= 26
+    elif x < dt.datetime(year=1993, month=7, day=1):
+        sec -= 27
+    elif x < dt.datetime(year=1994, month=7, day=1):
+        sec -= 28
+    elif x < dt.datetime(year=1996, month=1, day=1):
+        sec -= 29
+    elif x < dt.datetime(year=1997, month=7, day=1):
+        sec -= 30
+    elif x < dt.datetime(year=1999, month=1, day=1):
+        sec -= 31
+    elif x < dt.datetime(year=2006, month=1, day=1):
+        sec -= 32
+    elif x < dt.datetime(year=2009, month=1, day=1):
+        sec -= 33
+    elif x < dt.datetime(year=2012, month=7, day=1):
+        sec -= 34
+    elif x < dt.datetime(year=2015, month=7, day=1):
+        sec -= 35
+    elif x < dt.datetime(year=2017, month=1, day=1):
+        sec -= 36
+    else:
+        sec -= 37
+
+    return x + dt.timedelta(seconds=sec)
 
 
 seqs_map = {
