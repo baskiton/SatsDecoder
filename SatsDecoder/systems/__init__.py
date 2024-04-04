@@ -28,7 +28,7 @@ for i in (
         'roseycubesat',
         'sharjahsat',
         'sonate2',
-        'starlink_vhf',
+        # 'starlink_vhf',
         'wtc_simba',
         ):
     m = getattr(sys.modules['SatsDecoder.systems'], i)
