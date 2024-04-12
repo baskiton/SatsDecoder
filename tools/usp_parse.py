@@ -43,6 +43,25 @@ class Packet:
             x = f'construct.BitsInteger({sz})'
         return f'    \'_pad{n}\' / {x},'
 
+    @staticmethod
+    def resort_flags(flags):
+        res = []
+        oct = []
+        last_octet_n = 0
+        for off, v in flags.items():
+            oct_n = off // 8
+            if oct_n != last_octet_n:
+                last_octet_n = oct_n
+                oct.reverse()
+                res += oct
+                oct = []
+            oct.append(v)
+
+        oct.reverse()
+        res += oct
+
+        return res
+
     def generate(self):
         main_lines = [
             f'{self.name} = construct.Struct(',
@@ -51,8 +70,10 @@ class Packet:
             f'    \'desc\' / construct.Computed({self.desc!r}),',
         ]
         flags = []
+        tmp_flags = {}
 
         in_flag = 0
+        flags_start_off = 0
         off_expected = 0
         pad_num = 0
 
@@ -71,20 +92,23 @@ class Packet:
                 if not in_flag:
                     main_lines.append(f'    \'flags{len(flags)}\' / {self.name}_flags{len(flags)},')
                     in_flag = 1
+                    flags_start_off = f.off
                     flags.append([f'{self.name}_flags{len(flags)} = construct.BitStruct('])
+                    tmp_flags = {}
                 if pad:
-                    flags[-1].append(pad)
-                flags[-1].append(line)
+                    tmp_flags[off_expected - flags_start_off] = pad
+                tmp_flags[f.off - flags_start_off] = line
                 if not tab[0].startswith('_'):
                     tlm_table['flags'].append(tab)
 
             else:
                 if in_flag:
-                    in_flag = 0
                     if pad:
-                        flags[-1].append(pad)
+                        tmp_flags[off_expected - flags_start_off] = pad
                         pad = ''
+                    flags[-1] += self.resort_flags(tmp_flags)
                     flags[-1].append(')')
+                    in_flag = 0
                 if pad:
                     main_lines.append(pad)
                 main_lines.append(line)
@@ -95,6 +119,7 @@ class Packet:
 
         if in_flag:
             in_flag = 0
+            flags[-1] += self.resort_flags(tmp_flags)
             flags[-1].append(')')
 
         main_lines.append(')')

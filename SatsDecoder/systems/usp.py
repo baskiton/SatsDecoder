@@ -99,9 +99,9 @@ FILETRANSFER_DATA = 0x0C24
 # tlm
 # 0x000E
 regular_common_flags0 = construct.BitStruct(
-    'current_invalid' / construct.Flag,  # Current invalid
-    'voltage_invalid' / construct.Flag,  # Voltage invalid
     '_reserved' / construct.BitsInteger(6),  # reserved
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    'current_invalid' / construct.Flag,  # Current invalid
 )
 regular_common = construct.Struct(
     '_name' / construct.Computed('regular_common'),
@@ -114,9 +114,9 @@ regular_common = construct.Struct(
 
 # 0x000F
 regular_x_flags0 = construct.BitStruct(
-    'current_invalid' / construct.Flag,  # Current invalid
-    'voltage_invalid' / construct.Flag,  # Voltage invalid
     '_reserved' / construct.BitsInteger(6),  # reserved
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    'current_invalid' / construct.Flag,  # Current invalid
 )
 regular_x = construct.Struct(
     '_name' / construct.Computed('regular_x'),
@@ -129,9 +129,9 @@ regular_x = construct.Struct(
 
 # 0x0010
 regular_y_flags0 = construct.BitStruct(
-    'current_invalid' / construct.Flag,  # Current invalid
-    'voltage_invalid' / construct.Flag,  # Voltage invalid
     '_reserved' / construct.BitsInteger(6),  # reserved
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    'current_invalid' / construct.Flag,  # Current invalid
 )
 regular_y = construct.Struct(
     '_name' / construct.Computed('regular_y'),
@@ -144,9 +144,9 @@ regular_y = construct.Struct(
 
 # 0x0011
 regular_z_flags0 = construct.BitStruct(
-    'current_invalid' / construct.Flag,  # Current invalid
-    'voltage_invalid' / construct.Flag,  # Voltage invalid
     '_reserved' / construct.BitsInteger(6),  # reserved
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    'current_invalid' / construct.Flag,  # Current invalid
 )
 regular_z = construct.Struct(
     '_name' / construct.Computed('regular_z'),
@@ -159,9 +159,9 @@ regular_z = construct.Struct(
 
 # 0x0080
 psu_regular0_flags0 = construct.BitStruct(
-    'current_invalid' / construct.Flag,  # Current invalid
-    'voltage_invalid' / construct.Flag,  # Voltage invalid
     '_reserved' / construct.BitsInteger(6),  # reserved
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    'current_invalid' / construct.Flag,  # Current invalid
 )
 psu_regular0 = construct.Struct(
     '_name' / construct.Computed('psu_regular0'),
@@ -174,9 +174,9 @@ psu_regular0 = construct.Struct(
 
 # 0x0081
 psu_regular1_flags0 = construct.BitStruct(
-    'current_invalid' / construct.Flag,  # Current invalid
-    'voltage_invalid' / construct.Flag,  # Voltage invalid
     '_reserved' / construct.BitsInteger(6),  # reserved
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    'current_invalid' / construct.Flag,  # Current invalid
 )
 psu_regular1 = construct.Struct(
     '_name' / construct.Computed('psu_regular1'),
@@ -204,9 +204,9 @@ psu_regular2 = construct.Struct(
 
 # 0x0083
 psu_regular3_flags0 = construct.BitStruct(
-    'current_invalid' / construct.Flag,  # Current invalid
-    'voltage_invalid' / construct.Flag,  # Voltage invalid
     '_reserved' / construct.BitsInteger(6),  # reserved
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    'current_invalid' / construct.Flag,  # Current invalid
 )
 psu_regular3 = construct.Struct(
     '_name' / construct.Computed('psu_regular3'),
@@ -219,9 +219,9 @@ psu_regular3 = construct.Struct(
 
 # 0x0084
 psu_regular4_flags0 = construct.BitStruct(
-    'current_invalid' / construct.Flag,  # Current invalid
-    'voltage_invalid' / construct.Flag,  # Voltage invalid
     '_reserved' / construct.BitsInteger(6),  # reserved
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    'current_invalid' / construct.Flag,  # Current invalid
 )
 psu_regular4 = construct.Struct(
     '_name' / construct.Computed('psu_regular4'),
@@ -234,9 +234,9 @@ psu_regular4 = construct.Struct(
 
 # 0x0085
 psu_regular5_flags0 = construct.BitStruct(
-    'current_invalid' / construct.Flag,  # Current invalid
-    'voltage_invalid' / construct.Flag,  # Voltage invalid
     '_reserved' / construct.BitsInteger(6),  # reserved
+    'voltage_invalid' / construct.Flag,  # Voltage invalid
+    'current_invalid' / construct.Flag,  # Current invalid
 )
 psu_regular5 = construct.Struct(
     '_name' / construct.Computed('psu_regular5'),
@@ -281,9 +281,8 @@ Info = construct.Struct(
 
 # 0x0440
 regular_temperature_flags0 = construct.BitStruct(
-    'temperature0_invalid' / construct.Flag,  # temperature0_invalid
     'temperature1_invalid' / construct.Flag,  # temperature1_invalid
-    '_pad0' / construct.BitsInteger(6),
+    'temperature0_invalid' / construct.Flag,  # temperature0_invalid
 )
 regular_temperature = construct.Struct(
     '_name' / construct.Computed('regular_temperature'),
@@ -330,8 +329,8 @@ get_Payload_telemetry = construct.Struct(
 
 # 0x0B10
 ratesens_regular_x_flags0 = construct.BitStruct(
-    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
     'invalid' / construct.Flag,  # Invalid flag.
+    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
 )
 ratesens_regular_x = construct.Struct(
     '_name' / construct.Computed('ratesens_regular_x'),
@@ -344,8 +343,8 @@ ratesens_regular_x = construct.Struct(
 
 # 0x0B11
 ratesens_regular_y_flags0 = construct.BitStruct(
-    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
     'invalid' / construct.Flag,  # Invalid flag.
+    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
 )
 ratesens_regular_y = construct.Struct(
     '_name' / construct.Computed('ratesens_regular_y'),
@@ -358,8 +357,8 @@ ratesens_regular_y = construct.Struct(
 
 # 0x0B12
 ratesens_regular_z_flags0 = construct.BitStruct(
-    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
     'invalid' / construct.Flag,  # Invalid flag.
+    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
 )
 ratesens_regular_z = construct.Struct(
     '_name' / construct.Computed('ratesens_regular_z'),
@@ -372,8 +371,8 @@ ratesens_regular_z = construct.Struct(
 
 # 0x0B13
 magnsens_regular_x_flags0 = construct.BitStruct(
-    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
     'invalid' / construct.Flag,  # Invalid flag.
+    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
 )
 magnsens_regular_x = construct.Struct(
     '_name' / construct.Computed('magnsens_regular_x'),
@@ -386,8 +385,8 @@ magnsens_regular_x = construct.Struct(
 
 # 0x0B14
 magnsens_regular_y_flags0 = construct.BitStruct(
-    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
     'invalid' / construct.Flag,  # Invalid flag.
+    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
 )
 magnsens_regular_y = construct.Struct(
     '_name' / construct.Computed('magnsens_regular_y'),
@@ -400,8 +399,8 @@ magnsens_regular_y = construct.Struct(
 
 # 0x0B15
 magnsens_regular_z_flags0 = construct.BitStruct(
-    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
     'invalid' / construct.Flag,  # Invalid flag.
+    'counter' / construct.BitsInteger(7),  # Counter - the number of the logical link of messages.
 )
 magnsens_regular_z = construct.Struct(
     '_name' / construct.Computed('magnsens_regular_z'),
@@ -504,6 +503,7 @@ beacon_flags0 = construct.BitStruct(
     'heater1_on' / construct.Flag,  # Флаг включения нагревателя 1.
     'Tab_max' / construct.Flag,  # Флаг превышения максимальной температуры
     'Tab_min' / construct.Flag,  # Флаг "Низкая температура батареи".
+
     'channelon4' / construct.Flag,  # Флаг состояния канала 4.
     'channelon3' / construct.Flag,  # Флаг состояния канала 3.
     'channelon2' / construct.Flag,  # Флаг состояния канала 2.
@@ -512,12 +512,14 @@ beacon_flags0 = construct.BitStruct(
     'Ich_limit3' / construct.Flag,  # Флаг превышения тока по каналу 3.
     'Ich_limit2' / construct.Flag,  # Флаг превышения тока по каналу 2.
     'Ich_limit1' / construct.Flag,  # Флаг превышения тока по каналу 1.
+
     '_reserved0' / construct.BitsInteger(3),  # Резерв
     'Additional_channel_3_on' / construct.Flag,  # Флаг включения дополнительного канала 3
     'Additional_channel_2_on' / construct.Flag,  # Флаг включения дополнительного канала 2
     'Additional_channel_1_on' / construct.Flag,  # Флаг включения дополнительного канала 1
     'FSB' / construct.Flag,  # Флаг ошибки коммутатора
     'charger' / construct.Flag,  # Флаг наличия напряжения на разъёме для зарядки
+
     '_reserved1' / construct.BitsInteger(8),  # Резерв
 )
 beacon = construct.Struct(
@@ -612,10 +614,10 @@ time_request = construct.Struct(
 
 # 0x4246
 uhf_beacon_flags0 = construct.BitStruct(
-    'NumActiveSchedules' / construct.BitsInteger(5),  # Number of Active Schedules in executor.
-    'ResetOccurredDuringExecution' / construct.Flag,  # Reboot occurred during schedule execution.
-    'BackupScheduleActive' / construct.Flag,  # Backup schedule execution in progress.
     '_Reserved' / construct.Flag,  # Value
+    'BackupScheduleActive' / construct.Flag,  # Backup schedule execution in progress.
+    'ResetOccurredDuringExecution' / construct.Flag,  # Reboot occurred during schedule execution.
+    'NumActiveSchedules' / construct.BitsInteger(5),  # Number of Active Schedules in executor.
 )
 uhf_beacon = construct.Struct(
     '_name' / construct.Computed('uhf_beacon'),
@@ -784,6 +786,7 @@ regular_telemetry_flags0 = construct.BitStruct(
     'HEATER1_ON' / construct.Flag,  # Флаг нагреватель 1 вкл
     'TMP_MAX' / construct.Flag,  # Флаг макс. темп. АКБ
     'TMP_MIN' / construct.Flag,  # Флаг мин. темп. АКБ
+
     'CHANNEL4_ON' / construct.Flag,  # Флаг включения канала 4
     'CHANNEL3_ON' / construct.Flag,  # Флаг включения канала 3
     'CHANNEL2_ON' / construct.Flag,  # Флаг включения канала 2
@@ -792,12 +795,14 @@ regular_telemetry_flags0 = construct.BitStruct(
     'ICH_FAULT_3' / construct.Flag,  # Флаг неисправности канала 3
     'ICH_FAULT_2' / construct.Flag,  # Флаг неисправности канала 2
     'ICH_FAULT_1' / construct.Flag,  # Флаг неисправности канала 1
+
     '_pad0' / construct.BitsInteger(3),
     'Additional_channel_3_on' / construct.Flag,  # Флаг включения дополнительного канала 3
     'Additional_channel_2_on' / construct.Flag,  # Флаг включения дополнительного канала 2
     'Additional_channel_1_on' / construct.Flag,  # Флаг включения дополнительного канала 1
     'FSB' / construct.Flag,  # Флаг ошибки коммутатора
     'CHAGER' / construct.Flag,  # Флаг подключния зарядного устройства
+
     '_pad1' / construct.BitsInteger(8),
 )
 regular_telemetry = construct.Struct(
@@ -881,59 +886,66 @@ switch_status = construct.Struct(
 
 # 0xDF25
 regular_telemetry6u_flags0 = construct.BitStruct(
-    'ch1_status' / construct.Flag,  # Value
-    'ch2_status' / construct.Flag,  # Value
-    'ch3_status' / construct.Flag,  # Value
-    'ch4_status' / construct.Flag,  # Value
-    'ch5_status' / construct.Flag,  # Value
-    'ch6_status' / construct.Flag,  # Value
-    'ch7_status' / construct.Flag,  # Value
     'ch8_status' / construct.Flag,  # Value
-    'ch9_status' / construct.Flag,  # Value
-    'ch10_status' / construct.Flag,  # Value
-    'ch11_status' / construct.Flag,  # Value
-    'ch12_status' / construct.Flag,  # Value
-    'ch13_status' / construct.Flag,  # Value
-    'ch14_status' / construct.Flag,  # Value
-    'ch15_status' / construct.Flag,  # Value
+    'ch7_status' / construct.Flag,  # Value
+    'ch6_status' / construct.Flag,  # Value
+    'ch5_status' / construct.Flag,  # Value
+    'ch4_status' / construct.Flag,  # Value
+    'ch3_status' / construct.Flag,  # Value
+    'ch2_status' / construct.Flag,  # Value
+    'ch1_status' / construct.Flag,  # Value
+
     'ch16_status' / construct.Flag,  # Value
-    'ch17_status' / construct.Flag,  # Value
-    'ch18_status' / construct.Flag,  # Value
-    'ch19_status' / construct.Flag,  # Value
-    'ch20_status' / construct.Flag,  # Value
-    'ch21_status' / construct.Flag,  # Value
-    'ch22_status' / construct.Flag,  # Value
-    'ch23_status' / construct.Flag,  # Value
+    'ch15_status' / construct.Flag,  # Value
+    'ch14_status' / construct.Flag,  # Value
+    'ch13_status' / construct.Flag,  # Value
+    'ch12_status' / construct.Flag,  # Value
+    'ch11_status' / construct.Flag,  # Value
+    'ch10_status' / construct.Flag,  # Value
+    'ch9_status' / construct.Flag,  # Value
+
     'ch24_status' / construct.Flag,  # Value
-    'ch25_status' / construct.Flag,  # Value
-    'ch26_status' / construct.Flag,  # Value
-    'ch27_status' / construct.Flag,  # Value
-    'ch28_status' / construct.Flag,  # Value
-    'ch29_status' / construct.Flag,  # Value
-    'ch30_status' / construct.Flag,  # Value
+    'ch23_status' / construct.Flag,  # Value
+    'ch22_status' / construct.Flag,  # Value
+    'ch21_status' / construct.Flag,  # Value
+    'ch20_status' / construct.Flag,  # Value
+    'ch19_status' / construct.Flag,  # Value
+    'ch18_status' / construct.Flag,  # Value
+    'ch17_status' / construct.Flag,  # Value
+
     '_reserved' / construct.BitsInteger(2),  # Value
-    'Tab_min' / construct.Flag,  # none
-    'Tab_max' / construct.Flag,  # none
-    'heater1_on' / construct.Flag,  # none
-    'heater2_on' / construct.Flag,  # none
-    'heater1_manual' / construct.Flag,  # none
-    'heater2_manual' / construct.Flag,  # none
-    'Uab_min' / construct.Flag,  # none
+    'ch30_status' / construct.Flag,  # Value
+    'ch29_status' / construct.Flag,  # Value
+    'ch28_status' / construct.Flag,  # Value
+    'ch27_status' / construct.Flag,  # Value
+    'ch26_status' / construct.Flag,  # Value
+    'ch25_status' / construct.Flag,  # Value
+
     'Uab_crit' / construct.Flag,  # none
-    'Ich_limit1' / construct.Flag,  # none
-    'Ich_limit2' / construct.Flag,  # none
-    'Ich_limit3' / construct.Flag,  # none
-    'Ich_limit4' / construct.Flag,  # none
-    'channelon1' / construct.Flag,  # none
-    'channelon2' / construct.Flag,  # none
-    'channelon3' / construct.Flag,  # none
+    'Uab_min' / construct.Flag,  # none
+    'heater2_manual' / construct.Flag,  # none
+    'heater1_manual' / construct.Flag,  # none
+    'heater2_on' / construct.Flag,  # none
+    'heater1_on' / construct.Flag,  # none
+    'Tab_max' / construct.Flag,  # none
+    'Tab_min' / construct.Flag,  # none
+
     'channelon4' / construct.Flag,  # none
-    'charger' / construct.Flag,  # none
-    'FSB' / construct.Flag,  # Power switch error.
-    'AuxCH1_enabled_flag' / construct.Flag,  # Additional_channel_1_on.
-    'AuxCH2_enabled_flag' / construct.Flag,  # Additional_channel_2_on.
-    'AuxCH3_enabled_flag' / construct.Flag,  # Additional_channel_3_on.
+    'channelon3' / construct.Flag,  # none
+    'channelon2' / construct.Flag,  # none
+    'channelon1' / construct.Flag,  # none
+    'Ich_limit4' / construct.Flag,  # none
+    'Ich_limit3' / construct.Flag,  # none
+    'Ich_limit2' / construct.Flag,  # none
+    'Ich_limit1' / construct.Flag,  # none
+
     '_reserved0' / construct.BitsInteger(3),  # Reserved.
+    'AuxCH3_enabled_flag' / construct.Flag,  # Additional_channel_3_on.
+    'AuxCH2_enabled_flag' / construct.Flag,  # Additional_channel_2_on.
+    'AuxCH1_enabled_flag' / construct.Flag,  # Additional_channel_1_on.
+    'FSB' / construct.Flag,  # Power switch error.
+    'charger' / construct.Flag,  # none
+
     '_reserved1' / construct.BitsInteger(8),  # Reserved.
 )
 regular_telemetry6u = construct.Struct(
@@ -962,30 +974,33 @@ regular_telemetry6u = construct.Struct(
 
 # 0xED21
 ps_regular_telemetry_5ch_flags0 = construct.BitStruct(
-    'Tab_min' / construct.Flag,  # none
-    'Tab_max' / construct.Flag,  # none
-    'heater1_on' / construct.Flag,  # none
-    'heater2_on' / construct.Flag,  # none
-    'heater1_manual' / construct.Flag,  # none
-    'heater2_manual' / construct.Flag,  # none
-    'Uab_min' / construct.Flag,  # none
     'Uab_crit' / construct.Flag,  # none
-    'Ich_limit1' / construct.Flag,  # none
-    'Ich_limit2' / construct.Flag,  # none
-    'Ich_limit3' / construct.Flag,  # none
-    'Ich_limit4' / construct.Flag,  # none
-    'Ich_limit5' / construct.Flag,  # none
-    'channelon1' / construct.Flag,  # none
-    'channelon2' / construct.Flag,  # none
+    'Uab_min' / construct.Flag,  # none
+    'heater2_manual' / construct.Flag,  # none
+    'heater1_manual' / construct.Flag,  # none
+    'heater2_on' / construct.Flag,  # none
+    'heater1_on' / construct.Flag,  # none
+    'Tab_max' / construct.Flag,  # none
+    'Tab_min' / construct.Flag,  # none
+
     'channelon3' / construct.Flag,  # none
-    'channelon4' / construct.Flag,  # none
-    'channelon5' / construct.Flag,  # none
-    'charger' / construct.Flag,  # none
-    'FSB' / construct.Flag,  # Power switch error.
-    'AuxCH1_enabled_flag' / construct.Flag,  # Additional_channel_1_on.
-    'AuxCH2_enabled_flag' / construct.Flag,  # Additional_channel_2_on.
-    'AuxCH3_enabled_flag' / construct.Flag,  # Additional_channel_3_on.
+    'channelon2' / construct.Flag,  # none
+    'channelon1' / construct.Flag,  # none
+    'Ich_limit5' / construct.Flag,  # none
+    'Ich_limit4' / construct.Flag,  # none
+    'Ich_limit3' / construct.Flag,  # none
+    'Ich_limit2' / construct.Flag,  # none
+    'Ich_limit1' / construct.Flag,  # none
+
     '_reserved0' / construct.Flag,  # Reserved.
+    'AuxCH3_enabled_flag' / construct.Flag,  # Additional_channel_3_on.
+    'AuxCH2_enabled_flag' / construct.Flag,  # Additional_channel_2_on.
+    'AuxCH1_enabled_flag' / construct.Flag,  # Additional_channel_1_on.
+    'FSB' / construct.Flag,  # Power switch error.
+    'charger' / construct.Flag,  # none
+    'channelon5' / construct.Flag,  # none
+    'channelon4' / construct.Flag,  # none
+
     '_reserved1' / construct.BitsInteger(8),  # Reserved.
 )
 ps_regular_telemetry_5ch = construct.Struct(
@@ -1019,21 +1034,21 @@ ps_regular_telemetry_5ch = construct.Struct(
 # 0xF204
 _tm_adcs_beacon_old_policies = construct.Hex(construct.Enum(construct.BitsInteger(7), **{'None': 0, 'Integrator': 1, 'Integrator AVS shifts': 2, 'Triad': 3, 'Triad AVS shifts': 4, 'Kalman BWS': 5, 'Star tracker': 6, 'Star_tracker AVS shifts': 7, 'Kalman Q': 8, 'Kalman WQ': 9}))
 tm_adcs_beacon_old_flags0 = construct.BitStruct(
-    'eci_policy' / _tm_adcs_beacon_old_policies,
     'eci_invalid' / construct.Flag,  # Value
+    'eci_policy' / _tm_adcs_beacon_old_policies,
 )
 tm_adcs_beacon_old_flags1 = construct.BitStruct(
-    'orb_policy' / _tm_adcs_beacon_old_policies,
     'orb_invalid' / construct.Flag,  # Value
+    'orb_policy' / _tm_adcs_beacon_old_policies,
 )
 tm_adcs_beacon_old_flags2 = construct.BitStruct(
-    'forced_policy' / _tm_adcs_beacon_old_policies,
     'forced_invalid' / construct.Flag,  # Value
+    'forced_policy' / _tm_adcs_beacon_old_policies,
 )
 tm_adcs_beacon_old_flags3 = construct.BitStruct(
-    'mfs_invalid' / construct.Flag,  # Value
-    'avs_invalid' / construct.Flag,  # Value
     '_reserved' / construct.BitsInteger(6),  # Value
+    'avs_invalid' / construct.Flag,  # Value
+    'mfs_invalid' / construct.Flag,  # Value
 )
 tm_adcs_beacon_old = construct.Struct(
     '_name' / construct.Computed('tm_adcs_beacon_old'),
@@ -1074,40 +1089,42 @@ tm_adcs_beacon_old = construct.Struct(
 # 0xF210
 _tm_adcs_beacon_policies = construct.Hex(construct.Enum(construct.BitsInteger(7), **{'None': 0, 'Integrator': 1, 'Integrator + AV shifts': 2, 'Triad': 3, 'Triad + AV shifts': 4, 'Kalman BWS': 5, 'Star tracker': 6, 'Star tracker + AV shifts': 7, 'Kalman Q': 8, 'Kalman WQ': 9, 'Kalman WQP': 10}))
 tm_adcs_beacon_flags0 = construct.BitStruct(
-    'eci_policy' / _tm_adcs_beacon_policies,
     'eci_invalid' / construct.Flag,  # Invalidity flag.
+    'eci_policy' / _tm_adcs_beacon_policies,
 )
 tm_adcs_beacon_flags1 = construct.BitStruct(
-    'orb_policy' / _tm_adcs_beacon_policies,
     'orb_invalid' / construct.Flag,  # Invalidity flag.
+    'orb_policy' / _tm_adcs_beacon_policies,
 )
 tm_adcs_beacon_flags2 = construct.BitStruct(
-    'eci_forced_policy' / _tm_adcs_beacon_policies,
     'eci_forced_invalid' / construct.Flag,  # Invalidity flag.
+    'eci_forced_policy' / _tm_adcs_beacon_policies,
 )
 tm_adcs_beacon_flags3 = construct.BitStruct(
-    'ballistics_policy' / construct.Hex(construct.Enum(construct.BitsInteger(3), **{'Propagator': 0, 'GNSS': 1, 'GNSS + estimation by speed': 2})),
-    'gnss_invalid' / construct.Flag,  # GNSS invalidity.
-    'auto_ballistics_polity' / construct.Hex(construct.Enum(construct.BitsInteger(2), Disabled=0, Enabled=1)),  # Auto ballistics policy
     'auto_control_policy' / construct.Hex(construct.Enum(construct.BitsInteger(2), **{'Disabled': 0, 'Enabled set 1': 1, 'Enabled set 2': 2})),  # Set angular motion auto control policy
+    'auto_ballistics_polity' / construct.Hex(construct.Enum(construct.BitsInteger(2), Disabled=0, Enabled=1)),  # Auto ballistics policy
+    'gnss_invalid' / construct.Flag,  # GNSS invalidity.
+    'ballistics_policy' / construct.Hex(construct.Enum(construct.BitsInteger(3), **{'Propagator': 0, 'GNSS': 1, 'GNSS + estimation by speed': 2})),
 )
 tm_adcs_beacon_flags4 = construct.BitStruct(
-    'ss_active' / construct.BitsInteger(6),  # Active sun sensor.
-    'ss_invalid_x_plus' / construct.Flag,  # Sun sensors invalidity flags.
     'ss_invalid_x_minus' / construct.Flag,  # Value
-    'ss_invalid_y_plus' / construct.Flag,  # Value
-    'ss_invalid_y_minus' / construct.Flag,  # Value
-    'ss_invalid_z_plus' / construct.Flag,  # Value
-    'ss_invalid_z_minus' / construct.Flag,  # Value
-    'ss_invalid_extra' / construct.Flag,  # Value
-    'star_tracker_invalid' / construct.Flag,  # Star tracker invalidity flag.
-    'avs_invalid' / construct.Flag,  # AVS invalidity flag.
+    'ss_invalid_x_plus' / construct.Flag,  # Sun sensors invalidity flags.
+    'ss_active' / construct.BitsInteger(6),  # Active sun sensor.
+
     'mfs_invalid' / construct.Flag,  # MFS invalidity flag.
-    'wheel_invalid_x_plus' / construct.Flag,  # Wheels invalidity flags.
-    'wheel_invalid_x_minus' / construct.Flag,  # Value
-    'wheel_invalid_y_plus' / construct.Flag,  # Value
-    'wheel_invalid_y_minus' / construct.Flag,  # Value
+    'avs_invalid' / construct.Flag,  # AVS invalidity flag.
+    'star_tracker_invalid' / construct.Flag,  # Star tracker invalidity flag.
+    'ss_invalid_extra' / construct.Flag,  # Value
+    'ss_invalid_z_minus' / construct.Flag,  # Value
+    'ss_invalid_z_plus' / construct.Flag,  # Value
+    'ss_invalid_y_minus' / construct.Flag,  # Value
+    'ss_invalid_y_plus' / construct.Flag,  # Value
+
     'reset_reason' / construct.Hex(construct.BitsInteger(4)),  # Last reset reason.
+    'wheel_invalid_y_minus' / construct.Flag,  # Value
+    'wheel_invalid_y_plus' / construct.Flag,  # Value
+    'wheel_invalid_x_minus' / construct.Flag,  # Value
+    'wheel_invalid_x_plus' / construct.Flag,  # Wheels invalidity flags.
 )
 tm_adcs_beacon = construct.Struct(
     '_name' / construct.Computed('tm_adcs_beacon'),
@@ -1154,24 +1171,26 @@ tm_adcs_beacon = construct.Struct(
 
 # 0xF212
 tm_adcs_beacon_6_wheels_flags4 = construct.BitStruct(
-    'ss_active' / construct.BitsInteger(6),  # Active sun sensor.
-    'ss_invalid_x_plus' / construct.Flag,  # Sun sensors invalidity flags.
     'ss_invalid_x_minus' / construct.Flag,  # Value
-    'ss_invalid_y_plus' / construct.Flag,  # Value
-    'ss_invalid_y_minus' / construct.Flag,  # Value
-    'ss_invalid_z_plus' / construct.Flag,  # Value
-    'ss_invalid_z_minus' / construct.Flag,  # Value
-    'ss_invalid_extra' / construct.Flag,  # Value
-    'star_tracker_invalid' / construct.Flag,  # Star tracker invalidity flag.
-    'avs_invalid' / construct.Flag,  # AVS invalidity flag.
+    'ss_invalid_x_plus' / construct.Flag,  # Sun sensors invalidity flags.
+    'ss_active' / construct.BitsInteger(6),  # Active sun sensor.
+
     'mfs_invalid' / construct.Flag,  # MFS invalidity flag.
-    'wheel_invalid_1' / construct.Flag,  # Wheels invalidity flags.
-    'wheel_invalid_2' / construct.Flag,  # Value
-    'wheel_invalid_3' / construct.Flag,  # Value
-    'wheel_invalid_4' / construct.Flag,  # Value
-    'wheel_invalid_5' / construct.Flag,  # Value
-    'wheel_invalid_6' / construct.Flag,  # Value
+    'avs_invalid' / construct.Flag,  # AVS invalidity flag.
+    'star_tracker_invalid' / construct.Flag,  # Star tracker invalidity flag.
+    'ss_invalid_extra' / construct.Flag,  # Value
+    'ss_invalid_z_minus' / construct.Flag,  # Value
+    'ss_invalid_z_plus' / construct.Flag,  # Value
+    'ss_invalid_y_minus' / construct.Flag,  # Value
+    'ss_invalid_y_plus' / construct.Flag,  # Value
+
     '_reserved' / construct.BitsInteger(2),  # Value
+    'wheel_invalid_6' / construct.Flag,  # Value
+    'wheel_invalid_5' / construct.Flag,  # Value
+    'wheel_invalid_4' / construct.Flag,  # Value
+    'wheel_invalid_3' / construct.Flag,  # Value
+    'wheel_invalid_2' / construct.Flag,  # Value
+    'wheel_invalid_1' / construct.Flag,  # Wheels invalidity flags.
 )
 tm_adcs_beacon_6_wheels = construct.Struct(
     '_name' / construct.Computed('tm_adcs_beacon_6_wheels'),
