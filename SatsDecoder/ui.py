@@ -26,6 +26,7 @@ import webbrowser
 
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 
+import construct
 import numpy as np
 import PIL
 import PIL.Image
@@ -788,6 +789,11 @@ class DecoderFrame(ttk.Frame):
                         f.write(str(packet))
 
                 self.history_frame.put(*args, date=date)
+
+        except construct.ConstructError:
+            # TODO: log it
+            pass
+
         except Exception as e:
             messagebox.showerror(message='feed %s: %s' % (self.name, e))
             return 1
