@@ -48,10 +48,12 @@ class Image:
         self.close()
         old = self.fn
         new_filename = self.fn.with_name(new_filename)
-        try:
-            self.fn.rename(new_filename)
-        except FileExistsError:
-            self.fn.unlink(True)
+        for i in range(2):
+            try:
+                self.fn.rename(new_filename)
+                break
+            except FileExistsError:
+                new_filename.unlink(True)
         self.fn = new_filename
         self.renamed = old
 
