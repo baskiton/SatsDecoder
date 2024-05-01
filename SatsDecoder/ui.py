@@ -281,8 +281,7 @@ class CanvasFrame(ttk.Frame):
                                       validate='all', validatecommand=lambda: False)
         self.image_offset.grid(column=3, row=0, sticky=tk.W, padx=0)
 
-        self.sep = ttk.Separator(self, orient='vertical')
-        self.sep.grid(column=4, row=0, sticky=tk.NS)
+        ttk.Separator(self, orient='vertical').grid(column=4, row=0, sticky=tk.NS)
 
         self.first_data_off_l = tk.Label(self, text='First data offset:')
         self.first_data_off_l.grid(column=5, row=0, sticky=tk.E, padx=0)
@@ -300,17 +299,18 @@ class CanvasFrame(ttk.Frame):
         self.canvas.grid(row=1, columnspan=8, sticky=tk.NSEW, pady=3)
 
         self.tail_frame = ttk.Frame(self)
-        self.tail_frame.columnconfigure(0, weight=1)
         self.tail_frame.grid(row=2, columnspan=8, sticky=tk.NSEW, pady=3)
 
-        self.image_name_l = ttk.Label(self.tail_frame)
-        self.image_name_l.grid(sticky=tk.SW, row=0, column=0)
-
         self.demosaic_btn = ttk.Button(self.tail_frame, text='Demosaicing', command=self.demosaicing, state=tk.DISABLED)
-        self.demosaic_btn.grid(row=0, column=1)
+        self.demosaic_btn.grid(sticky=tk.SW, row=0, column=0, padx=1.5)
 
         self.save_btn = ttk.Button(self.tail_frame, text='Save as', command=self.save_as)
-        self.save_btn.grid(row=0, column=2)
+        self.save_btn.grid(sticky=tk.SW, row=0, column=1, padx=1.5)
+
+        ttk.Separator(self.tail_frame, orient='vertical').grid(sticky=tk.NS, row=0, column=2, padx=3)
+
+        self.image_name_l = ttk.Label(self.tail_frame)
+        self.image_name_l.grid(sticky=tk.SW, row=0, column=3)
 
     def fill_canvas(self, img, force=0):
         if not (force or (self.active_img and self.active_img.fn == img.fn)):

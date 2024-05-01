@@ -130,7 +130,7 @@ class TlmCommonFrame(ttk.Frame):
         table.vsb.grid(column=1, row=0, sticky=tk.NSEW)
         table.hsb.grid(column=0, row=1, sticky=tk.NSEW)
 
-        self.tlm_name_l.config(text=filename)
+        self.tlm_name_l.config(text=filename.name)
 
 
 class DynamicNotebook(ttk.Notebook):
