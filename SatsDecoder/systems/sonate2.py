@@ -4450,7 +4450,7 @@ sonate2_map = {
 }
 
 
-class SonateProtocol:
+class SonateProtocol(common.Protocol):
     columns = 'APID',
     c_width = 60,
 
@@ -8532,9 +8532,6 @@ class SonateProtocol:
             ),
         },
     }
-
-    def __init__(self, outdir):
-        self.ir = None
 
     @staticmethod
     def get_sender_callsign(data):

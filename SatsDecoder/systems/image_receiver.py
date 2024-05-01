@@ -15,6 +15,7 @@ class Image:
 
     def __init__(self, fn, date=0):
         self.fn = fn
+        self.renamed = 0
         self.f = None
         self.packets = 0
         self.date = date
@@ -42,6 +43,20 @@ class Image:
             self.f = open(self.fn, mode)
 
         return self.f
+
+    def rename(self, new_filename):
+        self.close()
+        old = self.fn
+        new_filename = self.fn.with_name(new_filename)
+        try:
+            self.fn.rename(new_filename)
+        except FileExistsError:
+            self.fn.unlink(True)
+        self.fn = new_filename
+        self.renamed = old
+
+    def rename_done(self):
+        self.renamed = 0
 
     def flush(self):
         if self.f:
@@ -106,6 +121,13 @@ class ImageReceiver:
         if force_new or not fid:
             fid = self.generate_fid(**kwargs)
         return self.images.get(fid) or self.new_file(fid)
+
+    def rename_image(self, old, new):
+        img = self.get_image()
+        img.rename(new)
+        self.images.pop(old, 0)
+        self.images[new] = img
+        self.current_fid = new
 
     def set_outdir(self, outdir):
         self.outdir = pathlib.Path(outdir).expanduser().absolute()

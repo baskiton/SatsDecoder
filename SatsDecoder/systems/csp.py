@@ -8,6 +8,7 @@
 import construct
 
 from SatsDecoder import utils
+from SatsDecoder.systems import common
 
 __all__ = 'CspProtocol',
 
@@ -42,7 +43,7 @@ csp = construct.Struct(
 )
 
 
-class CspProtocol:
+class CspProtocol(common.Protocol):
     columns = ()
     c_width = ()
 
@@ -64,9 +65,6 @@ class CspProtocol:
             ),
         },
     }
-
-    def __init__(self, outdir):
-        self.ir = None
 
     def recognize(self, bb):
         frame = csp.parse(bb)

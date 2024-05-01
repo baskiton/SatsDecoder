@@ -225,7 +225,7 @@ class GeoscanImageReceiver(ImageReceiver):
         return (self._prev_data_sz < prev_sz) and b'\xff\xd9' in data
 
 
-class GeoscanProtocol:
+class GeoscanProtocol(common.Protocol):
     PACKETSIZE = 64
     columns = ()
     c_width = ()
@@ -284,12 +284,8 @@ class GeoscanProtocol:
     }
 
     def __init__(self, outdir):
-        self.ir = GeoscanImageReceiver(outdir)
+        super().__init__(GeoscanImageReceiver(outdir))
         self.last_fn = None
-
-    @staticmethod
-    def get_sender_callsign(data):
-        return ax25.get_sender_callsign(data.ax25)
 
     def recognize(self, data):
         while data:

@@ -101,7 +101,7 @@ starlink = construct.Struct(
 )
 
 
-class StarlinkProtocol:
+class StarlinkProtocol(common.Protocol):
     columns = 'msg_id',
     c_width = 60,
 
@@ -191,9 +191,6 @@ class StarlinkProtocol:
             ),
         }
     }
-
-    def __init__(self, outdir):
-        self.ir = None
 
     def recognize(self, bb):
         x = starlink.parse(bb)

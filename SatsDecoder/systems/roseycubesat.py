@@ -103,7 +103,7 @@ class RoseyImageReceiver(ImageReceiver):
         return 1
 
 
-class RoseyProtocol:
+class RoseyProtocol(common.Protocol):
     columns = 'msg_id',
     c_width = 60,
 
@@ -124,11 +124,7 @@ class RoseyProtocol:
     }
 
     def __init__(self, outdir):
-        self.ir = RoseyImageReceiver(outdir)
-
-    @staticmethod
-    def get_sender_callsign(data):
-        return ax25.get_sender_callsign(data.ax25)
+        super().__init__(RoseyImageReceiver(outdir))
 
     def recognize(self, bb):
         data = rosey.parse(bb)
@@ -146,3 +142,6 @@ class RoseyProtocol:
 
         else:
             yield 'raw', name, '0x%04X' % data.rosey.packet_id, data.rosey.packet
+
+    def create_new_image(self):
+        return (-1,) + super().create_new_image()

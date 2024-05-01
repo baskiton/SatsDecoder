@@ -1452,7 +1452,9 @@ class UspImageReceiver(ImageReceiver):
         super().__init__(outdir)
 
     def generate_fid(self, fname='unknown'):
-        if not (self.current_fid and self.merge_mode):
+        if self.current_fid == 'unknown':
+            self.rename_image(self.current_fid, fname)
+        elif not (self.current_fid and self.merge_mode):
             self.last_date = dt.datetime.now()
             self.current_fid = fname
         return self.current_fid
@@ -1483,7 +1485,7 @@ class UspImageReceiver(ImageReceiver):
         return 1
 
 
-class UspProtocol:
+class UspProtocol(common.Protocol):
     columns = 'msg-id',
     c_width = 60,
 
@@ -2325,11 +2327,7 @@ class UspProtocol:
     }
 
     def __init__(self, outdir):
-        self.ir = UspImageReceiver(outdir)
-
-    @staticmethod
-    def get_sender_callsign(data):
-        return ax25.get_sender_callsign(data.ax25)
+        super().__init__(UspImageReceiver(outdir))
 
     def recognize(self, bb):
         while bb:
@@ -2353,3 +2351,6 @@ class UspProtocol:
                     ty = 'raw'
 
                 yield ty, self.get_sender_callsign(data), '0x%04X' % i.message, p_data
+
+    def create_new_image(self):
+        return (-1,) + super().create_new_image()

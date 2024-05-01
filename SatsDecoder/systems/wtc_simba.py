@@ -161,7 +161,7 @@ class WtcSimbaImageReceiver(ImageReceiver):
         return 1
 
 
-class WtcSimbaProtocol:
+class WtcSimbaProtocol(common.Protocol):
     columns = ('d_port',)
     c_width = (60,)
 
@@ -239,7 +239,7 @@ class WtcSimbaProtocol:
     }
 
     def __init__(self, outdir):
-        self.ir = WtcSimbaImageReceiver(outdir)
+        super().__init__(WtcSimbaImageReceiver(outdir))
         self.files = {}
 
     def recognize(self, bb):
@@ -266,3 +266,6 @@ class WtcSimbaProtocol:
         #             self.files[x.data.str] = x.data.val
         #             print(self.files)
         #     #     print(t, x.id, x.pnum, str(x.data))
+
+    def create_new_image(self):
+        return (-1,) + super().create_new_image()

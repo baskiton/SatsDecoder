@@ -12,6 +12,9 @@ import datetime as dt
 
 import construct
 
+from SatsDecoder.systems import ax25
+from SatsDecoder.systems.image_receiver import ImageReceiver
+
 
 class UNIXTimestampAdapter(construct.Adapter):
     def _encode(self, obj, context, path=None):
@@ -64,3 +67,22 @@ class EvalAdapter(construct.Adapter):
 
     def _decode(self, x, ctx, path=None):
         return eval(self.xfunc)
+
+
+class Protocol:
+    columns = ()
+    c_width = ()
+    tlm_table = {}
+
+    def __init__(self, ir: ImageReceiver = None):
+        self.ir = ir
+
+    @staticmethod
+    def get_sender_callsign(data):
+        return ax25.get_sender_callsign(data.ax25)
+
+    def recognize(self, bb):
+        raise NotImplementedError
+
+    def create_new_image(self):
+        return self.ir.force_new(),

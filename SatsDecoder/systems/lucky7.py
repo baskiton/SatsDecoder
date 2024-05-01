@@ -107,7 +107,7 @@ class Lucky7ImageReceiver(ImageReceiver):
         return 1
 
 
-class Lucky7Protocol:
+class Lucky7Protocol(common.Protocol):
     columns = ()
     c_width = ()
 
@@ -136,7 +136,7 @@ class Lucky7Protocol:
     }
 
     def __init__(self, outdir):
-        self.ir = Lucky7ImageReceiver(outdir)
+        super().__init__(Lucky7ImageReceiver(outdir))
 
     def recognize(self, bb):
         hdr = lucky7_hdr.parse(bb)

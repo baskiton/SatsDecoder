@@ -216,6 +216,17 @@ class HistoryFrame(ttk.LabelFrame):
         vals = args[:len(self.master.decoder.columns)]
         if tag == 'img':
             *_, img = args
+            if not date:
+                date = img.date
+            if img.renamed:
+                self.vals.pop(img.renamed, 0)
+                img.rename_done()
+                iid = self.vals.pop(date, None)
+                if iid is not None:
+                    self.vals.pop(iid, None)
+                    self.table.detach(iid)
+                    self.table.selection_set(iid)
+                    self.table.see(iid)
             if img.fn in self.vals:
                 return
             self.vals[img.fn] = 1
@@ -518,7 +529,10 @@ class DecoderFrame(ttk.Frame):
         ttk.Label(self.ctrl_frame, text='Conn:').grid(column=0, row=2, sticky=tk.E, pady=3)
         self.conn_mode = ttk.Combobox(self.ctrl_frame, values=tuple(utils.con_mode_names.values()), state='readonly')
         self.conn_mode.bind('<<ComboboxSelected>>', self.named_conn_btn)
-        self.conn_mode.current(int(config.get('connmode')))
+        try:
+            self.conn_mode.current(int(config.get('connmode')))
+        except tk.TclError:
+            self.conn_mode.current(0)
         self.named_conn_btn()
         self.conn_mode.grid(column=1, row=2, sticky=tk.EW, pady=3)
 
@@ -583,9 +597,9 @@ class DecoderFrame(ttk.Frame):
 
     def new_img(self):
         if self.decoder.ir:
-            img = self.decoder.ir.force_new()
+            *_, img = args = self.decoder.create_new_image()
             self.dv_frame.set_img(img, 1)
-            self.history_frame.put('img', self.proto, img)
+            self.history_frame.put('img', self.proto, *args)
 
     def stop(self, _=None):
         if self.sk:

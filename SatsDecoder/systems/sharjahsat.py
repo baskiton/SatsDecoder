@@ -278,7 +278,7 @@ class SharjahImageReceiver(ImageReceiver):
             self.current_fid = 0
 
 
-class SharjahProtocol:
+class SharjahProtocol(common.Protocol):
     columns = ()
     c_width = ()
 
@@ -432,11 +432,7 @@ class SharjahProtocol:
     }
 
     def __init__(self, outdir):
-        self.ir = SharjahImageReceiver(outdir)
-
-    @staticmethod
-    def get_sender_callsign(data):
-        return ax25.get_sender_callsign(data.ax25)
+        super().__init__(SharjahImageReceiver(outdir))
 
     def recognize(self, bb):
         while bb:

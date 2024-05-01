@@ -13,6 +13,7 @@ from collections import namedtuple as nt
 import construct
 
 from SatsDecoder import utils
+from SatsDecoder.systems import common
 
 
 __all__ = 'Ax25Protocol',
@@ -73,7 +74,7 @@ def get_receiver_callsign(ax25_hdr):
     return get_callsign(ax25_hdr, 0)
 
 
-class Ax25Protocol:
+class Ax25Protocol(common.Protocol):
     columns = ()
     c_width = ()
     dd = nt('Ax25Tlm', ('receiver_cs', 'sender_cs', 'control', 'pid', 'data', 'hex'))
@@ -89,9 +90,6 @@ class Ax25Protocol:
             ),
         },
     }
-
-    def __init__(self, outdir):
-        self.ir = None
 
     @staticmethod
     def get_sender_callsign(data):
