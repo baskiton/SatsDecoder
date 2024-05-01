@@ -1465,6 +1465,8 @@ class UspImageReceiver(ImageReceiver):
         if data.message == FILETRANSFER_DATA:
             img = self.get_image()
             with img.lock:
+                if not packet.offset and packet.data.startswith(b'\xff\xd8'):
+                    img.has_soi = 1
                 img.push_data(packet.offset, packet.data[:data.size - 5])
                 if packet.offset < img.first_data_offset:
                     img.first_data_offset = packet.offset
