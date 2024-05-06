@@ -75,7 +75,7 @@ class Protocol:
     tlm_table = {}
 
     def __init__(self, ir: ImageReceiver = None):
-        self.ir = ir
+        self.ir = isinstance(ir, ImageReceiver) and ir
 
     @staticmethod
     def get_sender_callsign(data):
