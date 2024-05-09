@@ -33,7 +33,7 @@ import PIL.Image
 import PIL.ImageFile
 import PIL.ImageTk
 
-from SatsDecoder import AGWPE_CON, HOMEDIR, RES, systems, utils
+from SatsDecoder import HOMEDIR, RES, systems, utils
 from SatsDecoder.version import __version__
 
 
@@ -657,8 +657,9 @@ class DecoderFrame(ttk.Frame):
         ask_hex.update()
 
     def _start(self):
-        self.is_server = utils.ConnMode(self.conn_mode.current()) == utils.ConnMode.TCP_SRV
-        self.is_raw_tcp = 1
+        curr_mode = utils.ConnMode(self.conn_mode.current())
+        self.is_server = curr_mode == utils.ConnMode.TCP_SRV
+        self.is_agwpe_cli = curr_mode == utils.ConnMode.AGWPE_CLI
         try:
             self.frame_off = 0
             s = sk.socket(sk.AF_INET, sk.SOCK_STREAM)
@@ -669,10 +670,9 @@ class DecoderFrame(ttk.Frame):
 
             else:
                 s.connect((self.server_v.get(), int(self.port_v.get())))
-                if utils.ConnMode(self.conn_mode.current()) == utils.ConnMode.AGWPE_CLI:
-                    self.is_raw_tcp = 0
-                    self.frame_off = 37
-                    s.send(AGWPE_CON)
+                if self.is_agwpe_cli:
+                    self.frame_off = 1
+                    s.send(utils.AGWPE_CON)
 
             s.setblocking(0)
             self.sk = s
@@ -751,8 +751,9 @@ class DecoderFrame(ttk.Frame):
 
     def _receive(self, conn):
         try:
-            if not self.is_raw_tcp:
-                frame = conn.recv(4096)
+            if self.is_agwpe_cli:
+                port, kind, pid, c_from, c_to, dlen = utils.AGWPE_HDR_FMT.unpack_from(conn.recv(utils.AGWPE_HDR_FMT.size))
+                frame = conn.recv(dlen)
             else:
                 frame_sz = frame = self._recvall(conn, 4)
                 if frame_sz:

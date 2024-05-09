@@ -7,6 +7,7 @@
 
 import datetime as dt
 import enum
+import struct
 import sys
 import tkinter as tk
 
@@ -399,3 +400,7 @@ seqs_map = {
                             'anBnLyVzcHgtQ3ViZVNhdF9HZW9zY2FuLUVkZWx2ZWlzX2VtYmxlbS5qcGc=',
     '\x72\x73\x31\x35\x73': 'aHR0cHM6Ly9zcHV0bml4LnJ1L3RwbC9pbWcvbG9nby16b3JraXkuanBnPyVz',
 }
+
+AGWPE_CON = b'\x00\x00\x00\x00k\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+AGWPE_HDR_FMT = struct.Struct('BxxxBxBx10s10sIxxxx')
