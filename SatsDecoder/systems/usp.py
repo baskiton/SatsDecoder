@@ -9,6 +9,7 @@ import datetime as dt
 
 import construct
 
+from SatsDecoder import utils
 from SatsDecoder.systems import ax25, common
 from SatsDecoder.systems.image_receiver import ImageReceiver
 
@@ -610,6 +611,8 @@ time_request = construct.Struct(
     '_name' / construct.Computed('time_request'),
     'name' / construct.Computed('TIME_REQUEST'),
     'desc' / construct.Computed('Acknowledge of completed data transmission'),
+    'data' / construct.Bytes(construct.this._.size),
+    'hex' / construct.Computed(lambda this: utils.bytes2hex(this.data)),
 )
 
 # 0x4246
@@ -644,6 +647,8 @@ detector_transmits = construct.Struct(
     '_name' / construct.Computed('detector_transmits'),
     'name' / construct.Computed('DETECTOR_TRANSMITS'),
     'desc' / construct.Computed('Detector mod data'),
+    'data' / construct.Bytes(construct.this._.size),
+    'hex' / construct.Computed(lambda this: utils.bytes2hex(this.data)),
 )
 
 # 0x5439
@@ -651,6 +656,8 @@ data_massive_addr_rpl = construct.Struct(
     '_name' / construct.Computed('data_massive_addr_rpl'),
     'name' / construct.Computed('DATA_MASSIVE_ADDR_RPL'),
     'desc' / construct.Computed('Massive addr mod data'),
+    'data' / construct.Bytes(construct.this._.size),
+    'hex' / construct.Computed(lambda this: utils.bytes2hex(this.data)),
 )
 
 # 0x543A
@@ -658,6 +665,8 @@ data_event_addr_rpl = construct.Struct(
     '_name' / construct.Computed('data_event_addr_rpl'),
     'name' / construct.Computed('DATA_EVENT_ADDR_RPL'),
     'desc' / construct.Computed('Event addr mod data'),
+    'data' / construct.Bytes(construct.this._.size),
+    'hex' / construct.Computed(lambda this: utils.bytes2hex(this.data)),
 )
 
 # 0x543B
@@ -665,6 +674,8 @@ data_monitor_addr_rpl = construct.Struct(
     '_name' / construct.Computed('data_monitor_addr_rpl'),
     'name' / construct.Computed('DATA_MONITOR_ADDR_RPL'),
     'desc' / construct.Computed('Monitor addr mod data'),
+    'data' / construct.Bytes(construct.this._.size),
+    'hex' / construct.Computed(lambda this: utils.bytes2hex(this.data)),
 )
 
 # 0x543C
@@ -672,6 +683,8 @@ data_massive_rpl = construct.Struct(
     '_name' / construct.Computed('data_massive_rpl'),
     'name' / construct.Computed('DATA_MASSIVE_RPL'),
     'desc' / construct.Computed('Massive mod data'),
+    'data' / construct.Bytes(construct.this._.size),
+    'hex' / construct.Computed(lambda this: utils.bytes2hex(this.data)),
 )
 
 # 0x543D
@@ -679,6 +692,8 @@ data_event_rpl = construct.Struct(
     '_name' / construct.Computed('data_event_rpl'),
     'name' / construct.Computed('DATA_EVENT_RPL'),
     'desc' / construct.Computed('Event mod ata'),
+    'data' / construct.Bytes(construct.this._.size),
+    'hex' / construct.Computed(lambda this: utils.bytes2hex(this.data)),
 )
 
 # 0x543E
@@ -686,6 +701,8 @@ data_monitor_rpl = construct.Struct(
     '_name' / construct.Computed('data_monitor_rpl'),
     'name' / construct.Computed('DATA_MONITOR_RPL'),
     'desc' / construct.Computed('Monitor mod data'),
+    'data' / construct.Bytes(construct.this._.size),
+    'hex' / construct.Computed(lambda this: utils.bytes2hex(this.data)),
 )
 
 # 0xABD1
@@ -703,6 +720,8 @@ no_monitor_data = construct.Struct(
     '_name' / construct.Computed('no_monitor_data'),
     'name' / construct.Computed('NO_MONITOR_DATA'),
     'desc' / construct.Computed('There is no enought corresponding data'),
+    'data' / construct.Bytes(construct.this._.size),
+    'hex' / construct.Computed(lambda this: utils.bytes2hex(this.data)),
 )
 
 # 0xABD5
@@ -710,6 +729,8 @@ no_event_data = construct.Struct(
     '_name' / construct.Computed('no_event_data'),
     'name' / construct.Computed('NO_EVENT_DATA'),
     'desc' / construct.Computed('There is no enought corresponding data'),
+    'data' / construct.Bytes(construct.this._.size),
+    'hex' / construct.Computed(lambda this: utils.bytes2hex(this.data)),
 )
 
 # 0xABD6
@@ -717,6 +738,8 @@ no_massive_data = construct.Struct(
     '_name' / construct.Computed('no_massive_data'),
     'name' / construct.Computed('NO_MASSIVE_DATA'),
     'desc' / construct.Computed('There is no enought corresponding data'),
+    'data' / construct.Bytes(construct.this._.size),
+    'hex' / construct.Computed(lambda this: utils.bytes2hex(this.data)),
 )
 
 # 0xABD9
@@ -724,6 +747,8 @@ compl_monitor_data = construct.Struct(
     '_name' / construct.Computed('compl_monitor_data'),
     'name' / construct.Computed('COMPL_MONITOR_DATA'),
     'desc' / construct.Computed('Acknowledge of completed data transmission'),
+    'data' / construct.Bytes(construct.this._.size),
+    'hex' / construct.Computed(lambda this: utils.bytes2hex(this.data)),
 )
 
 # 0xABDA
@@ -731,6 +756,8 @@ compl_event_data = construct.Struct(
     '_name' / construct.Computed('compl_event_data'),
     'name' / construct.Computed('COMPL_EVENT_DATA'),
     'desc' / construct.Computed('Acknowledge of completed data transmission'),
+    'data' / construct.Bytes(construct.this._.size),
+    'hex' / construct.Computed(lambda this: utils.bytes2hex(this.data)),
 )
 
 # 0xABDB
@@ -738,6 +765,8 @@ compl_massive_data = construct.Struct(
     '_name' / construct.Computed('compl_massive_data'),
     'name' / construct.Computed('COMPL_MASSIVE_DATA'),
     'desc' / construct.Computed('Acknowledge of completed data transmission'),
+    'data' / construct.Bytes(construct.this._.size),
+    'hex' / construct.Computed(lambda this: utils.bytes2hex(this.data)),
 )
 
 # 0xABDD
@@ -1435,13 +1464,13 @@ Data = construct.Struct(
 
 Frame = construct.Struct(
     'data' / construct.GreedyRange(Data),
-    '_tail' / construct.GreedyBytes
+    '_tail' / construct.GreedyBytes,
 )
 
 usp = construct.Struct(
     'ax25' / construct.Peek(ax25.ax25_header),
     'ax25' / construct.If(lambda this: bool(this.ax25), ax25.ax25_header),
-    'usp' / construct.If(lambda this: (bool(this.ax25) and this.ax25.pid == 0xF0), Frame)
+    'usp' / construct.If(lambda this: (bool(this.ax25) and this.ax25.pid == 0xF0), Frame),
 )
 
 usp_range = construct.GreedyRange(usp)
@@ -1543,6 +1572,14 @@ class UspProtocol(common.Protocol):
         ),
         'flags': (
             ('invalid', 'Data is not valid'),
+        ),
+    }
+    _data_tmpl = {
+        'table': (
+            ('name', 'Name'),
+            ('desc', 'Description'),
+            ('data', 'Data'),
+            ('hex', 'Data (HEX)'),
         ),
     }
     _zerolen_tmpl = {
@@ -1773,7 +1810,7 @@ class UspProtocol(common.Protocol):
                 ('LastEvent_CH2_3', 'Last event Ch#2 H2M2'),
             ),
         },
-        'time_request': _zerolen_tmpl,
+        'time_request': _data_tmpl,
         'uhf_beacon': {
             'table': (
                 ('name', 'Name'),
@@ -1798,13 +1835,13 @@ class UspProtocol(common.Protocol):
                 ('BackupScheduleActive', 'Backup schedule execution in progress'),
             ),
         },
-        'detector_transmits': _zerolen_tmpl,
-        'data_massive_addr_rpl': _zerolen_tmpl,
-        'data_event_addr_rpl': _zerolen_tmpl,
-        'data_monitor_addr_rpl': _zerolen_tmpl,
-        'data_massive_rpl': _zerolen_tmpl,
-        'data_event_rpl': _zerolen_tmpl,
-        'data_monitor_rpl': _zerolen_tmpl,
+        'detector_transmits': _data_tmpl,
+        'data_massive_addr_rpl': _data_tmpl,
+        'data_event_addr_rpl': _data_tmpl,
+        'data_monitor_addr_rpl': _data_tmpl,
+        'data_massive_rpl': _data_tmpl,
+        'data_event_rpl': _data_tmpl,
+        'data_monitor_rpl': _data_tmpl,
         'get_Payload_FW_MSG': {
             'table': (
                 ('name', 'Name'),
@@ -1814,12 +1851,12 @@ class UspProtocol(common.Protocol):
                 ('Release_Number', 'Release Number'),
             ),
         },
-        'no_monitor_data': _zerolen_tmpl,
-        'no_event_data': _zerolen_tmpl,
-        'no_massive_data': _zerolen_tmpl,
-        'compl_monitor_data': _zerolen_tmpl,
-        'compl_event_data': _zerolen_tmpl,
-        'compl_massive_data': _zerolen_tmpl,
+        'no_monitor_data': _data_tmpl,
+        'no_event_data': _data_tmpl,
+        'no_massive_data': _data_tmpl,
+        'compl_monitor_data': _data_tmpl,
+        'compl_event_data': _data_tmpl,
+        'compl_massive_data': _data_tmpl,
         'get_Payload_CURRENT_CONFIG': {
             'table': (
                 ('name', 'Name'),
