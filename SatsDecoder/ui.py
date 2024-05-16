@@ -752,12 +752,18 @@ class DecoderFrame(ttk.Frame):
     def _receive(self, conn):
         try:
             if self.is_agwpe_cli:
-                port, kind, pid, c_from, c_to, dlen = utils.AGWPE_HDR_FMT.unpack_from(conn.recv(utils.AGWPE_HDR_FMT.size))
-                frame = conn.recv(dlen)
+                frame = conn.recv(utils.AGWPE_HDR_FMT.size)
+                if len(frame) != utils.AGWPE_HDR_FMT.size:
+                    frame = 0
+                else:
+                    port, kind, pid, c_from, c_to, dlen = utils.AGWPE_HDR_FMT.unpack_from(frame)
+                    frame = conn.recv(dlen)
             else:
-                frame_sz = frame = self._recvall(conn, 4)
-                if frame_sz:
-                    frame_sz, = struct.unpack('!I', frame_sz)
+                frame = self._recvall(conn, 4)
+                if len(frame) != 4:
+                    frame = 0
+                else:
+                    frame_sz, = struct.unpack('!I', frame)
                     frame = self._recvall(conn, frame_sz)
         except AttributeError:
             return 1
