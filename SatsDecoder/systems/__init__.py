@@ -17,6 +17,7 @@ from SatsDecoder.systems.sonate2 import *
 from SatsDecoder.systems.starlink_vhf import *
 from SatsDecoder.systems.usp import *
 from SatsDecoder.systems.wtc_simba import *
+from SatsDecoder.systems.raw import *
 
 PROTOCOLS = {}
 for i in (
@@ -30,6 +31,7 @@ for i in (
         'sonate2',
         # 'starlink_vhf',
         'wtc_simba',
+        'raw',
         ):
     m = getattr(sys.modules['SatsDecoder.systems'], i)
     for n in dir(m):

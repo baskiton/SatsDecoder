@@ -41,6 +41,7 @@ The following protocols are currently supported:
 * `SharjahSat`
 * `Sonate-2` - [Sonate-2 protocol](https://www.informatik.uni-wuerzburg.de/en/aerospaceinfo/mitarbeiter/kayal/forschungsprojekte/sonate-2/information-for-radio-amateurs/)
 * `WTCSimba` - [WildTrackCube-SIMBA](https://www.s5lab.space/index.php/decoding-simba/)
+* `RAW` - Any raw data
 
 #### Data Sources
 Various data source types are available in the `Conn` combobox:
