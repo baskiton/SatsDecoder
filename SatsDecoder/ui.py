@@ -787,6 +787,9 @@ class DecoderFrame(ttk.Frame):
             for i in self.decoder.recognize(data):
                 args = i
                 ty, name, *_, packet = i
+                if '\0' in name:
+                    # TODO: log it, '`null` in name not allowed'
+                    continue
                 date = 0
 
                 if ty == 'img':
@@ -804,10 +807,14 @@ class DecoderFrame(ttk.Frame):
                     args = args[:-1] + (tlm, fp)
 
                     fp.parent.mkdir(parents=True, exist_ok=True)
-                    with fp.open('w') as f:
-                        f.write(utils.bytes2hex(data))
-                        f.write('\n\n')
-                        f.write(str(packet))
+                    try:
+                        with fp.open('w') as f:
+                            f.write(utils.bytes2hex(data))
+                            f.write('\n\n')
+                            f.write(str(packet))
+                    except ValueError:
+                        # TODO: log it. invalid name
+                        continue
 
                 self.history_frame.put(*args, date=date)
 
