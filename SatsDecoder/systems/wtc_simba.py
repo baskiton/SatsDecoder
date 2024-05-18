@@ -286,35 +286,43 @@ class WtcSimbaProtocol(common.Protocol):
 
         csp_packet.data = s = simba.parse(raw_simba, csp_hdr=csp_packet.hdr)
         args = [
+            'raw',
             self.NAME,
             f'{csp_packet.hdr.src}:{csp_packet.hdr.src_port}',
             f'{csp_packet.hdr.dest}:{csp_packet.hdr.dest_port}',
             hasattr(s.packet, 'id') and f'{s.packet.id:02X}' or None,
+            raw_simba,
         ]
 
         if csp_packet.hdr.dest_port == SIMBA_IMG_DPORT:
             x = self.ir.push_data(s.packet)
             if x:
-                yield 'img', *args, (x, self.ir.cur_img)
+                args[0] = 'img'
+                args[-1] = x, self.ir.cur_img
+                yield tuple(args)
 
         elif csp_packet.hdr.dest_port in packets_map:
-            pass
-            yield 'tlm', *args, (csp_packet, s.packet)
+            args[0] = 'tlm'
+            args[-1] = csp_packet, s.packet
+            yield tuple(args)
 
         elif s.packet.id == SIMBA_LIMG_ID:
-            z = args[1:3]
+            z = args[2:4]
             if csp_packet.rdp:
                 z.append(str(csp_packet.rdp.ack_nr))
             x = self.ir.push_data(s.packet.data, large=tuple(z))
             if x:
-                yield 'img', *args, (x, self.ir.cur_img)
+                args[0] = 'img'
+                args[-1] = x, self.ir.cur_img
+                yield tuple(args)
 
         elif s.packet.id in ids_map:
-            pass
-            yield 'tlm', *args, (csp_packet, s.packet.data)
+            args[0] = 'tlm'
+            args[-1] = csp_packet, s.packet.data
+            yield tuple(args)
 
         else:
-            yield 'raw', *args, raw_simba
+            yield tuple(args)
 
     def create_new_image(self):
         return (-1, -1, -1) + super().create_new_image()
