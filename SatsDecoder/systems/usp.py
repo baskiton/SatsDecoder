@@ -1488,7 +1488,7 @@ class UspImageReceiver(ImageReceiver):
             self.current_fid = fname
         return self.current_fid
 
-    def push_data(self, data):
+    def push_data(self, data, **kw):
         packet = data.packet
 
         if data.message == FILETRANSFER_DATA:

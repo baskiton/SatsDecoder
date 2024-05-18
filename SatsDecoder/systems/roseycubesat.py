@@ -89,7 +89,7 @@ class RoseyImageReceiver(ImageReceiver):
         img.mosaic = 'bayer;grbg'
         return img
 
-    def push_data(self, data):
+    def push_data(self, data, **kw):
         if data.packet.id != 0x00:
             # this is thumbnail 48x36
             return

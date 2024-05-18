@@ -93,7 +93,7 @@ class Lucky7ImageReceiver(ImageReceiver):
         img.has_soi |= soi
         return img
 
-    def push_data(self, data):
+    def push_data(self, data, **kw):
         off = self.PACKET_LEN * data.pnum
 
         img = self.get_image(not data.pnum, data.packets)

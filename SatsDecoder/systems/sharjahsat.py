@@ -255,7 +255,7 @@ class SharjahImageReceiver(ImageReceiver):
         img.has_soi |= soi
         return img
 
-    def push_data(self, data):
+    def push_data(self, data, **kw):
         pack_num = data.hdr.packet_counter
         soi = data.data.startswith(b'\xff\xd8')
         eoi = pack_num == 1

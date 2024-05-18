@@ -156,7 +156,8 @@ class HistoryFrame(ttk.LabelFrame):
 
         for c, w in zip(master.decoder.columns, master.decoder.c_width):
             self.table.heading(c, text=c.capitalize())
-            self.table.column(c, width=f.measure(c), stretch=tk.NO)
+            # self.table.column(c, width=f.measure(c), stretch=tk.NO)
+            self.table.column(c, width=w, stretch=tk.NO)
         self.table.column(self.table['columns'][-1], stretch=tk.YES)
 
         self.table.bind('<<TreeviewSelect>>', self.item_select)

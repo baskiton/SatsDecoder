@@ -170,7 +170,7 @@ class GeoscanImageReceiver(ImageReceiver):
     def force_new(self, *args, **kwargs):
         return super().force_new(*args, **kwargs)
 
-    def push_data(self, data):
+    def push_data(self, data, **kw):
         if data.marker not in self.MARKERS:
             self._miss_cnt += 1
             return
