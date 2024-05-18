@@ -13,6 +13,7 @@ import json
 import pathlib
 import re
 import select
+import shutil
 import socket as sk
 import struct
 import sys
@@ -266,7 +267,7 @@ class CanvasFrame(ttk.Frame):
         self.rowconfigure(1, weight=1)
         self.columnconfigure(0, weight=1)
 
-        self.active_img = self.active_pil_img = None
+        self.active_img = self.active_pil_img = self.active_pil_img_modified = None
         self.cnv_img_id = tk.ALL
         self._imgtk = 0
 
@@ -346,6 +347,7 @@ class CanvasFrame(ttk.Frame):
         self.first_data_off_v.set(img.first_data_offset)
         self.strip_btn.config(state=img.first_data_offset and tk.NORMAL or tk.DISABLED)
         self.demosaic_btn.config(state=img.mosaic and tk.NORMAL or tk.DISABLED)
+        self.active_pil_img_modified = 0
 
         try:
             with img.lock:
@@ -386,15 +388,19 @@ class CanvasFrame(ttk.Frame):
             self.draw_image(PIL.Image.fromarray(utils.bayer2rgb(data, mode, *self.active_pil_img.size), 'RGB'))
 
         self.demosaic_btn.config(state=tk.DISABLED)
+        self.active_pil_img_modified = 1
 
     def save_as(self):
         fn = pathlib.Path(self.active_img.fn)
-        fn = filedialog.asksaveasfilename(
-            defaultextension='.png', confirmoverwrite=True,
-            filetypes=[('Images', ['*.png', '*.jpg']), ('All files', '*.*')],
-            initialdir=fn.parent, initialfile=fn.with_suffix('.png').name)
-        if fn:
-            self.active_pil_img.save(fn)
+        ofn = filedialog.asksaveasfilename(
+            defaultextension=fn.suffix, confirmoverwrite=True,
+            filetypes=[('Auto', [f'*{fn.suffix}']), ('Images', ['*.png', '*.jpg']), ('All files', '*.*')],
+            initialdir=fn.parent, initialfile=fn.name)
+        if ofn:
+            if self.active_pil_img_modified:
+                self.active_pil_img.save(ofn)
+            else:
+                shutil.copyfile(fn, ofn)
 
     def draw_image(self, i):
         del self._imgtk
