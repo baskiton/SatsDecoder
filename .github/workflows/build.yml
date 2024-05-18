@@ -53,11 +53,12 @@ jobs:
         id: build
         run: |
           echo "ver=v$(bash semver.sh)" | tee "$GITHUB_OUTPUT"
-          [[ ${{ matrix.os }} == windows-latest ]] && pyinstaller -y decoder.spec
+          [[ ${{ matrix.os }} != windows-latest ]] || pyinstaller -y decoder.spec
           pyinstaller -y decoder-onefile.spec
 
       - name: Dist rename
         run: |
+          ls -ahl dist
           case ${{ matrix.os }} in
             ubuntu-latest)
               mv dist/SatsDecoder dist/SatsDecoder-linux
