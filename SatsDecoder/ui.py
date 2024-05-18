@@ -264,43 +264,64 @@ class CanvasFrame(ttk.Frame):
     def __init__(self, master):
         super().__init__(master)
         self.rowconfigure(1, weight=1)
+        self.columnconfigure(0, weight=1)
+
         self.active_img = self.active_pil_img = None
         self.cnv_img_id = tk.ALL
         self._imgtk = 0
 
-        self.image_starter = ttk.Label(self, text='STARTER', foreground='red')
-        self.image_starter.grid(column=0, row=0, sticky=tk.E, padx=0)
+        self.info_frame = ttk.Frame(self)
+        self.info_frame.grid(row=0, sticky=tk.NSEW, pady=3)
 
-        self.image_soi = ttk.Label(self, text='SOI', foreground='red')
-        self.image_soi.grid(column=1, row=0, sticky=tk.E, padx=0)
+        self.image_starter = ttk.Label(self.info_frame, text='STARTER', foreground='red')
+        self.image_starter.grid(column=0, row=0, sticky=tk.E, padx=1.5)
 
-        self.image_offset_l = ttk.Label(self, text='Base offset:')
-        self.image_offset_l.grid(column=2, row=0, sticky=tk.E, padx=0)
+        self.image_soi = ttk.Label(self.info_frame, text='SOI', foreground='red')
+        self.image_soi.grid(column=1, row=0, sticky=tk.E, padx=1.5)
 
-        self.image_offset_v = tk.IntVar(self, 0)
-        self.image_offset = ttk.Entry(self, textvariable=self.image_offset_v, width=7,
+        ttk.Separator(self.info_frame, orient='vertical').grid(column=2, row=0, sticky=tk.NS, padx=3)
+
+        self.image_offset_l = ttk.Label(self.info_frame, text='Base offset:')
+        self.image_offset_l.grid(column=3, row=0, sticky=tk.E, padx=0)
+
+        self.image_offset_v = tk.IntVar(self.info_frame, 0)
+        self.image_offset = ttk.Entry(self.info_frame, textvariable=self.image_offset_v, width=7,
                                       validate='all', validatecommand=lambda: False)
-        self.image_offset.grid(column=3, row=0, sticky=tk.W, padx=0)
+        self.image_offset.grid(column=4, row=0, sticky=tk.W, padx=0)
 
-        ttk.Separator(self, orient='vertical').grid(column=4, row=0, sticky=tk.NS)
+        ttk.Separator(self.info_frame, orient='vertical').grid(column=5, row=0, sticky=tk.NS, padx=3)
 
-        self.first_data_off_l = tk.Label(self, text='First data offset:')
-        self.first_data_off_l.grid(column=5, row=0, sticky=tk.E, padx=0)
+        self.first_data_off_l = tk.Label(self.info_frame, text='First data offset:')
+        self.first_data_off_l.grid(column=6, row=0, sticky=tk.E, padx=0)
 
-        self.first_data_off_v = tk.IntVar(self, 0)
-        self.first_data_off = ttk.Entry(self, textvariable=self.first_data_off_v, width=7,
+        self.first_data_off_v = tk.IntVar(self.info_frame, 0)
+        self.first_data_off = ttk.Entry(self.info_frame, textvariable=self.first_data_off_v, width=7,
                                         validate='all', validatecommand=lambda: False)
-        self.first_data_off.grid(column=6, row=0, sticky=tk.W, padx=0)
+        self.first_data_off.grid(column=7, row=0, sticky=tk.W, padx=0)
 
-        self.strip_btn = ttk.Button(self, text='Strip', command=self.strip_file, state=tk.DISABLED)
-        self.strip_btn.grid(column=7, row=0, sticky=tk.W, padx=0)
+        self.strip_btn = ttk.Button(self.info_frame, text='Strip', command=self.strip_file, state=tk.DISABLED)
+        self.strip_btn.grid(column=8, row=0, sticky=tk.W, padx=3)
 
-        self.canvas_sz = 420, 420
-        self.canvas = tk.Canvas(self, width=self.canvas_sz[0], height=self.canvas_sz[1])
-        self.canvas.grid(row=1, columnspan=8, sticky=tk.NSEW, pady=3)
+        self.canvas_frame = ttk.Frame(self)
+        self.canvas_frame.grid(column=0, row=1, sticky=tk.NSEW, pady=3)
+        self.canvas_frame.columnconfigure(0, weight=1)
+        self.canvas_frame.rowconfigure(0, weight=1)
+
+        self.canvas_sz = 0, 0
+        self.canvas = tk.Canvas(self.canvas_frame)
+        self.canvas.grid(column=0, row=0, sticky=tk.NSEW)
+
+        self.vsb = utils.AutoScrollbar(self.canvas_frame, orient='vertical', command=self.canvas.yview)
+        self.vsb.grid(row=0, column=1, sticky=tk.NS)
+        self.canvas.configure(yscrollcommand=self.vsb.set)
+        self.hsb = utils.AutoScrollbar(self.canvas_frame, orient='horizontal', command=self.canvas.xview)
+        self.hsb.grid(row=1, column=0, sticky=tk.EW)
+        self.canvas.configure(xscrollcommand=self.hsb.set)
+        self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
 
         self.tail_frame = ttk.Frame(self)
-        self.tail_frame.grid(row=2, columnspan=8, sticky=tk.NSEW, pady=3)
+        self.tail_frame.grid(row=2, sticky=tk.NSEW, pady=3)
+        self.tail_frame.columnconfigure(3, weight=1)
 
         self.demosaic_btn = ttk.Button(self.tail_frame, text='Demosaicing', command=self.demosaicing, state=tk.DISABLED)
         self.demosaic_btn.grid(sticky=tk.SW, row=0, column=0, padx=1.5)
@@ -376,17 +397,14 @@ class CanvasFrame(ttk.Frame):
             self.active_pil_img.save(fn)
 
     def draw_image(self, i):
-        if i.size != self.canvas_sz:
-            self.canvas.config(width=i.width, height=i.height)
-            self.canvas_sz = i.size
-            self.canvas.update()
-            # self.master.minsize(self.winfo_width(), self.winfo_height())
-
         del self._imgtk
         _imgtk = PIL.ImageTk.PhotoImage(i)
         to_del, self.cnv_img_id = self.cnv_img_id, self.canvas.create_image(0, 0, anchor=tk.NW, image=_imgtk)
         self.canvas.delete(to_del)
         self._imgtk = _imgtk
+
+        if i.size != self.canvas_sz:
+            self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
 
         if self.active_pil_img:
             self.active_pil_img.close()
