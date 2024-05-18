@@ -397,7 +397,7 @@ class CanvasFrame(ttk.Frame):
             filetypes=[('Auto', [f'*{fn.suffix}']), ('Images', ['*.png', '*.jpg']), ('All files', '*.*')],
             initialdir=fn.parent, initialfile=fn.name)
         if ofn:
-            if self.active_pil_img_modified:
+            if self.active_pil_img_modified or fn.suffix != pathlib.Path(ofn).suffix:
                 self.active_pil_img.save(ofn)
             else:
                 shutil.copyfile(fn, ofn)
