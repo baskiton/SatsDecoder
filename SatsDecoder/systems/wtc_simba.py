@@ -151,7 +151,7 @@ class WtcSimbaImageReceiver(ImageReceiver):
     def generate_fid(self, large=''):
         if not (self.current_fid and self.merge_mode):
             self.last_date = now = dt.datetime.now()
-            large = large and f'_LARGE-({"-".join(large)})'
+            large = large and f'_LARGE-({",".join(large)})'
             self.current_fid = f'WildTrackCube-SIMBA_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}{large}'
         return self.current_fid
 
@@ -288,8 +288,8 @@ class WtcSimbaProtocol(common.Protocol):
         args = [
             'raw',
             self.NAME,
-            f'{csp_packet.hdr.src}:{csp_packet.hdr.src_port}',
-            f'{csp_packet.hdr.dest}:{csp_packet.hdr.dest_port}',
+            f'{csp_packet.hdr.src}-{csp_packet.hdr.src_port}',
+            f'{csp_packet.hdr.dest}-{csp_packet.hdr.dest_port}',
             hasattr(s.packet, 'id') and f'{s.packet.id:02X}' or None,
             raw_simba,
         ]
