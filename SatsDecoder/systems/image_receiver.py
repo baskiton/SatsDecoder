@@ -7,6 +7,8 @@
 
 import math
 import pathlib
+import shutil
+import sys
 import threading
 
 
@@ -52,8 +54,18 @@ class Image:
             try:
                 self.fn.rename(new_filename)
                 break
+            except PermissionError as e:
+                if not (sys.platform == 'win32' and e.winerror == 32):
+                    raise
+                shutil.copyfile(old, new_filename)
+                break
             except FileExistsError:
-                new_filename.unlink(True)
+                try:
+                    new_filename.unlink()
+                except IsADirectoryError:
+                    new_filename.rmdir()
+                except FileNotFoundError:
+                    pass
         self.fn = new_filename
         self.renamed = old
 
@@ -111,7 +123,7 @@ class ImageReceiver:
         self.outdir.mkdir(parents=True, exist_ok=True)
         self.images = {}
         self.merge_mode = 0
-        self.current_fid = None
+        self.current_fid = ''
         self.last_date = 0
 
     @property

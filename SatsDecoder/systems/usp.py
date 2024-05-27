@@ -1480,11 +1480,13 @@ class UspImageReceiver(ImageReceiver):
     def __init__(self, outdir):
         super().__init__(outdir)
 
-    def generate_fid(self, fname='unknown'):
-        if self.current_fid == 'unknown':
+    def generate_fid(self, fname=''):
+        if self.current_fid.startswith('unknown_') and fname:
             self.rename_image(self.current_fid, fname)
         elif not (self.current_fid and self.merge_mode):
-            self.last_date = dt.datetime.now()
+            self.last_date = now = dt.datetime.now()
+            if not fname:
+                fname = f'unknown_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
             self.current_fid = fname
         return self.current_fid
 
