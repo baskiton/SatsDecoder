@@ -126,8 +126,12 @@ geoscan = construct.Struct(
 )
 
 
+# markers
+GEOSKAN_IMG = 0x0001
+STRATOSAT_IMG = 0x0002
+
 _frame = construct.Struct(
-    'marker' / construct.Hex(construct.Int16ul),    # #0
+    'marker' / construct.Hex(construct.Enum(construct.Int16ul, GEOSCAN=GEOSKAN_IMG, STRATOSAT=STRATOSAT_IMG)),    # #0
     'dlen' / construct.Int8ul,                      # #2
     'mtype' / construct.Hex(construct.Int16ul),     # #3
     'offset' / construct.Int16ul,                   # #5
@@ -135,10 +139,6 @@ _frame = construct.Struct(
     # 'data' / construct.Bytes(construct.this.dlen - 6)
     'data' / construct.Bytes(56)
 )
-
-# mtypes
-GEOSKAN_IMG = 0x0001
-STRATOSAT_IMG = 0x0002
 
 marker_names = {
     GEOSKAN_IMG: 'geoscan-img',
@@ -153,12 +153,13 @@ def get_marker_name(marker):
 class GeoscanImageReceiver(ImageReceiver):
     MARKERS = GEOSKAN_IMG, STRATOSAT_IMG
     CMD_IMG_START = 0x0901
-    CMD_IMG_FRAME = 0x0905, 0x0920
+    CMD_IMG_FRAME = 0x0905, 0x0920, 0x9820
 
     def __init__(self, outdir):
         super().__init__(outdir, '.jpg')
         self._prev_data_sz = -1
         self._miss_cnt = 0
+        self._last_mtype = -1
 
     def generate_fid(self, marker=None):
         if not (self.current_fid and self.merge_mode):
@@ -171,18 +172,19 @@ class GeoscanImageReceiver(ImageReceiver):
         return super().force_new(*args, **kwargs)
 
     def push_data(self, data, **kw):
-        if data.marker not in self.MARKERS:
+        marker = int(data.marker)
+        if marker not in self.MARKERS:
             self._miss_cnt += 1
             return
 
         off = (data.subsystem_num << 16) | data.offset
 
         if data.mtype == self.CMD_IMG_START:
-            img = self.get_image(1, marker=data.marker)
+            img = self.get_image(1, marker=marker)
 
             with img.lock:
                 if data.data.startswith(b'\xff\xd8'):
-                    img.has_soi = off
+                    img.has_soi = 1
                 img.has_starter = 1
                 img.base_offset = off
                 img.first_data_offset = off = 0
@@ -191,14 +193,15 @@ class GeoscanImageReceiver(ImageReceiver):
 
         elif data.mtype in self.CMD_IMG_FRAME:
             force = data.data.startswith(b'\xff\xd8')
-            img = self.get_image(force, marker=data.marker)
+            img = self.get_image(force, marker=marker)
             with img.lock:
                 if force:
-                    img.base_offset = img.has_soi = off
+                    img.has_soi = 1
+                    img.base_offset = off
 
                 x = off - img.base_offset
                 if x < 0:
-                    img = self.force_new(marker=data.marker)
+                    img = self.force_new(marker=marker)
                     img.base_offset = img.BASE_OFFSET
                     x = off - img.base_offset
                 off = x
@@ -303,7 +306,7 @@ class GeoscanProtocol(common.Protocol):
                 yield 'raw', get_marker_name(None), raw_packet
                 continue
 
-            name = get_marker_name(frame.marker)
+            name = get_marker_name(int(frame.marker))
             x = self.ir.push_data(frame)
             if x:
                 if x != 2:
