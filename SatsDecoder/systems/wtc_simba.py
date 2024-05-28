@@ -28,7 +28,7 @@ simba_tlm = construct.Struct(
     '_name' / construct.Computed('simba_tlm'),
     'name' / construct.Computed('Telemetry'),
 
-    'tid' / construct.Hex(construct.Int16ub),  # 2, Telemetry Identifier
+    'id' / construct.Hex(construct.Int16ub),  # 2, Telemetry Identifier
     'time_ms' / construct.Int16ub,  # 2, Millisecond part of the unix time, ms
     'Time' / common.UNIXTimestampAdapter(construct.Int32ub),  # 4, On-board unix time, s
     'proceed_ms' / construct.Int16ub,  # 2, Time taken to process the telemetry, ms
@@ -204,7 +204,7 @@ class WtcSimbaProtocol(common.Protocol):
         'simba_tlm': {
             'table': (
                 ('name', 'Name'),
-                ('tid', 'Telemetry Identifier'),
+                ('id', 'Telemetry Identifier'),
                 ('time_ms', 'Millisecond part of the unix time, ms'),
                 ('Time', 'On-board unix time, s'),
                 ('proceed_ms', 'Time taken to process the telemetry, ms'),
@@ -270,6 +270,12 @@ class WtcSimbaProtocol(common.Protocol):
                 ('pnum', 'pnum'),
                 ('key', 'Key'),
                 ('val', 'Value'),
+            ),
+        },
+        'default_packet': {
+            'table': (
+                ('id', 'ID'),
+                ('data', 'Data'),
             ),
         },
     }
