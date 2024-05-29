@@ -1,6 +1,9 @@
 #  Copyright (c) 2024. Alexander Baskikh
-#  #  MIT License (MIT), http://opensource.org/licenses/MIT  #  Full license can be found in the LICENSE-MIT file
-#  #  SPDX-License-Identifier: MIT
+#
+#  MIT License (MIT), http://opensource.org/licenses/MIT
+#  Full license can be found in the LICENSE-MIT file
+#
+#  SPDX-License-Identifier: MIT
 
 import construct
 
@@ -205,7 +208,7 @@ class GreenCubeProtocol(common.Protocol):
             self.NAME,
             f'{csp_packet.hdr.src}-{csp_packet.hdr.src_port}',
             f'{csp_packet.hdr.dest}-{csp_packet.hdr.dest_port}',
-            hasattr(s.packet, 'id') and f'{s.packet.id:02X}' or None,
+            hasattr(s.packet, 'id') and f'{s.packet.id:04X}' or None,
             raw_greencube,
         ]
 

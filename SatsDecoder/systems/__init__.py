@@ -11,6 +11,7 @@ from SatsDecoder.systems.ax25 import *
 from SatsDecoder.systems.csp import *
 from SatsDecoder.systems.geoscan import *
 from SatsDecoder.systems.greencube import *
+from SatsDecoder.systems.ledsat import *
 from SatsDecoder.systems.lucky7 import *
 from SatsDecoder.systems.roseycubesat import *
 from SatsDecoder.systems.sharjahsat import *
@@ -27,6 +28,7 @@ for i in (
         'usp',
         'ax25',
         'csp',
+        'ledsat',
         'lucky7',
         'roseycubesat',
         'sharjahsat',

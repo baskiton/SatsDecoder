@@ -94,13 +94,13 @@ SIMBA_LIMG_PLEN = 185
 simba_img = construct.Struct(
     'plen' / construct.Computed(SIMBA_IMG_PLEN),
     'pnum' / construct.Int16ub,
-    'data' / construct.GreedyBytes,
+    'data' / construct.Bytes(SIMBA_IMG_PLEN),
 )
 
 simba_large_img = construct.Struct(
     'plen' / construct.Computed(SIMBA_LIMG_PLEN),
     'pnum' / construct.Int32ub,
-    'data' / construct.GreedyBytes,
+    'data' / construct.Bytes(SIMBA_LIMG_PLEN),
 )
 
 simba_named_value = construct.Struct(
