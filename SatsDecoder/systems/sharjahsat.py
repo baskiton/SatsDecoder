@@ -235,14 +235,14 @@ class SharjahImageReceiver(ImageReceiver):
         if img:
             if pnum > img.packets:
                 if img.has_soi:
-                    self.current_fid = fid = 0
+                    self.current_fid = fid = ''
                     force_new = 1
                 else:
                     img.shift_image((pnum - img.packets) * self.PACKET_SIZE)
                     img.packets = pnum
 
             elif soi and pnum < img.packets:
-                self.current_fid = fid = 0
+                self.current_fid = fid = ''
                 force_new = 1
 
         if force_new or not img:
@@ -275,7 +275,7 @@ class SharjahImageReceiver(ImageReceiver):
         if img:
             img.flush()
         if not self.merge_mode:
-            self.current_fid = 0
+            self.current_fid = ''
 
 
 class SharjahProtocol(common.Protocol):

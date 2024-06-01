@@ -214,7 +214,7 @@ class GeoscanImageReceiver(ImageReceiver):
                 if self.is_last_data(x):
                     img.flush()
                     # img.close()
-                    # self.current_fid = None
+                    # self.current_fid = ''
                     return 2
 
         else:

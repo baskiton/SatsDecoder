@@ -154,7 +154,7 @@ class ImageReceiver:
         raise NotImplementedError
 
     def force_new(self, *args, **kwargs):
-        self.current_fid = 0
+        self.current_fid = ''
         return self.new_file(self.generate_fid(*args, **kwargs))
 
     def new_file(self, fid):
@@ -176,4 +176,4 @@ class ImageReceiver:
     def clear(self):
         for i in self.images.values():
             i.close()
-        self.current_fid = 0
+        self.current_fid = ''

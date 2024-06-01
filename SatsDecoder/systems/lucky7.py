@@ -78,7 +78,7 @@ class Lucky7ImageReceiver(ImageReceiver):
         img = self.images.get(fid)
         if img:
             if packets != img.packets:
-                self.current_fid = fid = 0
+                self.current_fid = fid = ''
                 force_new = 1
 
         if force_new or not img:

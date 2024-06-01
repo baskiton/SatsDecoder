@@ -171,7 +171,7 @@ class LedsatImageReceiver(ImageReceiver):
 
         if not self.last_addr and large or self.last_addr and not large:
             # 100% it's new image. dont merged it
-            self.current_fid = 0
+            self.current_fid = ''
             force_new = 1
         else:
             force_new = not data.pnum or soi or data.plen != self.prev_plen or large != self.last_addr
