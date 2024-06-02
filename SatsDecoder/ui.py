@@ -882,6 +882,10 @@ class App(ttk.Frame):
         self.master.bind('<Control-q>', self.exit)
         self.master.bind('<F1>', self.about)
 
+        self.check_update_v = tk.IntVar(self, int(config.get('main', 'check_update')))
+        if self.check_update_v.get():
+            threading.Thread(target=self.check_updates, args=(self, 0, 0)).start()
+
         # Notebook frame
         # self.notebook = ttk.Notebook(self)
         self.notebook = utils.DynamicNotebook(self, self.create_new_tab)
@@ -938,6 +942,7 @@ class App(ttk.Frame):
             self.close_df(name, df)
 
         self.config.set('main', 'pos', self.master.winfo_geometry())
+        self.config.set('main', 'check_update', str(self.check_update_v.get()))
         self.config.set('info', 'version', __version__)
         self.quit()
 
@@ -1045,21 +1050,25 @@ class App(ttk.Frame):
         btns_frame.columnconfigure((0, 1), weight=1)
 
         upd_btn = ttk.Button(btns_frame, text='Check updates',
-                             command=lambda: threading.Thread(target=self.check_updates, args=(about, btns_frame,)).start())
+                             command=lambda: threading.Thread(target=self.check_updates, args=(about, btns_frame, 1)).start())
         upd_btn.grid(column=0, row=0)
 
         ok_btn = ttk.Button(btns_frame, text='Ok', command=lambda: (about.grab_release(), about.destroy()))
         ok_btn.grid(column=1, row=0)
 
+        check_update_ckb = ttk.Checkbutton(frame, text='Check updates on startup', variable=self.check_update_v)
+        check_update_ckb.grid(columnspan=2)
+
         about.update()
 
     @staticmethod
-    def check_updates(about, btns_frame):
+    def check_updates(parent, label_frame, showerror):
         m = re.match(r'([\d.]+).*', __version__)
         if m:
             v = tuple(map(int, m.group(1).split('.')))
         else:
-            messagebox.showerror(message=f'Invalid version, can\'t be compared: {__version__}')
+            if showerror:
+                messagebox.showerror(message=f'Invalid version, can\'t be compared: {__version__}')
             return
 
         try:
@@ -1068,21 +1077,26 @@ class App(ttk.Frame):
                     headers={'accept': 'application/vnd.github+json'})) as r:
                 resp = json.load(r)
         except urllib.error.URLError as e:
-            messagebox.showerror(message=str(e))
+            if showerror:
+                messagebox.showerror(message=str(e))
             return
 
         if v < tuple(map(int, resp['tag_name'].split('.'))):
             fg = 'green'
             msg = resp['tag_name']
+            if not label_frame:
+                if messagebox.askyesno(message=f'New version found: {msg}\nFollow to download link?', parent=parent):
+                    webbrowser.open('https://github.com/baskiton/SatsDecoder/releases/latest')
+                return
         else:
             fg = 'red'
             msg = 'not found'
 
-        for i in btns_frame.winfo_children():
-            if isinstance(i, ttk.Label):
-                i.config(text=f'New version: {msg}', foreground=fg)
-                break
-        else:
-            ttk.Label(btns_frame, text=f'New version: {msg}', foreground=fg, justify='center').grid(columnspan=2)
-
-        about.update()
+        if label_frame:
+            for i in label_frame.winfo_children():
+                if isinstance(i, ttk.Label):
+                    i.config(text=f'New version: {msg}', foreground=fg)
+                    break
+            else:
+                ttk.Label(label_frame, text=f'New version: {msg}', foreground=fg, justify='center').grid(columnspan=2)
+            parent.update()

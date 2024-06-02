@@ -13,7 +13,7 @@ from SatsDecoder.version import __version__
 
 if __name__ == '__main__':
     cp = configparser.ConfigParser()
-    d = {'main': {},
+    d = {'main': {'check_update': 1},
          'info': {'version': __version__}}
     cp.read_dict(d)
     cp.read(CONFIG)
