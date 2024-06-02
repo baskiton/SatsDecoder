@@ -534,7 +534,7 @@ class DecoderFrame(ttk.Frame):
         self.out_dir_e = ttk.Entry(self.ctrl_frame, textvariable=self.out_dir_v, state=tk.NORMAL)
         self.out_dir_e.grid(column=0, columnspan=4, row=0, sticky=tk.EW, pady=3)
 
-        self.out_dir_btn = ttk.Button(self.ctrl_frame, text='Out Dir', command=self.set_out_dir)
+        self.out_dir_btn = ttk.Button(self.ctrl_frame, text='Out Dir', command=self.choose_out_dir)
         self.out_dir_btn.grid(column=4, row=0, sticky=tk.EW, pady=3, padx=3)
 
         self.server_v = tk.StringVar(self.ctrl_frame, config.get('ip'))
@@ -605,13 +605,18 @@ class DecoderFrame(ttk.Frame):
         else:   # raw, etc
             self.dv_frame.set_raw(vals[-1], tag)
 
-    def set_out_dir(self):
+    def choose_out_dir(self):
         d = filedialog.askdirectory()
         if d:
             self.out_dir_v.set(d)
+            self.set_out_dir(d)
 
     def con(self):
-        if utils.ConnMode(self.conn_mode.current()) == utils.ConnMode.HEX:
+        self.set_merge_mode()
+        self.set_out_dir()
+
+        m = utils.ConnMode(self.conn_mode.current())
+        if m == utils.ConnMode.HEX:
             self._hex_values()
         else:
             self.stop() if self.sk else self._start()
@@ -619,6 +624,10 @@ class DecoderFrame(ttk.Frame):
     def set_merge_mode(self):
         if self.decoder.ir:
             self.decoder.ir.set_merge_mode(self.merge_mode_v.get())
+
+    def set_out_dir(self, d=None):
+        if self.decoder.ir:
+            self.decoder.ir.set_outdir(d or self.out_dir_v.get())
 
     def new_img(self):
         if self.decoder.ir:
@@ -715,10 +724,6 @@ class DecoderFrame(ttk.Frame):
             self.out_dir_e.config(state=tk.DISABLED)
             self.out_dir_btn.config(state=tk.DISABLED)
             self.conn_mode.config(state=tk.DISABLED)
-
-            if self.decoder.ir:
-                self.decoder.ir.set_outdir(self.out_dir_v.get())
-                self.decoder.ir.set_merge_mode(self.merge_mode_v.get())
 
             self.thr = threading.Thread(target=self.is_server and self._server or self._client, daemon=1)
             self.thr.start()

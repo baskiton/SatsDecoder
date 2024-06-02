@@ -96,6 +96,7 @@ class Image:
             if not off:
                 return
 
+            off = int(off)
             self.base_offset = off
             self.first_data_offset = 0
             f = self.open()

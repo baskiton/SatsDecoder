@@ -7,6 +7,8 @@
 
 import datetime as dt
 
+from itertools import chain
+
 import construct
 
 from SatsDecoder import utils
@@ -46,8 +48,8 @@ class MulAdapter(construct.Adapter):
         return float(obj) * self.v
 
 
-geoscan_frame = construct.Struct(
-    '_name' / construct.Computed('beacon'),
+geoscan_tlm = construct.Struct(
+    '_name' / construct.Computed('geoscan_beacon'),
     'name' / construct.Computed('Beacon'),
 
     'Time' / common.UNIXTimestampAdapter(construct.Int32ul),
@@ -74,9 +76,8 @@ geoscan_frame = construct.Struct(
     'pad' / construct.GreedyBytes
 )
 
-
-stratosat_frame = construct.Struct(
-    '_name' / construct.Computed('stratosat'),
+stratosat_tlm = construct.Struct(
+    '_name' / construct.Computed('stratosat_beacon'),
     'name' / construct.Computed('Beacon'),
 
     'Time' / common.UNIXTimestampAdapter(construct.Int32ul),
@@ -110,28 +111,27 @@ stratosat_frame = construct.Struct(
     'pad' / construct.GreedyBytes
 )
 
-frames_map = {
-    'RS20S': geoscan_frame,
-    'RS52S': stratosat_frame,
+tlm_map = {
+    'RS20S': geoscan_tlm,
+    'RS52S': stratosat_tlm,
 }
 
 geoscan = construct.Struct(
     'ax25' / construct.Peek(ax25.ax25_header),
-    'ax25' / construct.If(lambda this: (bool(this.ax25)
-                                        and this.ax25.addresses[0].callsign == u'BEACON'),
+    'ax25' / construct.If(lambda this: (bool(this.ax25) and this.ax25.addresses[0].callsign == u'BEACON'),
                           ax25.ax25_header),
-    'packet' / construct.If(lambda this: (bool(this.ax25)
-                                           and this.ax25.pid == 0xF0),
-                             construct.Switch(construct.this.ax25.addresses[1].callsign, frames_map, default=geoscan_frame)),
+    'packet' / construct.If(lambda this: (bool(this.ax25) and this.ax25.pid == 0xF0),
+                            construct.Switch(construct.this.ax25.addresses[1].callsign, tlm_map, default=geoscan_tlm)),
 )
 
 
-# markers
-GEOSKAN_IMG = 0x0001
-STRATOSAT_IMG = 0x0002
+# sats numbers
+GEOSKAN = 0x01
+STRATOSAT = 0x02
 
 _frame = construct.Struct(
-    'marker' / construct.Hex(construct.Enum(construct.Int16ul, GEOSCAN=GEOSKAN_IMG, STRATOSAT=STRATOSAT_IMG)),    # #0
+    'sat_num' / construct.Enum(construct.Int8ul, GEOSCAN=GEOSKAN, STRATOSAT=STRATOSAT),  # #0
+    'reserved' / construct.Int8ul,                  # #1
     'dlen' / construct.Int8ul,                      # #2
     'mtype' / construct.Hex(construct.Int16ul),     # #3
     'offset' / construct.Int16ul,                   # #5
@@ -140,47 +140,60 @@ _frame = construct.Struct(
     'data' / construct.Bytes(56)
 )
 
-marker_names = {
-    GEOSKAN_IMG: 'geoscan-img',
-    STRATOSAT_IMG: 'stratosat-img',
+sat_names = {
+    GEOSKAN: 'geoscan-img',
+    STRATOSAT: 'stratosat-img',
 }
 
 
-def get_marker_name(marker):
-    return marker_names.get(marker, 'geoscan-common')
+def get_sat_name(sat_num):
+    return sat_names.get(sat_num, 'geoscan-common')
 
 
 class GeoscanImageReceiver(ImageReceiver):
-    MARKERS = GEOSKAN_IMG, STRATOSAT_IMG
     CMD_IMG_START = 0x0901
-    CMD_IMG_FRAME = 0x0905, 0x0920, 0x9820
+    CMD_IMG_FRAME = 0x0905, 0x0920,
+    CMD_IMG_HR_FRAME = 0x9820,
 
     def __init__(self, outdir):
         super().__init__(outdir, '.jpg')
         self._prev_data_sz = -1
         self._miss_cnt = 0
-        self._last_mtype = -1
+        self._last_sat_num = -1
+        self._last_is_hr = 0
 
-    def generate_fid(self, marker=None):
+    def generate_fid(self, sat_num=None):
         if not (self.current_fid and self.merge_mode):
             self.last_date = now = dt.datetime.now()
-            pfx = get_marker_name(marker).split('-')[0]
-            self.current_fid = f'{pfx.upper()}_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
+            pfx = get_sat_name(sat_num).split('-')[0]
+            hr = self._last_is_hr and '_hr' or ''
+            self.current_fid = f'{pfx.upper()}{hr}_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
         return self.current_fid
 
     def force_new(self, *args, **kwargs):
         return super().force_new(*args, **kwargs)
 
     def push_data(self, data, **kw):
-        marker = int(data.marker)
-        if marker not in self.MARKERS:
+        sat_num = int(data.sat_num)
+        if sat_num not in sat_names:
             self._miss_cnt += 1
             return
 
         off = (data.subsystem_num << 16) | data.offset
 
         if data.mtype == self.CMD_IMG_START:
-            img = self.get_image(1, marker=marker)
+            force = 0
+            if sat_num != self._last_sat_num:
+                self._last_sat_num = sat_num
+                force = 1
+            if self._last_is_hr:
+                self._last_is_hr = 0
+                force = 1
+
+            if force:
+                img = self.force_new(sat_num=sat_num)
+            else:
+                img = self.get_image(1, sat_num=sat_num)
 
             with img.lock:
                 if data.data.startswith(b'\xff\xd8'):
@@ -191,18 +204,35 @@ class GeoscanImageReceiver(ImageReceiver):
 
                 img.push_data(off, data.data[:data.dlen - 6])
 
-        elif data.mtype in self.CMD_IMG_FRAME:
-            force = data.data.startswith(b'\xff\xd8')
-            img = self.get_image(force, marker=marker)
+        elif data.mtype in chain(self.CMD_IMG_FRAME, self.CMD_IMG_HR_FRAME):
+            has_soi = data.data.startswith(b'\xff\xd8')
+            force = 0
+            if sat_num != self._last_sat_num:
+                self._last_sat_num = sat_num
+                force = 1
+            is_hr = data.mtype in self.CMD_IMG_HR_FRAME
+            if is_hr != self._last_is_hr:
+                self._last_is_hr = is_hr
+                force = 1
+
+            if force:
+                img = self.force_new(sat_num=sat_num)
+            else:
+                img = self.get_image(has_soi, sat_num=sat_num)
+                if has_soi and not img.has_soi:
+                    img.rebase_offset(off)
+
             with img.lock:
-                if force:
+                if has_soi:
                     img.has_soi = 1
                     img.base_offset = off
 
                 x = off - img.base_offset
                 if x < 0:
-                    img = self.force_new(marker=marker)
+                    img = self.force_new(sat_num=sat_num)
                     img.base_offset = img.BASE_OFFSET
+                    if has_soi:
+                        img.has_soi = 1
                     x = off - img.base_offset
                 off = x
                 if x < img.first_data_offset:
@@ -233,7 +263,7 @@ class GeoscanProtocol(common.Protocol):
     columns = ()
     c_width = ()
     tlm_table = {
-        'beacon': {
+        'geoscan_beacon': {
             'table': (
                 ('name', 'Name'),
                 ('Time', 'Time'),
@@ -256,7 +286,7 @@ class GeoscanProtocol(common.Protocol):
                 ('pad', 'pad'),
             )
         },
-        'stratosat': {
+        'stratosat_beacon': {
             'table': (
                 ('name', 'Name'),
                 ('Time', 'Time'),
@@ -303,10 +333,10 @@ class GeoscanProtocol(common.Protocol):
             try:
                 frame = _frame.parse(raw_packet)
             except construct.ConstructError:
-                yield 'raw', get_marker_name(None), raw_packet
+                yield 'raw', get_sat_name(None), raw_packet
                 continue
 
-            name = get_marker_name(int(frame.marker))
+            name = get_sat_name(int(frame.sat_num))
             x = self.ir.push_data(frame)
             if x:
                 if x != 2:
