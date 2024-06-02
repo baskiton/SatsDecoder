@@ -772,7 +772,7 @@ class DecoderFrame(ttk.Frame):
                     continue
                 raise
             ret.extend(x)
-        return ret
+        return bytes(ret)
 
     def _receive(self, conn):
         try:
