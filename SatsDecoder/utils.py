@@ -21,6 +21,7 @@ class ConnMode(enum.IntEnum):
     TCP_CLI = 1
     TCP_SRV = 2
     HEX = 3
+    HEX_TXT = 4
 
 
 con_mode_names = {
@@ -28,6 +29,7 @@ con_mode_names = {
     ConnMode.TCP_CLI: 'TCP Client',
     ConnMode.TCP_SRV: 'TCP Server',
     ConnMode.HEX: 'HEX values',
+    ConnMode.HEX_TXT: 'HEX from TLM file',
 }
 
 

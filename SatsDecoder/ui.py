@@ -579,6 +579,16 @@ class DecoderFrame(ttk.Frame):
         self.dv_frame = DataViewFrame(self)
         self.dv_frame.grid(column=1, row=0, rowspan=2, sticky=tk.NSEW, padx=2, pady=2)
 
+    def openfiles(self):
+        path = HOMEDIR
+        files = filedialog.askopenfilenames(title='Choose packets', initialdir=path, filetypes=(("TLM file", "*.txt"), ("All files", "*.*")))
+        for f in files:
+            file = open(f, 'r')
+            line = file.readline().strip()
+            x = bytes.fromhex(line)
+            self.feed(x)
+            file.close()
+
     def named_conn_btn(self, _=None, **kw):
         m = utils.ConnMode(self.conn_mode.current())
         d = {
@@ -586,6 +596,7 @@ class DecoderFrame(ttk.Frame):
             utils.ConnMode.TCP_CLI: ('Connect', 'Disconnect'),
             utils.ConnMode.TCP_SRV: ('Start', 'Stop'),
             utils.ConnMode.HEX: ('Run', 'Stop'),
+            utils.ConnMode.HEX_TXT: ('Load packets', 'Stop'),
         }
         self.con_btn.config(text=d[m]['d' in kw])
 
@@ -618,8 +629,11 @@ class DecoderFrame(ttk.Frame):
         m = utils.ConnMode(self.conn_mode.current())
         if m == utils.ConnMode.HEX:
             self._hex_values()
+        elif m == utils.ConnMode.HEX_TXT:
+            self.openfiles()
         else:
             self.stop() if self.sk else self._start()
+
 
     def set_merge_mode(self):
         if self.decoder.ir:
