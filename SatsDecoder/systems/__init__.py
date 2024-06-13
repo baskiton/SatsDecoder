@@ -9,6 +9,7 @@ import sys
 
 from SatsDecoder.systems.ax25 import *
 from SatsDecoder.systems.csp import *
+from SatsDecoder.systems.dstar_one import *
 from SatsDecoder.systems.geoscan import *
 from SatsDecoder.systems.greencube import *
 from SatsDecoder.systems.ledsat import *
@@ -28,6 +29,7 @@ for i in (
         'usp',
         'ax25',
         'csp',
+        'dstar_one',
         'ledsat',
         'lucky7',
         'roseycubesat',

@@ -37,6 +37,7 @@ The following protocols are currently supported:
 * `USP` - [Unified SPUTNIX protocol](https://sputnix.ru/tpl/docs/amateurs/%D0%9E%D0%BF%D0%B8%D1%81%D0%B0%D0%BD%D0%B8%D0%B5%20%D0%BF%D1%80%D0%BE%D1%82%D0%BE%D0%BA%D0%BE%D0%BB%D0%B0%20USP%20v1.04.pdf)
 * `AX.25`
 * `CSP` - [Cubesat Space Protocol](https://github.com/libcsp/libcsp)
+* `D-Star ONE` - [D-Star ONE Protocol](https://web.archive.org/web/20190807184852/http://www.d-star.one/downloads/D-Star%20ONE%20telemetry%20frame%20format.pdf)
 * `Lucky-7` - [Lucky-7 Satellite protocol](https://www.lucky7satellite.org/radioamateurs)
 * `RoseyCubeSat`
 * `SharjahSat`
