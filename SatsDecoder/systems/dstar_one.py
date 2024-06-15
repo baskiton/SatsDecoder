@@ -11,7 +11,7 @@ from SatsDecoder.systems import common
 
 __all__ = 'DStarOneProtocol',
 
-proto_name = 'd-start one'
+proto_name = 'd-star one'
 
 """
 https://web.archive.org/web/20190807184852/http://www.d-star.one/downloads/D-Star%20ONE%20telemetry%20frame%20format.pdf
@@ -141,7 +141,10 @@ class DStarOneProtocol(common.Protocol):
     }
 
     def recognize(self, bb):
-        x = mobitex.parse(bb)
+        try:
+            x = mobitex.parse(bb)
+        except construct.ConstructError:
+            x = 0
         if not x:
             yield 'raw', 'unknown', bb
             return
