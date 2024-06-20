@@ -586,6 +586,7 @@ class DecoderFrame(ttk.Frame):
             utils.ConnMode.TCP_CLI: ('Connect', 'Disconnect'),
             utils.ConnMode.TCP_SRV: ('Start', 'Stop'),
             utils.ConnMode.HEX: ('Run', 'Stop'),
+            utils.ConnMode.KISS_FILES: ('Open', 'Stop'),
         }
         self.con_btn.config(text=d[m]['d' in kw])
 
@@ -618,6 +619,8 @@ class DecoderFrame(ttk.Frame):
         m = utils.ConnMode(self.conn_mode.current())
         if m == utils.ConnMode.HEX:
             self._hex_values()
+        elif m == utils.ConnMode.KISS_FILES:
+            self._kiss_files()
         else:
             self.stop() if self.sk else self._start()
 
@@ -689,6 +692,11 @@ class DecoderFrame(ttk.Frame):
         cancel_btn.grid(column=1, row=0)
 
         ask_hex.update()
+
+    def _kiss_files(self):
+        for fn in filedialog.askopenfilenames(filetypes=[('KISS', ['*.kss']), ('All files', '*.*')]):
+            for t, data in utils.kiss_read(pathlib.Path(fn)):
+                self.feed(data, t)
 
     def _start(self):
         curr_mode = utils.ConnMode(self.conn_mode.current())
@@ -811,7 +819,7 @@ class DecoderFrame(ttk.Frame):
 
         return self.feed(frame)
 
-    def feed(self, frame):
+    def feed(self, frame, t=None):
         try:
             data = frame[self.frame_off:]
             for i in self.decoder.recognize(data):
@@ -820,7 +828,7 @@ class DecoderFrame(ttk.Frame):
                 if '\0' in name:
                     # TODO: log it, '`null` in name not allowed'
                     continue
-                date = 0
+                date = t
 
                 if ty == 'img':
                     ir_ret, img = packet
@@ -830,7 +838,7 @@ class DecoderFrame(ttk.Frame):
 
                 elif ty == 'tlm':
                     packet, tlm = packet
-                    date = getattr(tlm, 'Time', dt.datetime.utcnow())
+                    date = getattr(tlm, 'Time', t or dt.datetime.utcnow())
                     name = ('%s_%s_%s_%s.txt' % (name, self.proto, tlm._name, date)).replace(
                         ' ', '_').replace(':', '-')
                     fp = pathlib.Path(self.out_dir_v.get()) / name

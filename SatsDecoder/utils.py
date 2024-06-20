@@ -21,6 +21,7 @@ class ConnMode(enum.IntEnum):
     TCP_CLI = 1
     TCP_SRV = 2
     HEX = 3
+    KISS_FILES = 4
 
 
 con_mode_names = {
@@ -28,6 +29,7 @@ con_mode_names = {
     ConnMode.TCP_CLI: 'TCP Client',
     ConnMode.TCP_SRV: 'TCP Server',
     ConnMode.HEX: 'HEX values',
+    ConnMode.KISS_FILES: 'KISS files',
 }
 
 
@@ -392,6 +394,45 @@ def gps_to_utc(week, sec):
         sec -= 37
 
     return x + dt.timedelta(seconds=sec)
+
+
+# KISS basic info: https://www.ax25.net/kiss.aspx
+# The basic implementation is taken from the kiss module from gr-satellites
+KISS_FEND = b'\xc0'
+KISS_FESC = b'\xdb'
+KISS_TFEND = b'\xdc'
+KISS_TFESC = b'\xdd'
+KISS_CMD_DATA = 0
+KISS_CMD_TS = 9
+
+
+def kiss_unescape(frame: bytes):
+    frame = frame.replace(KISS_FESC + KISS_TFEND, KISS_FEND)
+    frame = frame.replace(KISS_FESC + KISS_TFESC, KISS_FESC)
+    return frame
+
+
+def kiss_read(fp):
+    epoch = dt.datetime(1970, 1, 1)
+    with fp.open('rb') as kf:
+        frames = kf.read().split(KISS_FEND)
+        if frames[0]:
+            raise ValueError('no frame start: %s' % frames[0])
+
+        t = None
+        for fr in frames[1:]:
+            if not fr:
+                continue
+            if fr[0] == KISS_CMD_TS:
+                # timestamp
+                ts, = struct.unpack('>Q', kiss_unescape(fr[1:]))
+                t = epoch + dt.timedelta(seconds=ts / 1000)
+            elif fr[0] == KISS_CMD_DATA:
+                # data frame
+                yield t, kiss_unescape(fr[1:])
+            else:
+                # TODO: unknown, what to do?
+                pass
 
 
 seqs_map = {
