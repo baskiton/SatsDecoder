@@ -125,16 +125,19 @@ class HistoryFrame(ttk.LabelFrame):
 
         self.ctrl_frame = ttk.Frame(self)
         self.ctrl_frame.columnconfigure(0, weight=1)
-        self.ctrl_frame.columnconfigure(1, weight=1)
         self.ctrl_frame.grid(sticky=tk.NSEW)
 
         self.clear_btn = ttk.Button(self.ctrl_frame, text='clear', command=self.clear)
         self.clear_btn.grid(sticky=tk.W, column=0, row=0)
 
+        self.autoscroll_val = tk.IntVar(self, value=int(config.get('autoscroll', 1)))
+        self.autoscroll = ttk.Checkbutton(self.ctrl_frame, text='Autoscroll', variable=self.autoscroll_val)
+        self.autoscroll.grid(sticky=tk.E, column=1, row=0, padx=3)
+
         self.filter_btn = ttk.Menubutton(self.ctrl_frame, text='Filter')
         self.filter_menu = tk.Menu(self.filter_btn, tearoff=0)
         self.filter_btn.configure(menu=self.filter_menu)
-        self.filter_btn.grid(sticky=tk.E, column=1, row=0)
+        self.filter_btn.grid(sticky=tk.E, column=2, row=0)
         self.filters = {}
         filters = config.get('filter', ';'.join(self.FILTERS)).split(';')
         for filt in self.FILTERS:
@@ -227,8 +230,9 @@ class HistoryFrame(ttk.LabelFrame):
                 if iid is not None:
                     self.vals.pop(iid, None)
                     self.table.detach(iid)
-                    self.table.selection_set(iid)
-                    self.table.see(iid)
+                    if self.autoscroll_val.get():
+                        self.table.selection_set(iid)
+                        self.table.see(iid)
             if img.fn in self.vals:
                 return
             self.vals[img.fn] = 1
@@ -252,13 +256,13 @@ class HistoryFrame(ttk.LabelFrame):
             self.order.setdefault(parent_iid, []).append(iid)
 
         self.vals[iid] = args[len(self.master.decoder.columns):]
-        if self.filters[tag].get():
-            self.table.selection_set(iid)
-            self.table.see(iid)
-        else:
+        if not self.filters[tag].get():
             self.detached_vals.add((iid, parent_iid, tag))
             self.table.detach(iid)
             self.table.update()
+        elif self.autoscroll_val.get():
+            self.table.selection_set(iid)
+            self.table.see(iid)
 
 
 class CanvasFrame(ttk.Frame):
@@ -966,6 +970,7 @@ class App(ttk.Frame):
         self.config.set(name, 'merge mode', str(df.merge_mode_v.get()))
         self.config.set(name, 'connmode', str(df.conn_mode.current()))
         self.config.set(name, 'filter', str(';'.join(k for k, v in df.history_frame.filters.items() if v.get())))
+        self.config.set(name, 'autoscroll', str(df.history_frame.autoscroll_val.get()))
 
     def about(self, evt=None):
         seq = queue.Queue(5)
