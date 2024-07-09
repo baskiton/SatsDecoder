@@ -39,6 +39,7 @@ The following protocols are currently supported:
 * `D-Star ONE` - [D-Star ONE Protocol](https://web.archive.org/web/20190807184852/http://www.d-star.one/downloads/D-Star%20ONE%20telemetry%20frame%20format.pdf)
 * `CitGardens-02` - [CIT Gardens-02 project](https://sites.google.com/view/gardens-02/english_ver/home)
 * `GreenCube` - [GreenCube](https://www.s5lab.space/index.php/decoding-ledsat-2/)
+* `Ledsat` - [LEDSAT](https://www.s5lab.space/index.php/decoding-ledsat/)
 * `Lucky-7` - [Lucky-7 Satellite protocol](https://www.lucky7satellite.org/radioamateurs)
 * `RoseyCubeSat`
 * `SharjahSat`
@@ -59,6 +60,7 @@ Various data source types are available in the `Conn` combobox:
     }
     ```
     Byte order: Network (big-endian)
+* `KISS files` - read KISS-files
 
 ![](doc/Screenshot.jpg)
 
