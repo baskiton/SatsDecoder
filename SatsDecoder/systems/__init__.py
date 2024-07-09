@@ -25,10 +25,10 @@ from SatsDecoder.systems.raw import *
 PROTOCOLS = {}
 for i in (
         'geoscan',
-        'greencube',
         'usp',
         'ax25',
         'csp',
+        'greencube',
         'dstar_one',
         'ledsat',
         'lucky7',

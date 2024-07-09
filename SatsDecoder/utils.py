@@ -297,7 +297,7 @@ def bayer2rgb(data, mode, w, h):
     elif mode == 'bggr':
         b, g0, g1, r = layers
     else:
-        raise ValueError('Invali mode')
+        raise ValueError('Invalid mode')
 
     zh = np.full((oh, ow), np.nan, np.float32)
     zv = np.full((oh, w), np.nan, np.float32)
@@ -402,18 +402,19 @@ KISS_FEND = b'\xc0'
 KISS_FESC = b'\xdb'
 KISS_TFEND = b'\xdc'
 KISS_TFESC = b'\xdd'
-KISS_CMD_DATA = 0
+KISS_CMD_DATA = 0, 16
 KISS_CMD_TS = 9
 
+kiss_epoch = dt.datetime(1970, 1, 1)
 
-def kiss_unescape(frame: bytes):
+
+def kiss_unescape(frame):
     frame = frame.replace(KISS_FESC + KISS_TFEND, KISS_FEND)
     frame = frame.replace(KISS_FESC + KISS_TFESC, KISS_FESC)
     return frame
 
 
 def kiss_read(fp):
-    epoch = dt.datetime(1970, 1, 1)
     with fp.open('rb') as kf:
         frames = kf.read().split(KISS_FEND)
         if frames[0]:
@@ -426,8 +427,8 @@ def kiss_read(fp):
             if fr[0] == KISS_CMD_TS:
                 # timestamp
                 ts, = struct.unpack('>Q', kiss_unescape(fr[1:]))
-                t = epoch + dt.timedelta(seconds=ts / 1000)
-            elif fr[0] == KISS_CMD_DATA:
+                t = kiss_epoch + dt.timedelta(seconds=ts / 1000)
+            elif fr[0] in KISS_CMD_DATA:
                 # data frame
                 yield t, kiss_unescape(fr[1:])
             else:
