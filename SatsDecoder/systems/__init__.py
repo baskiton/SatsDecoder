@@ -8,6 +8,7 @@
 import sys
 
 from SatsDecoder.systems.ax25 import *
+from SatsDecoder.systems.cit_gardens_02 import *
 from SatsDecoder.systems.csp import *
 from SatsDecoder.systems.dstar_one import *
 from SatsDecoder.systems.geoscan import *
@@ -27,6 +28,7 @@ for i in (
         'geoscan',
         'usp',
         'ax25',
+        'cit_gardens_02',
         'csp',
         'greencube',
         'dstar_one',

@@ -37,6 +37,7 @@ The following protocols are currently supported:
 * `AX.25`
 * `CSP` - [Cubesat Space Protocol](https://github.com/libcsp/libcsp)
 * `D-Star ONE` - [D-Star ONE Protocol](https://web.archive.org/web/20190807184852/http://www.d-star.one/downloads/D-Star%20ONE%20telemetry%20frame%20format.pdf)
+* `CitGardens-02` - [CIT Gardens-02 project](https://sites.google.com/view/gardens-02/english_ver/home)
 * `GreenCube` - [GreenCube](https://www.s5lab.space/index.php/decoding-ledsat-2/)
 * `Lucky-7` - [Lucky-7 Satellite protocol](https://www.lucky7satellite.org/radioamateurs)
 * `RoseyCubeSat`
