@@ -1,12 +1,26 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import pathlib
+
+from threadpoolctl import threadpool_info
 
 block_cipher = None
 
 
+def get_ext_path():
+    x = threadpool_info()
+    if not x:
+        return []
+    x = x[0].get('filepath')
+    if not x:
+        return []
+    print('FOUND:', x)
+    return [str(pathlib.Path(x).parent)]
+
+
 a = Analysis(
     ['SatsDecoder/__main__.py'],
-    pathex=[],
+    pathex=get_ext_path(),
     binaries=[],
     datas=[('res/*.png', 'res')],
     hiddenimports=['tkinter', 'tkinter.ttk', 'tkinter.filedialog', 'tkinter.messagebox', 'PIL._tkinter_finder'],
