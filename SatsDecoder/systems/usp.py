@@ -1480,10 +1480,10 @@ class UspImageReceiver(ImageReceiver):
     def __init__(self, outdir):
         super().__init__(outdir)
 
-    def generate_fid(self, fname=''):
+    def generate_fid(self, fname='', force=0):
         if self.current_fid.startswith('unknown_') and fname:
             self.rename_image(self.current_fid, fname)
-        elif not (self.current_fid and self.merge_mode):
+        elif force or not (self.current_fid and self.merge_mode):
             self.last_date = now = dt.datetime.now()
             if not fname:
                 fname = f'unknown_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
@@ -1503,7 +1503,7 @@ class UspImageReceiver(ImageReceiver):
                     img.first_data_offset = packet.offset
 
         elif data.message == FILETRANSFER_INIT:
-            self.generate_fid(packet.file_name)
+            self.generate_fid(packet.file_name, 1)
             img = self.get_image()
             with img.lock:
                 img.has_starter = 1
