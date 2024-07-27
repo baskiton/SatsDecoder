@@ -26,9 +26,14 @@ jobs:
       matrix:
         os: [ ubuntu-latest, windows-latest ]
         python: [ "3.11" ]
+        arch: [ "x64" ]
         include:
           - os: windows-2019
             python: "3.7"
+            arch: "x64"
+          - os: windows-2019
+            python: "3.7"
+            arch: "x86"
     outputs:
       ver: ${{ steps.build.outputs.ver }}
 
@@ -41,6 +46,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          architecture: ${{ matrix.arch }}
           cache: 'pip'
           cache-dependency-path: |
             **/requirements*.txt
@@ -64,7 +70,7 @@ jobs:
               mv dist/SatsDecoder dist/SatsDecoder-linux
               ;;
             windows-2019)
-              mv dist/SatsDecoder.exe dist/SatsDecoder-win7.exe
+              mv dist/SatsDecoder.exe dist/SatsDecoder-win7-${{ matrix.arch }}.exe
               ;;
             windows-latest)
               mv dist/SatsDecoder dist/SatsDecoder-win
@@ -74,7 +80,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SatsDecoder-${{ matrix.os }}
+          name: SatsDecoder-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/*
 
   nightly-release:
