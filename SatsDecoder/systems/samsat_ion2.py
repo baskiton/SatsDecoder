@@ -17,7 +17,7 @@ proto_name = 'samsat-ion2'
 # SamSat-Ion2 beacon structure
 # https://spaceresearch.ssau.ru/doc/SamSat/SamSat-Ion2/SamSat-Ionosphere-beacon.pdf
 
-reg_temp = common.LinearAdapter(256, construct.Int16sl)
+reg_temp = common.EvalAdapter('x/256', construct.Int16sl)
 
 unkn = construct.Struct(
     '_name' / construct.Computed('samsat_unkn'),
@@ -38,7 +38,7 @@ packet = construct.Struct(
     'Ttx2' / reg_temp,
     'Ttx3' / reg_temp,
     '_pad3' / construct.Bytes(23),
-    'Tmag' / common.AffineAdapter(333.87, 21.0, construct.Int16sl),
+    'Tmag' / common.EvalAdapter('x/333.87+21', construct.Int16sl),
     '_tail' / construct.GreedyBytes,
 )
 
