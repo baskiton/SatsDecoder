@@ -16,6 +16,7 @@ from SatsDecoder.systems.greencube import *
 from SatsDecoder.systems.ledsat import *
 from SatsDecoder.systems.lucky7 import *
 from SatsDecoder.systems.roseycubesat import *
+from SatsDecoder.systems.samsat_ion2 import *
 from SatsDecoder.systems.sharjahsat import *
 from SatsDecoder.systems.sonate2 import *
 # from SatsDecoder.systems.starlink_vhf import *
@@ -35,6 +36,7 @@ for i in (
         'ledsat',
         'lucky7',
         'roseycubesat',
+        'samsat_ion2',
         'sharjahsat',
         'sonate2',
         # 'starlink_vhf',

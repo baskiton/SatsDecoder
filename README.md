@@ -42,6 +42,7 @@ The following protocols are currently supported:
 * `Ledsat` - [LEDSAT](https://www.s5lab.space/index.php/decoding-ledsat/)
 * `Lucky-7` - [Lucky-7 Satellite protocol](https://www.lucky7satellite.org/radioamateurs)
 * `RoseyCubeSat`
+* `SamSat-Ionosphere` - [SamSat-Ion2 beacon structure](https://spaceresearch.ssau.ru/doc/SamSat/SamSat-Ion2/SamSat-Ionosphere-beacon.pdf)
 * `SharjahSat`
 * `Sonate-2` - [Sonate-2 protocol](https://www.informatik.uni-wuerzburg.de/en/aerospaceinfo/mitarbeiter/kayal/forschungsprojekte/sonate-2/information-for-radio-amateurs/)
 * `WTCSimba` - [WildTrackCube-SIMBA](https://www.s5lab.space/index.php/decoding-simba/)
