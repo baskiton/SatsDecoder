@@ -10,7 +10,7 @@ Image and Telemetry decoder for some amateurs satellites (geoscan, sputnix platf
 First, download, setup and run soundmodem  
 https://r4uab.ru/settings-soundmodem/  
 * geoscan: [1](https://r4uab.ru/program/modem/geoscan.zip)
-* usp: [1](http://viewnok.sputnix.ru/lib/exe/fetch.php?media=gmskusp.zip), [2](http://uz7.ho.ua/gmskusp.zip)
+* usp: [1](https://edu.sputnix.ru/assets/files/hs_soundmodem-4c5cea0c92a6d1e2d686662c6b3115a8.zip), [2](http://uz7.ho.ua/gmskusp.zip)
 * lucky-7: [1](http://uz7.ho.ua/lucky7.zip)
 * other: [1](http://uz7.ho.ua/packetradio.htm)
 
