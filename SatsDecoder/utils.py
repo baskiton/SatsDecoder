@@ -90,15 +90,19 @@ class TlmCommonTable(ttk.Treeview):
         self.hsb = AutoScrollbar(self.master, orient='horizontal', command=self.xview)
         self.configure(xscrollcommand=self.hsb.set)
 
-    def fill(self, tlm, fw_max=10):
+    def fill(self, tlm, f_precision, fw_max=10):
         f = tk_nametofont('TkDefaultFont', self)
         for k, v in tlm.items():
             if k.startswith('flags'):
-                fw_max = self.fill(v, fw_max)
+                fw_max = self.fill(v, f_precision, fw_max)
             elif not k.startswith('_'):
                 if self.exists(k):
-                    self.set(k, 'val', str(v))
-                    x = f.measure(str(v))
+                    if isinstance(v, float):
+                        s_v = str(round(v, f_precision))
+                    else:
+                        s_v = str(v)
+                    self.set(k, 'val', s_v)
+                    x = f.measure(s_v)
                     if x > fw_max:
                         fw_max = x
 
@@ -113,16 +117,29 @@ class TlmCommonFrame(ttk.Frame):
         self.rowconfigure(0, weight=1)
 
         self.tlm_tables = {}
+        self.last_tlm = None
 
         for k, v in vals.items():
             self.tlm_tables[k] = TlmCommonTable(self, v)
 
-        self.tlm_name_l = ttk.Label(self)
-        self.tlm_name_l.grid(row=3, column=0, sticky=tk.EW, pady=3)
+        self.info_frm = ttk.Frame(self)
+        self.info_frm.columnconfigure(0, weight=1)
+        self.info_frm.grid(row=3, column=0, sticky=tk.EW, pady=3)
+
+        self.tlm_name_l = ttk.Label(self.info_frm)
+        self.tlm_name_l.grid(row=0, column=0, sticky=tk.EW, pady=3)
+
+        ttk.Separator(self.info_frm, orient='vertical').grid(column=1, row=0, sticky=tk.NS, pady=3, padx=3)
+        ttk.Label(self.info_frm, text='Float precision:').grid(column=2, row=0, sticky=tk.E, pady=3)
+        self.float_precision_v = tk.IntVar(self, 10)
+        self.float_precision = ttk.Spinbox(self.info_frm, from_=0, to=100, width=3,
+                                           textvariable=self.float_precision_v, command=self.float_review)
+        self.float_precision.grid(row=0, column=3, sticky=tk.E, pady=3)
 
     def fill(self, tlm, filename):
         table = self.tlm_tables[tlm._name]
-        table.fill(tlm)
+        table.fill(tlm, self.float_precision_v.get())
+        self.last_tlm = tlm
 
         for i in self.tlm_tables.values():
             i.grid_forget()
@@ -134,6 +151,10 @@ class TlmCommonFrame(ttk.Frame):
         table.hsb.grid(column=0, row=1, sticky=tk.NSEW)
 
         self.tlm_name_l.config(text=filename.name)
+
+    def float_review(self):
+        table = self.tlm_tables[self.last_tlm._name]
+        table.fill(self.last_tlm, self.float_precision_v.get())
 
 
 class DynamicNotebook(ttk.Notebook):
