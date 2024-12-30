@@ -713,6 +713,8 @@ class DecoderFrame(ttk.Frame):
         is_geoscan = self.proto == systems.geoscan.proto_name
 
         files = filedialog.askopenfilenames(filetypes=[('SatDump FRM', ['*.frm']), ('All files', '*.*')])
+        if not files:
+            return
 
         if is_geoscan:
             frm_len = simpledialog.askinteger('Frame length',
