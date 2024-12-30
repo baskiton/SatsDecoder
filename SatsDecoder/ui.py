@@ -25,7 +25,7 @@ import urllib.request
 import queue
 import webbrowser
 
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, messagebox, scrolledtext, simpledialog
 
 import construct
 import numpy as np
@@ -591,6 +591,7 @@ class DecoderFrame(ttk.Frame):
             utils.ConnMode.TCP_SRV: ('Start', 'Stop'),
             utils.ConnMode.HEX: ('Run', 'Stop'),
             utils.ConnMode.KISS_FILES: ('Open', 'Stop'),
+            utils.ConnMode.SATDUMP_FRM: ('Open', 'Stop'),
         }
         self.con_btn.config(text=d[m]['d' in kw])
 
@@ -625,6 +626,8 @@ class DecoderFrame(ttk.Frame):
             self._hex_values()
         elif m == utils.ConnMode.KISS_FILES:
             self._kiss_files()
+        elif m == utils.ConnMode.SATDUMP_FRM:
+            self._satdump_files()
         else:
             self.stop() if self.sk else self._start()
 
@@ -701,6 +704,39 @@ class DecoderFrame(ttk.Frame):
         for fn in filedialog.askopenfilenames(filetypes=[('KISS', ['*.kss']), ('All files', '*.*')]):
             for t, data in utils.kiss_read(pathlib.Path(fn)):
                 self.feed(data, t)
+
+    def _satdump_files(self):
+        if self.proto not in (systems.ax25.proto_name, systems.geoscan.proto_name):
+            return
+
+        is_ax25 = self.proto == systems.ax25.proto_name
+        is_geoscan = self.proto == systems.geoscan.proto_name
+
+        files = filedialog.askopenfilenames(filetypes=[('SatDump FRM', ['*.frm']), ('All files', '*.*')])
+
+        if is_geoscan:
+            frm_len = simpledialog.askinteger('Frame length',
+                                              'Input frame length:\n66 - old Geoscan protocol\n74 - new Geoscan protocol',
+                                              initialvalue=74, minvalue=66, maxvalue=74)
+            if not frm_len:
+                return
+
+        for fn in files:
+            with open(fn, 'rb') as f:
+                while 1:
+                    if is_ax25:
+                        hdr = f.read(6)
+                        if hdr[:4] != b'\x1a\xcf\xfc\x1d':
+                            break
+                        frm_len = hdr[4] << 8 | hdr[5]
+                    elif is_geoscan:
+                        f.read(4)
+
+                    data = f.read(frm_len)
+                    if len(data) < frm_len:
+                        break
+
+                    self.feed(data)
 
     def _start(self):
         curr_mode = utils.ConnMode(self.conn_mode.current())

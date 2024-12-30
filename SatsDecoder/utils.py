@@ -22,6 +22,7 @@ class ConnMode(enum.IntEnum):
     TCP_SRV = 2
     HEX = 3
     KISS_FILES = 4
+    SATDUMP_FRM = 5
 
 
 con_mode_names = {
@@ -30,6 +31,7 @@ con_mode_names = {
     ConnMode.TCP_SRV: 'TCP Server',
     ConnMode.HEX: 'HEX values',
     ConnMode.KISS_FILES: 'KISS files',
+    ConnMode.SATDUMP_FRM: 'SatDump frm files',
 }
 
 

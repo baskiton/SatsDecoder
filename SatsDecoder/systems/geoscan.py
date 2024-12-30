@@ -111,6 +111,13 @@ stratosat_tlm = construct.Struct(
     'pad' / construct.GreedyBytes
 )
 
+geoscan2_tlm = construct.Struct(
+    '_name' / construct.Computed('geoscan2_beacon'),
+    'name' / construct.Computed('Beacon'),
+
+    'pad' / construct.GreedyBytes
+)
+
 tlm_map = {
     'RS20S': geoscan_tlm,
     'RS52S': stratosat_tlm,
@@ -121,28 +128,47 @@ geoscan = construct.Struct(
     'ax25' / construct.If(lambda this: (bool(this.ax25) and this.ax25.addresses[0].callsign == u'BEACON'),
                           ax25.ax25_header),
     'packet' / construct.If(lambda this: (bool(this.ax25) and this.ax25.pid == 0xF0),
-                            construct.Switch(construct.this.ax25.addresses[1].callsign, tlm_map, default=geoscan_tlm)),
+                            construct.Switch(construct.this.ax25.addresses[1].callsign, tlm_map, default=geoscan2_tlm)),
 )
 
 
 # sats numbers
-GEOSKAN = 0x01
+GEOSCAN = 0x01
 STRATOSAT = 0x02
+HORIZON = 0x03
+RTU_MIREA_1 = 0x04
+TUSUR_GO = 0x05
+COLIBRI_S = 0x06
+VIZARD_ION = 0x07
 
 _frame = construct.Struct(
-    'sat_num' / construct.Enum(construct.Int8ul, GEOSCAN=GEOSKAN, STRATOSAT=STRATOSAT),  # #0
+    'sat_num' / construct.Enum(construct.Int8ul,
+                               GEOSCAN=GEOSCAN,
+                               STRATOSAT=STRATOSAT,
+                               HORIZON=HORIZON,
+                               RTU_MIREA_1=RTU_MIREA_1,
+                               TUSUR_GO=TUSUR_GO,
+                               COLIBRI_S=COLIBRI_S,
+                               VIZARD_ION=VIZARD_ION),  # #0
     'reserved' / construct.Int8ul,                  # #1
     'dlen' / construct.Int8ul,                      # #2
     'mtype' / construct.Hex(construct.Int16ul),     # #3
     'offset' / construct.Int16ul,                   # #5
     'subsystem_num' / construct.Int8ul,             # #7
     # 'data' / construct.Bytes(construct.this.dlen - 6)
-    'data' / construct.Bytes(56)
+    # 'data' / construct.Bytes(56),
+    'data' / construct.GreedyBytes,
+    # 'pad' / construct.Bytes(8),
 )
 
 sat_names = {
-    GEOSKAN: 'geoscan-img',
+    GEOSCAN: 'geoscan-img',
     STRATOSAT: 'stratosat-img',
+    HORIZON: 'horizon-img',
+    RTU_MIREA_1: 'rtu-mirea-1-img',
+    TUSUR_GO: 'tusur-go-img',
+    COLIBRI_S: 'colibri-s-img',
+    VIZARD_ION: 'vizard-ion-img',
 }
 
 
@@ -153,7 +179,7 @@ def get_sat_name(sat_num):
 class GeoscanImageReceiver(ImageReceiver):
     CMD_IMG_START = 0x0901
     CMD_IMG_FRAME = 0x0905, 0x0920,
-    CMD_IMG_HR_FRAME = 0x9820,
+    CMD_IMG_HR_FRAME = 0x9820, 0x411C
 
     def __init__(self, outdir):
         super().__init__(outdir, '.jpg')
@@ -165,7 +191,7 @@ class GeoscanImageReceiver(ImageReceiver):
     def generate_fid(self, sat_num=None):
         if not (self.current_fid and self.merge_mode):
             self.last_date = now = dt.datetime.now()
-            pfx = get_sat_name(sat_num).split('-')[0]
+            pfx = get_sat_name(sat_num).rpartition('-')[0]
             hr = self._last_is_hr and '_hr' or ''
             self.current_fid = f'{pfx.upper()}{hr}_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
         return self.current_fid
@@ -314,6 +340,13 @@ class GeoscanProtocol(common.Protocol):
                 ('pad', 'pad'),
             )
         },
+        'geoscan2_beacon': {
+            'table': (
+                ('name', 'Name'),
+                ('Time', 'Time'),
+                ('pad', 'pad'),
+            )
+        },
     }
 
     def __init__(self, outdir):
@@ -321,27 +354,26 @@ class GeoscanProtocol(common.Protocol):
         self.last_fn = None
 
     def recognize(self, data):
-        while data:
-            raw_packet, data = data[:self.PACKETSIZE], data[self.PACKETSIZE:]
-            tlm = geoscan.parse(raw_packet)
-            name = self.get_sender_callsign(tlm)
+        # raw_packet, data = data[:self.PACKETSIZE], data[self.PACKETSIZE:]
+        tlm = geoscan.parse(data)
+        name = self.get_sender_callsign(tlm)
 
-            if tlm.packet:
-                yield 'tlm', name, (tlm, tlm.packet)
-                continue
+        if tlm.packet:
+            yield 'tlm', name, (tlm, tlm.packet)
+            return
 
-            try:
-                frame = _frame.parse(raw_packet)
-            except construct.ConstructError:
-                yield 'raw', get_sat_name(None), raw_packet
-                continue
+        try:
+            frame = _frame.parse(data)
+        except construct.ConstructError:
+            yield 'raw', get_sat_name(None), data
+            return
 
-            name = get_sat_name(int(frame.sat_num))
-            x = self.ir.push_data(frame)
-            if x:
-                if x != 2:
-                    self.last_fn = self.ir.cur_img.fn
-                yield 'img', name, (x, self.ir.cur_img)
-                continue
+        name = get_sat_name(int(frame.sat_num))
+        x = self.ir.push_data(frame)
+        if x:
+            if x != 2:
+                self.last_fn = self.ir.cur_img.fn
+            yield 'img', name, (x, self.ir.cur_img)
+            return
 
-            yield 'frame', name, f'{str(frame)}\n\nHex:\n{utils.bytes2hex(raw_packet)}'
+        yield 'frame', name, f'{str(frame)}\n\nHex:\n{utils.bytes2hex(data)}'

@@ -62,6 +62,7 @@ Various data source types are available in the `Conn` combobox:
     ```
     Byte order: Network (big-endian)
 * `KISS files` - read KISS-files
+* `SatDump frm files` - read SatDump frm files (only for AX.25 and Geoscan)
 
 ![](doc/Screenshot.jpg)
 
