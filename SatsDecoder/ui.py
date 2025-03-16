@@ -711,7 +711,7 @@ class DecoderFrame(ttk.Frame):
         ask_hex.update()
 
     def _hex_files(self):
-        for fn in filedialog.askopenfilenames(filetypes=[('text', ['*.txt']), ('All files', '*.*')]):
+        for fn in filedialog.askopenfilenames(filetypes=[('Text', ['*.txt']), ('All files', '*.*')]):
             store_tlm = 1
             for ln in open(fn):
                 if ln.startswith(utils.SELF_SIGN):

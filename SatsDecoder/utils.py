@@ -157,8 +157,7 @@ class TlmCommonFrame(ttk.Frame):
         table.vsb.grid(column=1, row=0, sticky=tk.NSEW)
         table.hsb.grid(column=0, row=1, sticky=tk.NSEW)
 
-        if filename:
-            self.tlm_name_l.config(text=filename.name)
+        self.tlm_name_l.config(text=filename and filename.name)
 
     def float_review(self):
         table = self.tlm_tables[self.last_tlm._name]
