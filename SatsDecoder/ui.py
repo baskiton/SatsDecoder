@@ -1027,7 +1027,7 @@ class App(ttk.Frame):
         self.config.set(name, 'port', df.port_v.get())
         self.config.set(name, 'outdir', df.out_dir_v.get())
         self.config.set(name, 'merge mode', str(df.merge_mode_v.get()))
-        self.config.set(name, 'connmode', str(df.get_conn_mode()))
+        self.config.set(name, 'connmode', str(df.get_conn_mode().value))
         self.config.set(name, 'filter', str(';'.join(k for k, v in df.history_frame.filters.items() if v.get())))
         self.config.set(name, 'autoscroll', str(df.history_frame.autoscroll_val.get()))
 
