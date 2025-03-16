@@ -17,13 +17,15 @@ import numpy as np
 
 
 class ConnMode(enum.IntEnum):
+    # !!! only append !!!
+
     AGWPE_CLI = 0
-    TCP_CLI = 1
-    TCP_SRV = 2
-    HEX = 3
-    KISS_FILES = 4
-    SATDUMP_FRM = 5
-    HEX_FILES = 6
+    TCP_CLI = enum.auto()
+    TCP_SRV = enum.auto()
+    HEX = enum.auto()
+    KISS_FILES = enum.auto()
+    SATDUMP_FRM = enum.auto()
+    HEX_FILES = enum.auto()
 
 
 con_mode_names = {
@@ -35,6 +37,7 @@ con_mode_names = {
     ConnMode.KISS_FILES: 'KISS files',
     ConnMode.SATDUMP_FRM: 'SatDump frm files',
 }
+con_mode_names_inv = {v: k for k, v in con_mode_names.items()}
 
 
 class Dict(dict):

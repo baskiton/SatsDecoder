@@ -556,10 +556,11 @@ class DecoderFrame(ttk.Frame):
         self.con_btn.grid(column=4, row=1, sticky=tk.EW, pady=3, padx=3)
 
         ttk.Label(self.ctrl_frame, text='Conn:').grid(column=0, row=2, sticky=tk.E, pady=3)
-        self.conn_mode = ttk.Combobox(self.ctrl_frame, values=tuple(utils.con_mode_names.values()), state='readonly')
+        self.conn_mode = ttk.Combobox(self.ctrl_frame, values=tuple(utils.con_mode_names_inv), state='readonly')
         self.conn_mode.bind('<<ComboboxSelected>>', self.named_conn_btn)
         try:
-            self.conn_mode.current(int(config.get('connmode')))
+            m = utils.ConnMode(int(config.get('connmode')))
+            self.conn_mode.current(tuple(utils.con_mode_names).index(m))
         except tk.TclError:
             self.conn_mode.current(0)
         self.named_conn_btn()
@@ -583,8 +584,10 @@ class DecoderFrame(ttk.Frame):
         self.dv_frame = DataViewFrame(self)
         self.dv_frame.grid(column=1, row=0, rowspan=2, sticky=tk.NSEW, padx=2, pady=2)
 
+    def get_conn_mode(self):
+        return utils.ConnMode(utils.con_mode_names_inv[self.conn_mode.get()])
+
     def named_conn_btn(self, _=None, **kw):
-        m = utils.ConnMode(self.conn_mode.current())
         d = {
             utils.ConnMode.AGWPE_CLI: ('Connect', 'Disconnect'),
             utils.ConnMode.TCP_CLI: ('Connect', 'Disconnect'),
@@ -594,7 +597,7 @@ class DecoderFrame(ttk.Frame):
             utils.ConnMode.KISS_FILES: ('Open', 'Stop'),
             utils.ConnMode.SATDUMP_FRM: ('Open', 'Stop'),
         }
-        self.con_btn.config(text=d[m]['d' in kw])
+        self.con_btn.config(text=d[self.get_conn_mode()]['d' in kw])
 
     def fill_data(self, evt=None):
         x = self.history_frame.get_selected()
@@ -622,7 +625,7 @@ class DecoderFrame(ttk.Frame):
         self.set_merge_mode()
         self.set_out_dir()
 
-        m = utils.ConnMode(self.conn_mode.current())
+        m = self.get_conn_mode()
         if m == utils.ConnMode.HEX:
             self._hex_values()
         elif m == utils.ConnMode.HEX_FILES:
@@ -757,7 +760,7 @@ class DecoderFrame(ttk.Frame):
                     self.feed(data)
 
     def _start(self):
-        curr_mode = utils.ConnMode(self.conn_mode.current())
+        curr_mode = self.get_conn_mode()
         self.is_server = curr_mode == utils.ConnMode.TCP_SRV
         self.is_agwpe_cli = curr_mode == utils.ConnMode.AGWPE_CLI
         try:
@@ -1024,7 +1027,7 @@ class App(ttk.Frame):
         self.config.set(name, 'port', df.port_v.get())
         self.config.set(name, 'outdir', df.out_dir_v.get())
         self.config.set(name, 'merge mode', str(df.merge_mode_v.get()))
-        self.config.set(name, 'connmode', str(df.conn_mode.current()))
+        self.config.set(name, 'connmode', str(df.get_conn_mode()))
         self.config.set(name, 'filter', str(';'.join(k for k, v in df.history_frame.filters.items() if v.get())))
         self.config.set(name, 'autoscroll', str(df.history_frame.autoscroll_val.get()))
 
