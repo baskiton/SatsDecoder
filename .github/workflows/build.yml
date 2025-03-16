@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
+        os: [ ubuntu-20.04, windows-latest ]
         python: [ "3.11" ]
         arch: [ "x64" ]
         include:
@@ -66,7 +66,7 @@ jobs:
         run: |
           ls -ahl dist
           case ${{ matrix.os }} in
-            ubuntu-latest)
+            ubuntu-20.04)
               mv dist/SatsDecoder dist/SatsDecoder-linux
               ;;
             windows-2019)
@@ -84,7 +84,7 @@ jobs:
           path: dist/*
 
   nightly-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: build
 
     steps:
