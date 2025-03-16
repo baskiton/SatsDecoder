@@ -590,6 +590,7 @@ class DecoderFrame(ttk.Frame):
             utils.ConnMode.TCP_CLI: ('Connect', 'Disconnect'),
             utils.ConnMode.TCP_SRV: ('Start', 'Stop'),
             utils.ConnMode.HEX: ('Run', 'Stop'),
+            utils.ConnMode.HEX_FILES: ('Open', 'Stop'),
             utils.ConnMode.KISS_FILES: ('Open', 'Stop'),
             utils.ConnMode.SATDUMP_FRM: ('Open', 'Stop'),
         }
@@ -624,6 +625,8 @@ class DecoderFrame(ttk.Frame):
         m = utils.ConnMode(self.conn_mode.current())
         if m == utils.ConnMode.HEX:
             self._hex_values()
+        elif m == utils.ConnMode.HEX_FILES:
+            self._hex_files()
         elif m == utils.ConnMode.KISS_FILES:
             self._kiss_files()
         elif m == utils.ConnMode.SATDUMP_FRM:
@@ -661,6 +664,14 @@ class DecoderFrame(ttk.Frame):
         self.out_dir_btn.config(state=tk.NORMAL)
         self.conn_mode.config(state='readonly')
 
+    def _hex_line(self, line, store_tlm=1):
+        try:
+            x = bytes.fromhex(line)
+        except ValueError:
+            return
+        if x and self.feed(x, store_tlm=store_tlm):
+            return 1
+
     def _hex_values(self):
         ask_hex = tk.Toplevel(self)
         ask_hex.transient(self)
@@ -671,12 +682,8 @@ class DecoderFrame(ttk.Frame):
 
         def _finish(ok=0):
             if ok:
-                for line in text_e.get(1.0, 'end').splitlines():
-                    try:
-                        x = bytes.fromhex(line)
-                    except ValueError:
-                        continue
-                    if x and self.feed(x):
+                for ln in text_e.get(1.0, 'end').splitlines():
+                    if self._hex_line(ln):
                         break
 
             ask_hex.grab_release()
@@ -699,6 +706,15 @@ class DecoderFrame(ttk.Frame):
         cancel_btn.grid(column=1, row=0)
 
         ask_hex.update()
+
+    def _hex_files(self):
+        for fn in filedialog.askopenfilenames(filetypes=[('text', ['*.txt']), ('All files', '*.*')]):
+            store_tlm = 1
+            for ln in open(fn):
+                if ln.startswith(utils.SELF_SIGN):
+                    store_tlm = 0
+                if self._hex_line(ln, store_tlm):
+                    break
 
     def _kiss_files(self):
         for fn in filedialog.askopenfilenames(filetypes=[('KISS', ['*.kss']), ('All files', '*.*')]):
@@ -861,7 +877,7 @@ class DecoderFrame(ttk.Frame):
 
         return self.feed(frame)
 
-    def feed(self, frame, t=None):
+    def feed(self, frame, t=None, store_tlm=1):
         try:
             data = frame[self.frame_off:]
             for i in self.decoder.recognize(data):
@@ -881,21 +897,23 @@ class DecoderFrame(ttk.Frame):
                 elif ty == 'tlm':
                     packet, tlm = packet
                     date = getattr(tlm, 'Time', t or dt.datetime.utcnow())
-                    name = ('%s_%s_%s_%s.txt' % (name, self.proto, tlm._name, date)).replace(
-                        ' ', '_').replace(':', '-')
-                    fp = pathlib.Path(self.out_dir_v.get()) / name
+                    fp = ''
+                    if store_tlm:
+                        name = ('%s_%s_%s_%s.txt' % (name, self.proto, tlm._name, date)).replace(
+                            ' ', '_').replace(':', '-')
+                        fp = pathlib.Path(self.out_dir_v.get()) / name
+                        fp.parent.mkdir(parents=True, exist_ok=True)
+                        try:
+                            with fp.open('w') as f:
+                                f.write(utils.SELF_SIGN + '\n')
+                                f.write(utils.bytes2hex(data))
+                                f.write('\n\n')
+                                f.write(str(packet))
+                        except ValueError:
+                            # TODO: log it. invalid name
+                            continue
+
                     args = args[:-1] + (tlm, fp)
-
-                    fp.parent.mkdir(parents=True, exist_ok=True)
-                    try:
-                        with fp.open('w') as f:
-                            f.write(utils.bytes2hex(data))
-                            f.write('\n\n')
-                            f.write(str(packet))
-                    except ValueError:
-                        # TODO: log it. invalid name
-                        continue
-
                 self.history_frame.put(*args, date=date)
 
         except construct.ConstructError:

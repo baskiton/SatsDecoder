@@ -23,6 +23,7 @@ class ConnMode(enum.IntEnum):
     HEX = 3
     KISS_FILES = 4
     SATDUMP_FRM = 5
+    HEX_FILES = 6
 
 
 con_mode_names = {
@@ -30,6 +31,7 @@ con_mode_names = {
     ConnMode.TCP_CLI: 'TCP Client',
     ConnMode.TCP_SRV: 'TCP Server',
     ConnMode.HEX: 'HEX values',
+    ConnMode.HEX_FILES: 'HEX values from files',
     ConnMode.KISS_FILES: 'KISS files',
     ConnMode.SATDUMP_FRM: 'SatDump frm files',
 }
@@ -152,7 +154,8 @@ class TlmCommonFrame(ttk.Frame):
         table.vsb.grid(column=1, row=0, sticky=tk.NSEW)
         table.hsb.grid(column=0, row=1, sticky=tk.NSEW)
 
-        self.tlm_name_l.config(text=filename.name)
+        if filename:
+            self.tlm_name_l.config(text=filename.name)
 
     def float_review(self):
         table = self.tlm_tables[self.last_tlm._name]
@@ -469,3 +472,4 @@ seqs_map = {
 AGWPE_CON = b'\x00\x00\x00\x00k\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 AGWPE_HDR_FMT = struct.Struct('BxxxBxBx10s10sIxxxx')
+SELF_SIGN = '### SatsDecoder ###'

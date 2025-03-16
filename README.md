@@ -52,6 +52,7 @@ The following protocols are currently supported:
 Various data source types are available in the `Conn` combobox:
 * `AGWPE Client` - to connect to soundmodems
 * `HEX values` - per-line decoding of data transmitted as a HEX string
+* `HEX values from files` - same as the `HEX values`, but from files
 * `TCP Client` - TCP socket as client
 * `TCP Server` - TCP socket as server
   * ATTENTION!!! For TCP types, the data provider ensures that the header is sent before the main data:  
