@@ -70,7 +70,7 @@ class AutoScrollbar(ttk.Scrollbar):
 
 class TlmCommonTable(ttk.Treeview):
     def __init__(self, master, vals):
-        super().__init__(master, columns='x val', selectmode='browse', show='tree')
+        super().__init__(master, columns='x val', selectmode=tk.BROWSE, show='tree')
 
         self.flags = {}
 
@@ -80,21 +80,21 @@ class TlmCommonTable(ttk.Treeview):
             x = ''
             w0 = 20
             if k != 'table':
-                x = self.insert('', 'end', k, text=k)
+                x = self.insert('', tk.END, k, text=k)
                 w0 = 40
 
             for iid, text in v:
                 w1 = f.measure(text) + w0
                 if w1 > w:
                     w = w1
-                self.insert(x, 'end', iid, text=text)
+                self.insert(x, tk.END, iid, text=text)
 
-        self.column('#0', width=w, anchor='e', stretch=tk.NO)
+        self.column('#0', width=w, anchor=tk.E, stretch=tk.NO)
         self.column('x', width=10, stretch=tk.NO)
 
-        self.vsb = AutoScrollbar(self.master, orient='vertical', command=self.yview)
+        self.vsb = AutoScrollbar(self.master, orient=tk.VERTICAL, command=self.yview)
         self.configure(yscrollcommand=self.vsb.set)
-        self.hsb = AutoScrollbar(self.master, orient='horizontal', command=self.xview)
+        self.hsb = AutoScrollbar(self.master, orient=tk.HORIZONTAL, command=self.xview)
         self.configure(xscrollcommand=self.hsb.set)
 
     def fill(self, tlm, f_precision, fw_max=10):
@@ -136,7 +136,7 @@ class TlmCommonFrame(ttk.Frame):
         self.tlm_name_l = ttk.Label(self.info_frm)
         self.tlm_name_l.grid(row=0, column=0, sticky=tk.EW, pady=3)
 
-        ttk.Separator(self.info_frm, orient='vertical').grid(column=1, row=0, sticky=tk.NS, pady=3, padx=3)
+        ttk.Separator(self.info_frm, orient=tk.VERTICAL).grid(column=1, row=0, sticky=tk.NS, pady=3, padx=3)
         ttk.Label(self.info_frm, text='Float precision:').grid(column=2, row=0, sticky=tk.E, pady=3)
         self.float_precision_v = tk.IntVar(self, 10)
         self.float_precision = ttk.Spinbox(self.info_frm, from_=0, to=100, width=3,
@@ -314,7 +314,7 @@ def nonblocking_message(type_, title=None, message=None, detail=None, parent=Non
     frame = ttk.Frame(top, padding=(10, 6, 10, 6))
     frame.grid(column=0, row=0, sticky=tk.NSEW)
 
-    ttk.Label(frame, image=img, justify='left').grid(column=0, row=0)
+    ttk.Label(frame, image=img, justify=tk.LEFT).grid(column=0, row=0)
     ttk.Label(frame, text=message or '', font='TkCaptionFont').grid(column=1, row=0)
     if detail:
         ttk.Label(frame, text=detail).grid(columnspan=2, column=0, row=1)

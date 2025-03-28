@@ -149,7 +149,7 @@ class HistoryFrame(ttk.LabelFrame):
         self.vals = {}
         self.detached_vals = set()
         self.table = ttk.Treeview(self, columns='date type ' + ' '.join(master.decoder.columns),
-                                  selectmode='browse', show='tree headings')
+                                  selectmode=tk.BROWSE, show='tree headings')
         f = utils.tk_nametofont('TkDefaultFont', self.table)
         # self.table.column('#0', anchor='e')
         self.table.column('#0', width=110, stretch=tk.NO)
@@ -172,7 +172,7 @@ class HistoryFrame(ttk.LabelFrame):
 
         self.table.grid(sticky=tk.NSEW, pady=3)
 
-        self.vsb = utils.AutoScrollbar(self, orient='vertical', command=self.table.yview)
+        self.vsb = utils.AutoScrollbar(self, orient=tk.VERTICAL, command=self.table.yview)
         self.vsb.grid(sticky=tk.NSEW, pady=3, column=1, row=1)
 
         self.table.configure(yscrollcommand=self.vsb.set)
@@ -248,9 +248,9 @@ class HistoryFrame(ttk.LabelFrame):
             try:
                 parent_iid = self.table.item(name) and name
             except tk.TclError:
-                parent_iid = self.table.insert('', 'end', name, text=name)
+                parent_iid = self.table.insert('', tk.END, name, text=name)
 
-            iid = self.table.insert(parent_iid, 'end', tags=(tag,),
+            iid = self.table.insert(parent_iid, tk.END, tags=(tag,),
                                     values=[date, tag, *vals])
             self.vals[date] = iid
             self.order.setdefault(parent_iid, []).append(iid)
@@ -284,24 +284,24 @@ class CanvasFrame(ttk.Frame):
         self.image_soi = ttk.Label(self.info_frame, text='SOI', foreground='red')
         self.image_soi.grid(column=1, row=0, sticky=tk.E, padx=1.5)
 
-        ttk.Separator(self.info_frame, orient='vertical').grid(column=2, row=0, sticky=tk.NS, padx=3)
+        ttk.Separator(self.info_frame, orient=tk.VERTICAL).grid(column=2, row=0, sticky=tk.NS, padx=3)
 
         self.image_offset_l = ttk.Label(self.info_frame, text='Base offset:')
         self.image_offset_l.grid(column=3, row=0, sticky=tk.E, padx=0)
 
         self.image_offset_v = tk.IntVar(self.info_frame, 0)
         self.image_offset = ttk.Entry(self.info_frame, textvariable=self.image_offset_v, width=7,
-                                      validate='all', validatecommand=lambda: False)
+                                      validate=tk.ALL, validatecommand=lambda: False)
         self.image_offset.grid(column=4, row=0, sticky=tk.W, padx=0)
 
-        ttk.Separator(self.info_frame, orient='vertical').grid(column=5, row=0, sticky=tk.NS, padx=3)
+        ttk.Separator(self.info_frame, orient=tk.VERTICAL).grid(column=5, row=0, sticky=tk.NS, padx=3)
 
         self.first_data_off_l = tk.Label(self.info_frame, text='First data offset:')
         self.first_data_off_l.grid(column=6, row=0, sticky=tk.E, padx=0)
 
         self.first_data_off_v = tk.IntVar(self.info_frame, 0)
         self.first_data_off = ttk.Entry(self.info_frame, textvariable=self.first_data_off_v, width=7,
-                                        validate='all', validatecommand=lambda: False)
+                                        validate=tk.ALL, validatecommand=lambda: False)
         self.first_data_off.grid(column=7, row=0, sticky=tk.W, padx=0)
 
         self.strip_btn = ttk.Button(self.info_frame, text='Strip', command=self.strip_file, state=tk.DISABLED)
@@ -316,10 +316,10 @@ class CanvasFrame(ttk.Frame):
         self.canvas = tk.Canvas(self.canvas_frame)
         self.canvas.grid(column=0, row=0, sticky=tk.NSEW)
 
-        self.vsb = utils.AutoScrollbar(self.canvas_frame, orient='vertical', command=self.canvas.yview)
+        self.vsb = utils.AutoScrollbar(self.canvas_frame, orient=tk.VERTICAL, command=self.canvas.yview)
         self.vsb.grid(row=0, column=1, sticky=tk.NS)
         self.canvas.configure(yscrollcommand=self.vsb.set)
-        self.hsb = utils.AutoScrollbar(self.canvas_frame, orient='horizontal', command=self.canvas.xview)
+        self.hsb = utils.AutoScrollbar(self.canvas_frame, orient=tk.HORIZONTAL, command=self.canvas.xview)
         self.hsb.grid(row=1, column=0, sticky=tk.EW)
         self.canvas.configure(xscrollcommand=self.hsb.set)
         self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
@@ -334,7 +334,7 @@ class CanvasFrame(ttk.Frame):
         self.save_btn = ttk.Button(self.tail_frame, text='Save as', command=self.save_as)
         self.save_btn.grid(sticky=tk.SW, row=0, column=1, padx=1.5)
 
-        ttk.Separator(self.tail_frame, orient='vertical').grid(sticky=tk.NS, row=0, column=2, padx=3)
+        ttk.Separator(self.tail_frame, orient=tk.VERTICAL).grid(sticky=tk.NS, row=0, column=2, padx=3)
 
         self.image_name_l = ttk.Label(self.tail_frame)
         self.image_name_l.grid(sticky=tk.SW, row=0, column=3)
@@ -486,8 +486,8 @@ class DataViewFrame(ttk.LabelFrame):
         self.clear()
 
         self.text['state'] = 'normal'
-        self.text.delete('1.0', 'end')
-        self.text.insert('end', data)
+        self.text.delete('1.0', tk.END)
+        self.text.insert(tk.END, data)
         self.text['state'] = 'disabled'
 
         self.text.grid(column=0, row=0, sticky=tk.NSEW)
@@ -702,7 +702,7 @@ class DecoderFrame(ttk.Frame):
 
         def _finish(ok=0):
             if ok:
-                for ln in text_e.get(1.0, 'end').splitlines():
+                for ln in text_e.get(1.0, tk.END).splitlines():
                     if self._hex_line(ln):
                         break
 
@@ -1084,7 +1084,7 @@ class App(ttk.Frame):
                     ok_btn.config(text='73!')
                     if img_l:
                         img_l.destroy()
-                    img_l = ttk.Label(pad_frame, image=img, justify='center')
+                    img_l = ttk.Label(pad_frame, image=img, justify=tk.CENTER)
                     img_l.grid()
 
                     about.update()
@@ -1104,7 +1104,7 @@ class App(ttk.Frame):
         frame.grid(column=0, row=0, sticky=tk.NSEW)
 
         ttk.Label(frame, text=f'SatsDecoder v{__version__}').grid(columnspan=2)
-        ttk.Label(frame, text='GPL-3.0, MIT licenses\nCopyright (c) 2024 Alexander Baskikh\n', justify='center').grid(columnspan=2, rowspan=3)
+        ttk.Label(frame, text='GPL-3.0, MIT licenses\nCopyright (c) 2024 Alexander Baskikh\n', justify=tk.CENTER).grid(columnspan=2, rowspan=3)
 
         links = (
             ('GitHub page:', 'https://github.com/baskiton/SatsDecoder'),
@@ -1190,5 +1190,5 @@ class App(ttk.Frame):
                     i.config(text=f'New version: {msg}', foreground=fg)
                     break
             else:
-                ttk.Label(label_frame, text=f'New version: {msg}', foreground=fg, justify='center').grid(columnspan=2)
+                ttk.Label(label_frame, text=f'New version: {msg}', foreground=fg, justify=tk.CENTER).grid(columnspan=2)
             parent.update()
