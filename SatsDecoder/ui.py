@@ -510,6 +510,7 @@ class DataViewFrame(ttk.LabelFrame):
 
 class DecoderFrame(ttk.Frame):
     STOP_EVT = '<<STOP>>'
+    MSG_EVT = '<<SHOWMSG>>'
 
     def __init__(self, master, config, name):
         super().__init__(master)
@@ -583,6 +584,22 @@ class DecoderFrame(ttk.Frame):
         # data view frame
         self.dv_frame = DataViewFrame(self)
         self.dv_frame.grid(column=1, row=0, rowspan=2, sticky=tk.NSEW, padx=2, pady=2)
+
+        self.message_q = queue.Queue()
+        self.bind(self.MSG_EVT, lambda _: utils.nonblocking_message(**self.message_q.get()))
+
+    def show_message(self, type_, title=None, message=None, detail=None):
+        self.message_q.put(dict(type_=type_, title=title, message=message, detail=detail, parent=self))
+        self.event_generate(self.MSG_EVT, when='tail')
+
+    def show_info(self, title=None, message=None, detail=None):
+        self.show_message(messagebox.INFO, title=title, message=message, detail=detail)
+
+    def show_warn(self, title=None, message=None, detail=None):
+        self.show_message(messagebox.WARNING, title=title, message=message, detail=detail)
+
+    def show_err(self, title=None, message=None, detail=None):
+        self.show_message(messagebox.ERROR, title=title, message=message, detail=detail)
 
     def get_conn_mode(self):
         return utils.ConnMode(utils.con_mode_names_inv[self.conn_mode.get()])
@@ -781,10 +798,10 @@ class DecoderFrame(ttk.Frame):
             self.sk = s
 
         except (ConnectionError, OSError) as e:
-            messagebox.showerror(message='%s: %s' % (self.name, e.strerror))
+            self.show_err(message='%s: %s' % (self.name, e.strerror))
 
         except Exception as e:
-            messagebox.showerror(message='%s: %s' % (self.name, e.args))
+            self.show_err(message='%s: %s' % (self.name, e.args))
 
         else:
             self.named_conn_btn(d=1)
@@ -870,12 +887,12 @@ class DecoderFrame(ttk.Frame):
             if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK, sys.platform == 'win32' and errno.WSAEWOULDBLOCK):
                 return
             if e.errno not in (errno.EBADF, sys.platform == 'win32' and errno.WSAEBADF) and conn.fileno() != -1:
-                messagebox.showerror(message='%s: %s (%s)' % (self.name, e, conn))
+                self.show_err(message='%s: %s (%s)' % (self.name, e, conn))
             return 1
 
         if not frame:
             if not self.is_server:
-                messagebox.showwarning(message='%s: Connection lost' % self.name)
+                self.show_warn(message='%s: Connection lost' % self.name)
             return 1
 
         return self.feed(frame)
@@ -888,7 +905,10 @@ class DecoderFrame(ttk.Frame):
                 ty, name, *_, packet = i
                 if '\0' in name:
                     # TODO: log it, '`null` in name not allowed'
-                    continue
+                    # continue
+                    import sys
+                    print('WARNING: `null` in name not allowed', file=sys.stderr)
+                    name = name.replace('\0', '')
                 date = t
 
                 if ty == 'img':
@@ -924,7 +944,7 @@ class DecoderFrame(ttk.Frame):
             pass
 
         except Exception as e:
-            messagebox.showerror(message='feed %s: %s' % (self.name, e))
+            self.show_err(message='feed %s: %s' % (self.name, e))
             return 1
 
 

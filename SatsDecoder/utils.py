@@ -293,6 +293,38 @@ class DynamicNotebook(ttk.Notebook):
         ])
 
 
+def nonblocking_message(type_, title=None, message=None, detail=None, parent=None):
+    if type_ == messagebox.ERROR:
+        img = '::tk::icons::error'
+    elif type_ == messagebox.WARNING:
+        img = '::tk::icons::warning'
+    elif type_ == messagebox.INFO:
+        img = '::tk::icons::information'
+    else:
+        raise ValueError(f'Invalid message type: {type_}')
+
+    top = tk.Toplevel(parent)
+    top.transient(parent)
+    top.focus_set()
+    top.wait_visibility()
+    top.grab_set()
+    top.resizable(width=False, height=False)
+    top.title(title or type_.capitalize())
+
+    frame = ttk.Frame(top, padding=(10, 6, 10, 6))
+    frame.grid(column=0, row=0, sticky=tk.NSEW)
+
+    ttk.Label(frame, image=img, justify='left').grid(column=0, row=0)
+    ttk.Label(frame, text=message or '', font='TkCaptionFont').grid(column=1, row=0)
+    if detail:
+        ttk.Label(frame, text=detail).grid(columnspan=2, column=0, row=1)
+
+    ok_btn = ttk.Button(frame, text='Ok', command=lambda: (top.grab_release(), top.destroy()))
+    ok_btn.grid(columnspan=2, column=0, row=2)
+
+    top.update()
+
+
 def bytes2hex(data):
     return data.hex(*((' ',) if sys.version_info >= (3, 8, 0) else ()))
 
@@ -469,6 +501,8 @@ seqs_map = {
                             'cy90aHVtYi80LzRhL0N1YmVTYXRfR2Vvc2Nhbi1FZGVsdmVpc19lbWJsZW0u'
                             'anBnLyVzcHgtQ3ViZVNhdF9HZW9zY2FuLUVkZWx2ZWlzX2VtYmxlbS5qcGc=',
     '\x72\x73\x31\x35\x73': 'aHR0cHM6Ly9zcHV0bml4LnJ1L3RwbC9pbWcvbG9nby16b3JraXkuanBnPyVz',
+    '\x72\x73\x34\x30\x73': 'aHR0cHM6Ly9zcGFjZXBpLnNwYWNlL3VwbG9hZHMvRW1ibGVtYV9rdWJzYXRh'
+                            'X1VtX0tBX2NmNzhiMDE0YTguanBnPyVz',
 }
 
 AGWPE_CON = b'\x00\x00\x00\x00k\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
