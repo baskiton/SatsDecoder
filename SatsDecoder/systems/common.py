@@ -81,6 +81,10 @@ class Protocol:
     def get_sender_callsign(data):
         return ax25.get_sender_callsign(data.ax25)
 
+    @staticmethod
+    def get_receiver_callsign(data):
+        return ax25.get_receiver_callsign(data.ax25)
+
     def recognize(self, bb):
         raise NotImplementedError
 

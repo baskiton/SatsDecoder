@@ -19,11 +19,6 @@ proto_name = 'samsat-ion2'
 
 reg_temp = common.EvalAdapter('x/256', construct.Int16sl)
 
-unkn = construct.Struct(
-    '_name' / construct.Computed('samsat_unkn'),
-    'name' / construct.Computed('Unknown'),
-    'data' / construct.GreedyBytes,
-)
 packet = construct.Struct(
     '_name' / construct.Computed('samsat_beacon'),
     'name' / construct.Computed('Beacon'),
@@ -47,7 +42,10 @@ samsat = construct.Struct(
     'ax25' / construct.If(lambda this: bool(this.ax25), ax25.ax25_header),
     'packet' / construct.Peek(packet),
     'packet' / construct.If(lambda this: (bool(this.ax25) and this.ax25.pid == 0xF0),
-                            construct.IfThenElse(lambda this: bool(this.packet), packet, unkn)),
+                            construct.IfThenElse(
+                                lambda this: bool(this.packet and this.ax25.addresses[0].callsign == 'WORLD'),
+                                packet,
+                                construct.GreedyBytes)),
 )
 
 
@@ -79,8 +77,8 @@ class SamSatIon2Protocol(common.Protocol):
     def recognize(self, bb: bytes):
         x = samsat.parse(bb)
         name = self.get_sender_callsign(x) or 'unknown'
-        if not x.packet:
-            yield 'raw', name, bb
-            return
 
-        yield 'tlm', name, (x, x.packet)
+        if x.packet and self.get_receiver_callsign(x).startswith('WORLD'):
+            yield 'tlm', name, (x, x.packet)
+        else:
+            yield 'raw', name, x.packet if x.packet else bb
