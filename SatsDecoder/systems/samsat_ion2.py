@@ -22,7 +22,7 @@ reg_temp = common.EvalAdapter('x/256', construct.Int16sl)
 packet = construct.Struct(
     '_name' / construct.Computed('samsat_beacon'),
     'name' / construct.Computed('Beacon'),
-    'msg' / construct.PaddedString(6, 'ascii'),
+    'sign' / construct.StringEncoded(construct.Const(b'WORLD '), 'ascii'),
     '_pad0' / construct.Bytes(4),
     'Tbat1' / reg_temp,
     'Tbat2' / reg_temp,
@@ -42,10 +42,7 @@ samsat = construct.Struct(
     'ax25' / construct.If(lambda this: bool(this.ax25), ax25.ax25_header),
     'packet' / construct.Peek(packet),
     'packet' / construct.If(lambda this: (bool(this.ax25) and this.ax25.pid == 0xF0),
-                            construct.IfThenElse(
-                                lambda this: bool(this.packet and this.ax25.addresses[0].callsign == 'WORLD'),
-                                packet,
-                                construct.GreedyBytes)),
+                            construct.IfThenElse(lambda this: bool(this.packet), packet, construct.GreedyBytes)),
 )
 
 
@@ -56,7 +53,7 @@ class SamSatIon2Protocol(common.Protocol):
         'samsat_beacon': {
             'table': (
                 ('name', 'Name'),
-                ('msg', 'Message'),
+                ('sign', 'Signature'),
                 ('Tbat1', 'Battery #1 temperature, °C'),
                 ('Tbat2', 'Battery #2 temperature, °C'),
                 ('Mrecv', 'Messages received'),
@@ -66,19 +63,13 @@ class SamSatIon2Protocol(common.Protocol):
                 ('Tmag', 'Magnetometer temperature, °C'),
             )
         },
-        'samsat_unkn': {
-            'table': (
-                ('name', 'Name'),
-                ('data', 'Data'),
-            )
-        }
     }
 
     def recognize(self, bb: bytes):
         x = samsat.parse(bb)
         name = self.get_sender_callsign(x) or 'unknown'
 
-        if x.packet and self.get_receiver_callsign(x).startswith('WORLD'):
+        if x.packet and hasattr(x.packet, '_name'):
             yield 'tlm', name, (x, x.packet)
         else:
-            yield 'raw', name, x.packet if x.packet else bb
+            yield 'raw', name, x.packet or bb
