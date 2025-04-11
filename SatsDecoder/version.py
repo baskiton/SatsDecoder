@@ -5,4 +5,4 @@
 #
 #  SPDX-License-Identifier: MIT
 
-__version__ = '0.1.999-sourced'
+__version__ = '0.2.999-sourced'
