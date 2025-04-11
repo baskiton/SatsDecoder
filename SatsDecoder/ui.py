@@ -1104,34 +1104,24 @@ class App(ttk.Frame):
         frame.grid(column=0, row=0, sticky=tk.NSEW)
 
         ttk.Label(frame, text=f'SatsDecoder v{__version__}').grid(columnspan=2)
-        ttk.Label(frame, text='GPL-3.0, MIT licenses\nCopyright (c) 2024 Alexander Baskikh\n', justify=tk.CENTER).grid(columnspan=2, rowspan=3)
+        ttk.Label(frame, text='GPL-3.0, MIT licenses\nCopyright (c) 2025 Alexander Baskikh\n', justify=tk.CENTER).grid(columnspan=2, rowspan=3)
 
         links = (
             ('GitHub page:', 'https://github.com/baskiton/SatsDecoder'),
-            ('Geoscan page:', 'https://geoscan.space/'),
-            ('Sputnix page:', 'https://sputnix.ru/'),
+            ('Space-π', 'https://spacepi.space'),
+            ('R4UAB', 'https://r4uab.ru'),
+            ('Geoscan:', 'https://geoscan.space/'),
+            ('Sputnix:', 'https://sputnix.ru/'),
             ('Amateurs chat:', 'https://t.me/amateursat'),
         )
 
-        ttk.Label(frame, text=links[0][0]).grid(column=0, row=4, sticky=tk.E)
-        x = ttk.Label(frame, text=links[0][1], foreground='blue', cursor='hand2')
-        x.bind('<Button-1>', lambda e: webbrowser.open(links[0][1]))
-        x.grid(column=1, row=4, sticky=tk.W)
-
-        ttk.Label(frame, text=links[1][0]).grid(column=0, row=5, sticky=tk.E)
-        x = ttk.Label(frame, text=links[1][1], foreground='blue', cursor='hand2')
-        x.bind('<Button-1>', lambda e: webbrowser.open(links[1][1]))
-        x.grid(column=1, row=5, sticky=tk.W)
-
-        ttk.Label(frame, text=links[2][0]).grid(column=0, row=6, sticky=tk.E)
-        x = ttk.Label(frame, text=links[2][1], foreground='blue', cursor='hand2')
-        x.bind('<Button-1>', lambda e: webbrowser.open(links[2][1]))
-        x.grid(column=1, row=6, sticky=tk.W)
-
-        ttk.Label(frame, text=links[3][0]).grid(column=0, row=7, sticky=tk.E)
-        x = ttk.Label(frame, text=links[3][1], foreground='blue', cursor='hand2')
-        x.bind('<Button-1>', lambda e: webbrowser.open(links[3][1]))
-        x.grid(column=1, row=7, sticky=tk.W)
+        row = 4
+        for i, (name, link) in enumerate(links):
+            ttk.Label(frame, text=name).grid(column=0, row=row, sticky=tk.E),
+            x = ttk.Label(frame, text=link, foreground='blue', cursor='hand2')
+            x.bind('<Button-1>', lambda e: webbrowser.open(e.widget['text']))
+            x.grid(column=1, row=row, sticky=tk.W)
+            row += 1
 
         about.update()
         pad_frame = ttk.Frame(frame, height=x.winfo_height(), padding=(0, 6, 0, 6))
