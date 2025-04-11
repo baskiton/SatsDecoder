@@ -483,8 +483,8 @@ class GeoscanProtocol(common.Protocol):
                 ('eps_mode', 'EPS mode'),
                 ('Ipl', 'Current total, mA'),
                 ('Isp', 'Current SP, mA'),
-                ('Uab_per', 'Voltage per battery, V'),
-                ('Uab_sum', 'Voltage total, V'),
+                ('Uab_per', 'Voltage per battery, mV'),
+                ('Uab_sum', 'Voltage total, mV'),
                 ('Tab1', 'Temperature battery #1, °C'),
                 ('Tab2', 'Temperature battery #2, °C'),
 
@@ -530,11 +530,11 @@ class GeoscanProtocol(common.Protocol):
         is_v2 = 0
         try:
             hdr = _frame_hdr.parse(data)
-            if hdr.sat_num in (GEOSCAN, STRATOSAT):
+            if int(hdr.sat_num) in (GEOSCAN, STRATOSAT):
                 frame = _frame1.parse(data)
             else:
-                frame = _frame2.parse(data)
                 is_v2 = 1
+                frame = _frame2.parse(data)
         except construct.ConstructError:
             yield 'raw', get_sat_name(None), data
             return
