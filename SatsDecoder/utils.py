@@ -13,6 +13,7 @@ import tkinter as tk
 
 from tkinter import ttk, font, messagebox
 
+import construct
 import numpy as np
 
 
@@ -102,6 +103,8 @@ class TlmCommonTable(ttk.Treeview):
         for k, v in tlm.items():
             if k.startswith('flags'):
                 fw_max = self.fill(v, f_precision, fw_max)
+            elif isinstance(v, construct.Container):
+                fw_max = self.fill({k + '/' + kk: vv for kk, vv in v.items()}, f_precision, fw_max)
             elif not k.startswith('_'):
                 if self.exists(k):
                     if isinstance(v, float):

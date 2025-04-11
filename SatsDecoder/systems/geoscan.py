@@ -22,6 +22,9 @@ proto_name = 'geoscan'
 # GEOSCAN Telemetry Protocol
 # https://download.geoscan.aero/site-files/%D0%9F%D1%80%D0%BE%D1%82%D0%BE%D0%BA%D0%BE%D0%BB%20%D0%BF%D0%B5%D1%80%D0%B5%D0%B4%D0%B0%D1%87%D0%B8%20%D1%82%D0%B5%D0%BB%D0%B5%D0%BC%D0%B5%D1%82%D1%80%D0%B8%D0%B8.pdf
 # (https://download.geoscan.aero/site-files/Протокол передачи телеметрии.pdf)
+#
+# GEOSCAN2 Protocol
+# https://download.geoscan.ru/site-files/Protokol_radio_3U.pdf
 
 
 class SubAdapter(construct.Adapter):
@@ -115,7 +118,63 @@ geoscan2_tlm = construct.Struct(
     '_name' / construct.Computed('geoscan2_beacon'),
     'name' / construct.Computed('Beacon'),
 
-    'pad' / construct.GreedyBytes
+    'mayak_id' / construct.Hex(construct.Int8ul),   # must be 0x01
+
+    # EPS
+    'eps_name' / construct.Computed('EPS'),
+    'Time' / common.UNIXTimestampAdapter(construct.Int32ul),
+    'eps_mode' / construct.Hex(construct.Int8ul),
+    '_reserved_eps0' / construct.Bytes(1),
+    'Ipl' / construct.Int16ul,      # mA
+    'Isp' / construct.Int16ul,      # mA
+    'Uab_per' / construct.Int16ul,  # mV
+    'Uab_sum' / construct.Int16ul,  # mV
+    '_reserved_eps_bitfield0' / construct.Bytes(2),
+    'Tab1' / construct.Int8sl,      # °C
+    'Tab2' / construct.Int8sl,      # °C
+    '_reserved_eps2' / construct.Bytes(2),
+    '_reserved_eps_bitfield1' / construct.Bytes(1),
+    '_reserved_eps3' / construct.Bytes(2),
+
+    # OBC
+    'obc_name' / construct.Computed('OBC'),
+    '_reserved_obc0' / construct.Bytes(2),
+    'obc_act' / construct.BitStruct(
+        'flyweel' / construct.Flag,
+        'coil' / construct.Flag,
+        'ins' / construct.Flag,
+        'cam' / construct.Flag,
+        'x_plus' / construct.Flag,
+        'x_minus' / construct.Flag,
+        'y_plus' / construct.Flag,
+        'y_minus' / construct.Flag,
+    ),
+    'Tx_plus' / construct.Int8sl,   # °C
+    'Tx_minus' / construct.Int8sl,  # °C
+    'Ty_plus' / construct.Int8sl,   # °C
+    'Ty_minus' / construct.Int8sl,  # °C
+    'gnss_num' / construct.Int8ul,
+    '_reserved_obc1' / construct.Bytes(1),
+    '_reserved_obc_sois' / construct.Int8ul,
+    'camera_files' / construct.Int8ul,
+    '_reserved_obc2' / construct.Bytes(1),
+    '_reserved_obc3' / construct.Bytes(4),
+
+    # COMMU 1/2
+    'commu_name' / construct.Computed('COMMU 1/2'),
+    '_reserved_commu0' / construct.Bytes(1),
+    'Uvbus' / construct.Int16ul,    # mV
+    '_reserved_commu1' / construct.Bytes(2),
+    'rssi_last' / construct.Int8sl, # dBm
+    'rssi_min' / construct.Int8sl, # dBm
+    '_reserved_commu2' / construct.Bytes(1),
+    '_reserved_commu3' / construct.Bytes(1),
+    'tx_num' / construct.Int8ul,
+    '_reserved_commu4' / construct.Bytes(1),
+    '_reserved_commu5' / construct.Bytes(1),
+    '_reserved_commu6' / construct.Bytes(1),
+    'qso_num' / construct.Int8ul,
+    '_reserved_commu7' / construct.Bytes(2),
 )
 
 tlm_map = {
@@ -141,7 +200,7 @@ TUSUR_GO = 0x05
 COLIBRI_S = 0x06
 VIZARD_ION = 0x07
 
-_frame = construct.Struct(
+_frame_hdr = construct.Struct(
     'sat_num' / construct.Enum(construct.Int8ul,
                                GEOSCAN=GEOSCAN,
                                STRATOSAT=STRATOSAT,
@@ -149,16 +208,48 @@ _frame = construct.Struct(
                                RTU_MIREA_1=RTU_MIREA_1,
                                TUSUR_GO=TUSUR_GO,
                                COLIBRI_S=COLIBRI_S,
-                               VIZARD_ION=VIZARD_ION),  # #0
-    'reserved' / construct.Int8ul,                  # #1
-    'dlen' / construct.Int8ul,                      # #2
-    'mtype' / construct.Hex(construct.Int16ul),     # #3
-    'offset' / construct.Int16ul,                   # #5
-    'subsystem_num' / construct.Int8ul,             # #7
+                               VIZARD_ION=VIZARD_ION),
+    'reserved' / construct.Int8ul,
+    'dlen' / construct.Int8ul,
+)
+
+_frame1 = construct.Struct(
+    'sat_num' / construct.Enum(construct.Int8ul,
+                               GEOSCAN=GEOSCAN,
+                               STRATOSAT=STRATOSAT,
+                               HORIZON=HORIZON,
+                               RTU_MIREA_1=RTU_MIREA_1,
+                               TUSUR_GO=TUSUR_GO,
+                               COLIBRI_S=COLIBRI_S,
+                               VIZARD_ION=VIZARD_ION),
+    'reserved' / construct.Int8ul,
+    'dlen' / construct.Int8ul,
+    'mtype' / construct.Hex(construct.Int16ul),
+    'offset' / construct.Int16ul,
+    'subsystem_num' / construct.Int8ul,
     # 'data' / construct.Bytes(construct.this.dlen - 6)
     # 'data' / construct.Bytes(56),
     'data' / construct.GreedyBytes,
     # 'pad' / construct.Bytes(8),
+)
+
+_frame2 = construct.Struct(
+    'sat_num' / construct.Enum(construct.Int8ul,
+                               GEOSCAN=GEOSCAN,
+                               STRATOSAT=STRATOSAT,
+                               HORIZON=HORIZON,
+                               RTU_MIREA_1=RTU_MIREA_1,
+                               TUSUR_GO=TUSUR_GO,
+                               COLIBRI_S=COLIBRI_S,
+                               VIZARD_ION=VIZARD_ION),
+    'reserved' / construct.Int8ul,
+    'dlen' / construct.Int8ul,
+    'reserved' / construct.Bytes(2),
+    'marker' / construct.Hex(construct.Int32ul),
+    'offset' / construct.Int32ul,
+    'fnum' / construct.Int16ul,
+    'data' / construct.Bytes(54),
+    'tail' / construct.GreedyBytes,
 )
 
 sat_names = {
@@ -180,6 +271,7 @@ class GeoscanImageReceiver(ImageReceiver):
     CMD_IMG_START = 0x0901
     CMD_IMG_FRAME = 0x0905, 0x0920,
     CMD_IMG_HR_FRAME = 0x9820, 0x411C
+    MARKER_V2_IMG = 0x6F6B6F31
 
     def __init__(self, outdir):
         super().__init__(outdir, '.jpg')
@@ -187,24 +279,33 @@ class GeoscanImageReceiver(ImageReceiver):
         self._miss_cnt = 0
         self._last_sat_num = -1
         self._last_is_hr = 0
+        self._last_fnum = -1
 
     def generate_fid(self, sat_num=None):
         if not (self.current_fid and self.merge_mode):
             self.last_date = now = dt.datetime.now()
             pfx = get_sat_name(sat_num).rpartition('-')[0]
             hr = self._last_is_hr and '_hr' or ''
-            self.current_fid = f'{pfx.upper()}{hr}_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
+            fnum = (self._last_fnum > -1) and ('_N' + str(self._last_fnum)) or ''
+            self.current_fid = f'{pfx.upper()}{hr}{fnum}_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
         return self.current_fid
 
     def force_new(self, *args, **kwargs):
         return super().force_new(*args, **kwargs)
 
-    def push_data(self, data, **kw):
-        sat_num = int(data.sat_num)
-        if sat_num not in sat_names:
+    def push_data(self, data, is_v2=0, **kw):
+        if int(data.sat_num) not in sat_names:
             self._miss_cnt += 1
             return
 
+        if is_v2:
+            x = self._push_data2(data)
+        else:
+            x = self._push_data1(data)
+        return x
+
+    def _push_data1(self, data):
+        sat_num = int(data.sat_num)
         off = (data.subsystem_num << 16) | data.offset
 
         if data.mtype == self.CMD_IMG_START:
@@ -283,6 +384,39 @@ class GeoscanImageReceiver(ImageReceiver):
         self._prev_data_sz = len(data)
         return (self._prev_data_sz < prev_sz) and b'\xff\xd9' in data
 
+    def _push_data2(self, data):
+        sat_num = int(data.sat_num)
+        if data.marker != self.MARKER_V2_IMG:
+            return
+
+        has_soi = data.data.startswith(b'\xff\xd8')
+        off = data.offset
+        force = 0
+        if sat_num != self._last_sat_num:
+            self._last_sat_num = sat_num
+            force = 1
+        if data.fnum != self._last_fnum:
+            self._last_fnum = data.fnum
+            force = 1
+
+        if force:
+            img = self.force_new(sat_num=sat_num)
+        else:
+            img = self.get_image(has_soi, sat_num=sat_num)
+
+        with img.lock:
+            if has_soi:
+                img.has_soi = 1
+                img.has_starter = 1
+                img.base_offset = off
+                img.first_data_offset = off = 0
+            if off < img.first_data_offset:
+                img.first_data_offset = off
+
+            img.push_data(off, data.data)
+
+        return 1
+
 
 class GeoscanProtocol(common.Protocol):
     PACKETSIZE = 64
@@ -344,8 +478,39 @@ class GeoscanProtocol(common.Protocol):
             'table': (
                 ('name', 'Name'),
                 ('Time', 'Time'),
-                ('pad', 'pad'),
-            )
+
+                ('eps_name', '#'),
+                ('eps_mode', 'EPS mode'),
+                ('Ipl', 'Current total, mA'),
+                ('Isp', 'Current SP, mA'),
+                ('Uab_per', 'Voltage per battery, V'),
+                ('Uab_sum', 'Voltage total, V'),
+                ('Tab1', 'Temperature battery #1, °C'),
+                ('Tab2', 'Temperature battery #2, °C'),
+
+                ('obc_name', '#'),
+                ('obc_act/flyweel', 'Flyweels act'),
+                ('obc_act/coil', 'Coils act'),
+                ('obc_act/ins', 'INS act'),
+                ('obc_act/cam', 'Cam act'),
+                ('obc_act/x_plus', 'Panel X+ act'),
+                ('obc_act/x_minus', 'Panel X- act'),
+                ('obc_act/y_plus', 'Panel Y+ act'),
+                ('obc_act/y_minus', 'Panel Y- act'),
+                ('Tx_plus', 'Temperature X+, °C'),
+                ('Tx_minus', 'Temperature X-, °C'),
+                ('Ty_plus', 'Temperature Y+, °C'),
+                ('Ty_minus', 'Temperature Y-, °C'),
+                ('gnss_num', 'GNSS satellites'),
+                ('camera_files', 'Camera files'),
+
+                ('commu_name', '#'),
+                ('Uvbus', 'VBUS voltage, mV'),
+                ('rssi_last', 'RSSI last, dBm'),
+                ('rssi_min', 'RSSI min, dBm'),
+                ('tx_num', 'TX packets'),
+                ('qso_num', 'QSO numbers'),
+            ),
         },
     }
 
@@ -362,14 +527,21 @@ class GeoscanProtocol(common.Protocol):
             yield 'tlm', name, (tlm, tlm.packet)
             return
 
+        is_v2 = 0
         try:
-            frame = _frame.parse(data)
+            hdr = _frame_hdr.parse(data)
+            if hdr.sat_num in (GEOSCAN, STRATOSAT):
+                frame = _frame1.parse(data)
+            else:
+                frame = _frame2.parse(data)
+                is_v2 = 1
         except construct.ConstructError:
             yield 'raw', get_sat_name(None), data
             return
 
         name = get_sat_name(int(frame.sat_num))
-        x = self.ir.push_data(frame)
+
+        x = self.ir.push_data(frame, is_v2)
         if x:
             if x != 2:
                 self.last_fn = self.ir.cur_img.fn

@@ -27,7 +27,7 @@ class CallsignAdapter(construct.Adapter):
             (obj.upper() + ' '*6)[:6], encoding='ascii')])
 
     def _decode(self, obj, context, path=None):
-        return str(bytes([x >> 1 for x in obj]), encoding='ascii').strip()
+        return str(bytes([x >> 1 for x in obj]), encoding='ascii').strip(' \0')
 
 
 callsign = CallsignAdapter(construct.Bytes(6))
