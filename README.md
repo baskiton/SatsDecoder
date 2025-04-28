@@ -1,4 +1,6 @@
 # Satellites decoder
+[![](https://img.shields.io/badge/english-blue)](https://github.com/baskiton/SatsDecoder/blob/main/README.md)
+[![](https://img.shields.io/badge/русский-blue)](https://github.com/baskiton/SatsDecoder/blob/main/README.ru.md)
 
 ![](https://img.shields.io/github/v/release/baskiton/SatsDecoder?label=stable)
 ![](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/baskiton/7270038ca73e8e5f1acea6280cc8a416/raw/satsdecoder-pre.json)  
@@ -14,7 +16,7 @@ https://r4uab.ru/settings-soundmodem/
 * lucky-7: [1](http://uz7.ho.ua/lucky7.zip)
 * other: [1](http://uz7.ho.ua/packetradio.htm)
 
-To start decoding, run SatsDecoder, select protocol tab and press "Connect" button. Play FM demodulated signal
+To start decoding, run SatsDecoder, select protocol tab and press `Connect` button. Play FM demodulated signal
 and wait for result.
 
 #### Options
