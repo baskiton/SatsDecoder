@@ -44,6 +44,7 @@ The following protocols are currently supported:
 * `RoseyCubeSat`
 * `SamSat-Ionosphere` - [SamSat-Ion2 beacon structure](https://spaceresearch.ssau.ru/doc/SamSat/SamSat-Ion2/SamSat-Ionosphere-beacon.pdf)
 * `SharjahSat`
+* `Snuglite` - [SNUGLITE-I beacon structure](https://snuglitecubesat.wixsite.com/website/post/snuglite-beacon-structure)
 * `Sonate-2` - [Sonate-2 protocol](https://www.informatik.uni-wuerzburg.de/en/aerospaceinfo/mitarbeiter/kayal/forschungsprojekte/sonate-2/information-for-radio-amateurs/)
 * `WTCSimba` - [WildTrackCube-SIMBA](https://www.s5lab.space/index.php/decoding-simba/)
 * `RAW` - Any raw data
