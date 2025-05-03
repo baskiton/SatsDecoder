@@ -10,7 +10,6 @@ import sys
 from SatsDecoder.systems.ax25 import *
 from SatsDecoder.systems.cit_gardens_02 import *
 from SatsDecoder.systems.csp import *
-from SatsDecoder.systems.csum import *
 from SatsDecoder.systems.cubebel2 import *
 from SatsDecoder.systems.dstar_one import *
 from SatsDecoder.systems.geoscan import *
@@ -34,7 +33,6 @@ for i in (
         'ax25',
         'cit_gardens_02',
         'csp',
-        'csum',
         'cubebel2',
         'greencube',
         'dstar_one',
