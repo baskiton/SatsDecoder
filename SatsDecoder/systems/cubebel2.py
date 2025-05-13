@@ -84,8 +84,8 @@ cdm_telemetry_get_ans_motherboard = construct.Struct(
     'rst_cnt_total' / construct.Int8ul,
     'rst_cnt_iwdg' / construct.Int8ul,
     'adc_status' / construct.Hex(construct.Int8ul),
-    'adc_temp_1' / construct.Int16ul,
-    'adc_temp_2' / construct.Int16ul,
+    'adc_temp_1' / temperature16u,
+    'adc_temp_2' / temperature16u,
     'ant_1_v' / voltage16u,
     'ant_2_v' / voltage16u,
     'solar_common_v' / voltage16u,
@@ -220,6 +220,13 @@ cdm_trx_rfreply_ans = construct.Struct(
     'command_seq_num' / construct.Int16ul,
 )
 
+unknown = construct.Struct(
+    '_name' / construct.Computed('unknown'),
+    'name' / construct.Computed('Unknown'),
+
+    'data' / construct.Hex(construct.GreedyBytes),
+)
+
 payloads = {
     CDM_VERSION_GET_ANS: cdm_version_get_ans,
     CDM_TELEMETRY_GET_ANS_MOTHERBOARD: cdm_telemetry_get_ans_motherboard,
@@ -234,11 +241,11 @@ payloads = {
 trx_beacon = construct.Struct(
     'beacon_id' / construct.Int8ul,
     'beacon_uptime' / common.TimeDeltaAdapter(construct.Int32ul),
-    'beacon_vbus' / common.LinearAdapter(1000, construct.Int16ul),
+    'beacon_vbus' / voltage16u,
     'beacon_reset_total_cnt' / construct.Int8ul,
     'beacon_reset_iwdg_cnt' / construct.Int8ul,
     'beacon_reset_iwdg_time' / common.TimeDeltaAdapter(construct.Int32ul),
-    'beacon_pamp_temp' / common.LinearAdapter(100, construct.Int16ul),
+    'beacon_pamp_temp' / common.LinearAdapter(1000, construct.Int16ul),
     'beacon_rx_settings' / construct.Int8ul,
     'beacon_rx_period_on' / construct.Int16ul,
     'beacon_rx_seqnum' / construct.Int16ul,
@@ -262,7 +269,7 @@ frame = construct.Struct(
     'trx_beacon' / trx_beacon,
     'cdm_datalen' / construct.Int8ul,
     'cdm_header' / cdm_header,
-    'cdm_payload' / construct.Switch(construct.this.cdm_header.cdm_id, payloads, default=construct.GreedyBytes),
+    'cdm_payload' / construct.Switch(construct.this.cdm_header.cdm_id, payloads, default=unknown),
     '_tail' / construct.GreedyBytes,
 )
 
@@ -485,6 +492,13 @@ class Cubebel2Protocol(common.Protocol):
                 ('command_seq_num', 'Command seq num'),
             ),
         },
+        'unknown': {
+            'table': (
+                *_beacon,
+                ('tlm_name', 'Unknown'),
+                ('data', 'Data'),
+            ),
+        },
     }
 
     def recognize(self, bb):
@@ -497,6 +511,8 @@ class Cubebel2Protocol(common.Protocol):
         _trx_beacon.pop('_io', 0)
         _cdm_payload = {**data.frame.cdm_payload}
         _cdm_payload.pop('_io', 0)
+        if _cdm_payload['_name'] == 'unknown':
+            _cdm_payload['data'] = utils.bytes2hex(_cdm_payload['data'])
         d = utils.Dict(
             beacon_name='',
             **_trx_beacon,
