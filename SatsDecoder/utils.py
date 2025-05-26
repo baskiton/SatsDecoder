@@ -15,6 +15,8 @@ from tkinter import ttk, font, messagebox
 
 import construct
 import numpy as np
+import PIL
+import PIL.Image
 
 
 class ConnMode(enum.IntEnum):
@@ -344,10 +346,10 @@ def tk_nametofont(name, root=None):
     return font.Font(name=name, exists=True, root=root)
 
 
-def bayer2rgb(data, mode, w, h):
+def bayer2rgb(data, mode):
     in_dtype = data.dtype
+    h, w = data.shape
     ow, oh = w // 2, h // 2
-    data = data.reshape((h, w))
     layers = (
         data[0::2, 0::2],  # rows 0,2,4,6 columns 0,2,4,6
         data[0::2, 1::2],  # rows 0,2,4,6 columns 1,3,5,7
@@ -516,3 +518,70 @@ AGWPE_CON = b'\x00\x00\x00\x00k\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 AGWPE_HDR_FMT = struct.Struct('BxxxBxBx10s10sIxxxx')
 SELF_SIGN = '### SatsDecoder ###'
+
+
+def fits_hdr_read(f):
+    f.seek(0)
+    hdr = {}
+
+    while 1:
+        line = f.read(80)
+        if not line:
+            raise OSError('Truncated FITS file')
+        kw = line[:8].strip()
+        if kw == b'END':
+            break
+        val = line[8:].strip()
+        if val.startswith(b'='):
+            val = val[1:].strip()
+        # if not hdr and (not _accept(kw) or val != b"T"):
+        # if not hdr and val != b'T':
+        #     raise SyntaxError('Not a FITS file')
+        hdr[kw.decode('ascii')] = val.decode('ascii')
+
+    return hdr
+
+
+_bpp8 = {
+    'L',
+    'P',
+    'RGB',
+    'RGBA',
+    'CMYK',
+    'YCbCr',
+    'LAB',
+    'HSV',
+}
+def img_to_8bit(im):
+    if im.mode in _bpp8:
+        return im
+
+    x = np.asarray(im)
+    cmax = 2 ** (x.dtype.itemsize * 8)
+    x = x.astype(np.float64)
+    x = 255 * (x / cmax)
+
+    return PIL.Image.fromarray(x.astype(np.uint8))
+
+
+_fits_fmt = {
+    '8': np.uint8,
+    '16': np.int16,
+    '32': np.int32,
+    '-32': np.float32,
+    '-64': np.float64,
+}
+def fits_fix(f):
+    hdrs = fits_hdr_read(f)
+    fmt = _fits_fmt[hdrs['BITPIX']]
+
+    img = PIL.Image.open(f)
+    data = np.asarray(img, fmt)
+    data = data.view(data.dtype.newbyteorder('>')).astype(np.float64) + float(hdrs['BZERO'])
+
+    if fmt == np.int16:
+        fmt = np.uint16
+    elif fmt == np.int32:
+        fmt = np.uint32
+
+    return PIL.Image.fromarray(data.astype(fmt))

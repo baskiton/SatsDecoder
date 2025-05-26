@@ -358,6 +358,8 @@ class CanvasFrame(ttk.Frame):
                 f = img.open()
                 if img.mode == 'file':
                     i = PIL.Image.open(f)
+                    if i.format == 'FITS':
+                        i = utils.fits_fix(f)
                 elif img.mode == 'bytes':
                     kw = img.mode_kw
                     f.seek(0, 0)
@@ -388,8 +390,8 @@ class CanvasFrame(ttk.Frame):
 
         method, mode = self.active_img.mosaic.split(';')
         if method == 'bayer':
-            data = np.array(self.active_pil_img.getdata(), np.uint8)
-            self.draw_image(PIL.Image.fromarray(utils.bayer2rgb(data, mode, *self.active_pil_img.size), 'RGB'))
+            i = PIL.Image.fromarray(utils.bayer2rgb(np.asarray(self.active_pil_img, np.uint8), mode), 'RGB')
+            self.draw_image(i)
 
         self.demosaic_btn.config(state=tk.DISABLED)
         self.active_pil_img_modified = 1
@@ -400,15 +402,23 @@ class CanvasFrame(ttk.Frame):
             defaultextension=fn.suffix, confirmoverwrite=True,
             filetypes=[('Auto', [f'*{fn.suffix}']), ('Images', ['*.png', '*.jpg']), ('All files', '*.*')],
             initialdir=fn.parent, initialfile=fn.name)
-        if ofn:
-            if self.active_pil_img_modified or fn.suffix != pathlib.Path(ofn).suffix:
+        if not ofn:
+            return
+
+        if self.active_pil_img_modified or fn.suffix != pathlib.Path(ofn).suffix:
+            try:
                 self.active_pil_img.save(ofn)
-            else:
-                shutil.copyfile(fn, ofn)
+            except:
+                try:
+                    utils.img_to_8bit(self.active_pil_img).save(ofn)
+                except Exception as e:
+                    self.master.master.show_err('Error', 'Save failed', e)
+        else:
+            shutil.copyfile(fn, ofn)
 
     def draw_image(self, i):
         del self._imgtk
-        _imgtk = PIL.ImageTk.PhotoImage(i)
+        _imgtk = PIL.ImageTk.PhotoImage(utils.img_to_8bit(i))
         to_del, self.cnv_img_id = self.cnv_img_id, self.canvas.create_image(0, 0, anchor=tk.NW, image=_imgtk)
         self.canvas.delete(to_del)
         self._imgtk = _imgtk
