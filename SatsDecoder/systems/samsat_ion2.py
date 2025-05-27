@@ -49,6 +49,7 @@ samsat = construct.Struct(
 class SamSatIon2Protocol(common.Protocol):
     columns = ()
     c_width = ()
+    has_ax25 = 1
     tlm_table = {
         'samsat_beacon': {
             'table': (

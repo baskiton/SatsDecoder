@@ -281,6 +281,7 @@ class SharjahImageReceiver(ImageReceiver):
 class SharjahProtocol(common.Protocol):
     columns = ()
     c_width = ()
+    has_ax25 = 1
 
     tlm_table = {
         'eser': {

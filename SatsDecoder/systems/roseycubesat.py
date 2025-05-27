@@ -106,6 +106,7 @@ class RoseyImageReceiver(ImageReceiver):
 class RoseyProtocol(common.Protocol):
     columns = 'msg_id',
     c_width = 60,
+    has_ax25 = 1
 
     tlm_table = {
         'message': {

@@ -283,6 +283,7 @@ cubebel2 = construct.Struct(
 class Cubebel2Protocol(common.Protocol):
     columns = 'cdm_id',
     c_width = 60,
+    has_ax25 = 1
 
     _beacon = (
         ('beacon_name', 'TRX Beacon'),

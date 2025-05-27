@@ -73,6 +73,7 @@ class Protocol:
     columns = ()
     c_width = ()
     tlm_table = {}
+    has_ax25 = 0
 
     def __init__(self, ir: ImageReceiver = None):
         self.ir = isinstance(ir, ImageReceiver) and ir

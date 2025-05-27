@@ -1521,6 +1521,7 @@ class UspImageReceiver(ImageReceiver):
 class UspProtocol(common.Protocol):
     columns = 'msg-id',
     c_width = 60,
+    has_ax25 = 1
 
     _regular_tmpl = {
         'table': (

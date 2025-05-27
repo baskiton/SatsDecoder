@@ -77,6 +77,7 @@ def get_receiver_callsign(ax25_hdr):
 class Ax25Protocol(common.Protocol):
     columns = ()
     c_width = ()
+    has_ax25 = 1
     dd = nt('Ax25Tlm', ('receiver_cs', 'sender_cs', 'control', 'pid', 'data', 'hex'))
     tlm_table = {
         'frame': {

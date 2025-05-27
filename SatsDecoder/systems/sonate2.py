@@ -4453,6 +4453,7 @@ sonate2_map = {
 class SonateProtocol(common.Protocol):
     columns = 'APID',
     c_width = 60,
+    has_ax25 = 1
 
     tlm_table = {
         'std_hk': {

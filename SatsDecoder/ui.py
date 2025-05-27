@@ -752,11 +752,10 @@ class DecoderFrame(ttk.Frame):
                 self.feed(data, t)
 
     def _satdump_files(self):
-        if self.proto not in (systems.ax25.proto_name, systems.geoscan.proto_name):
-            return
-
-        is_ax25 = self.proto == systems.ax25.proto_name
         is_geoscan = self.proto == systems.geoscan.proto_name
+
+        if not (is_geoscan or self.decoder.has_ax25):
+            return
 
         files = filedialog.askopenfilenames(filetypes=[('SatDump FRM', ['*.frm']), ('All files', '*.*')])
         if not files:
@@ -772,13 +771,13 @@ class DecoderFrame(ttk.Frame):
         for fn in files:
             with open(fn, 'rb') as f:
                 while 1:
-                    if is_ax25:
+                    if is_geoscan:
+                        f.read(4)
+                    else:
                         hdr = f.read(6)
                         if hdr[:4] != b'\x1a\xcf\xfc\x1d':
                             break
                         frm_len = hdr[4] << 8 | hdr[5]
-                    elif is_geoscan:
-                        f.read(4)
 
                     data = f.read(frm_len)
                     if len(data) < frm_len:

@@ -422,6 +422,7 @@ class GeoscanProtocol(common.Protocol):
     PACKETSIZE = 64
     columns = ()
     c_width = ()
+    has_ax25 = 1
     tlm_table = {
         'geoscan_beacon': {
             'table': (
