@@ -199,29 +199,44 @@ RTU_MIREA_1 = 0x04
 TUSUR_GO = 0x05
 COLIBRI_S = 0x06
 VIZARD_ION = 0x07
+ALFEROV239 = 0x09
+INNOSAT3 = 0x0A
+GEOSCAN1 = 0x0B
+GEOSCAN2 = 0x0C
+GEOSCAN3 = 0x0D
+GEOSCAN4 = 0x0E
+GEOSCAN5 = 0x0F
+GEOSCAN6 = 0x10
+INNOSAT16 = 0x11
+
+_satnum = construct.Enum(
+    construct.Int8ul,
+    GEOSCAN=GEOSCAN,
+    STRATOSAT=STRATOSAT,
+    HORIZON=HORIZON,
+    RTU_MIREA_1=RTU_MIREA_1,
+    TUSUR_GO=TUSUR_GO,
+    COLIBRI_S=COLIBRI_S,
+    VIZARD_ION=VIZARD_ION,
+    ALFEROV239=ALFEROV239,
+    INNOSAT3=INNOSAT3,
+    GEOSCAN1=GEOSCAN1,
+    GEOSCAN2=GEOSCAN2,
+    GEOSCAN3=GEOSCAN3,
+    GEOSCAN4=GEOSCAN4,
+    GEOSCAN5=GEOSCAN5,
+    GEOSCAN6=GEOSCAN6,
+    INNOSAT16=INNOSAT16,
+)
 
 _frame_hdr = construct.Struct(
-    'sat_num' / construct.Enum(construct.Int8ul,
-                               GEOSCAN=GEOSCAN,
-                               STRATOSAT=STRATOSAT,
-                               HORIZON=HORIZON,
-                               RTU_MIREA_1=RTU_MIREA_1,
-                               TUSUR_GO=TUSUR_GO,
-                               COLIBRI_S=COLIBRI_S,
-                               VIZARD_ION=VIZARD_ION),
+    'sat_num' / _satnum,
     'reserved' / construct.Int8ul,
     'dlen' / construct.Int8ul,
 )
 
 _frame1 = construct.Struct(
-    'sat_num' / construct.Enum(construct.Int8ul,
-                               GEOSCAN=GEOSCAN,
-                               STRATOSAT=STRATOSAT,
-                               HORIZON=HORIZON,
-                               RTU_MIREA_1=RTU_MIREA_1,
-                               TUSUR_GO=TUSUR_GO,
-                               COLIBRI_S=COLIBRI_S,
-                               VIZARD_ION=VIZARD_ION),
+    'sat_num' / _satnum,
     'reserved' / construct.Int8ul,
     'dlen' / construct.Int8ul,
     'mtype' / construct.Hex(construct.Int16ul),
@@ -234,14 +249,7 @@ _frame1 = construct.Struct(
 )
 
 _frame2 = construct.Struct(
-    'sat_num' / construct.Enum(construct.Int8ul,
-                               GEOSCAN=GEOSCAN,
-                               STRATOSAT=STRATOSAT,
-                               HORIZON=HORIZON,
-                               RTU_MIREA_1=RTU_MIREA_1,
-                               TUSUR_GO=TUSUR_GO,
-                               COLIBRI_S=COLIBRI_S,
-                               VIZARD_ION=VIZARD_ION),
+    'sat_num' / _satnum,
     'reserved' / construct.Int8ul,
     'dlen' / construct.Int8ul,
     'reserved' / construct.Bytes(2),
@@ -260,6 +268,15 @@ sat_names = {
     TUSUR_GO: 'tusur-go-img',
     COLIBRI_S: 'colibri-s-img',
     VIZARD_ION: 'vizard-ion-img',
+    ALFEROV239: '239alferov-img',
+    INNOSAT3: 'innosat3-img',
+    GEOSCAN1: 'geoscan-1-img',
+    GEOSCAN2: 'geoscan-2-img',
+    GEOSCAN3: 'geoscan-3-img',
+    GEOSCAN4: 'geoscan-4-img',
+    GEOSCAN5: 'geoscan-5-img',
+    GEOSCAN6: 'geoscan-6-img',
+    INNOSAT16: 'innosat16-img',
 }
 
 
