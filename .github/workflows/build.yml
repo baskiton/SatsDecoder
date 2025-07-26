@@ -27,13 +27,6 @@ jobs:
         os: [ ubuntu-22.04, windows-latest ]
         python: [ "3.11" ]
         arch: [ "x64" ]
-        include:
-          - os: windows-2019
-            python: "3.7"
-            arch: "x64"
-          - os: windows-2019
-            python: "3.7"
-            arch: "x86"
     outputs:
       ver: ${{ steps.build.outputs.ver }}
 
