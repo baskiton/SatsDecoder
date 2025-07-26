@@ -231,13 +231,13 @@ _satnum = construct.Enum(
 
 _frame_hdr = construct.Struct(
     'sat_num' / _satnum,
-    'reserved' / construct.Int8ul,
+    'reserved0' / construct.Int8ul,
     'dlen' / construct.Int8ul,
 )
 
 _frame1 = construct.Struct(
     'sat_num' / _satnum,
-    'reserved' / construct.Int8ul,
+    'reserved0' / construct.Int8ul,
     'dlen' / construct.Int8ul,
     'mtype' / construct.Hex(construct.Int16ul),
     'offset' / construct.Int16ul,
@@ -250,9 +250,9 @@ _frame1 = construct.Struct(
 
 _frame2 = construct.Struct(
     'sat_num' / _satnum,
-    'reserved' / construct.Int8ul,
+    'reserved0' / construct.Int8ul,
     'dlen' / construct.Int8ul,
-    'reserved' / construct.Bytes(2),
+    'reserved1' / construct.Bytes(2),
     'marker' / construct.Hex(construct.Int32ul),
     'offset' / construct.Int32ul,
     'fnum' / construct.Int16ul,
@@ -287,7 +287,8 @@ def get_sat_name(sat_num):
 class GeoscanImageReceiver(ImageReceiver):
     CMD_IMG_START = 0x0901
     CMD_IMG_FRAME = 0x0905, 0x0920,
-    CMD_IMG_HR_FRAME = 0x9820, 0x411C
+    CMD_IMG_HR_FRAME = 0x9820, 0x411C,
+    CMD_IMG_FRAME_SPECIALS = 0x4150,
     MARKER_V2_IMG = 0x6F6B6F31
 
     def __init__(self, outdir):
@@ -310,13 +311,20 @@ class GeoscanImageReceiver(ImageReceiver):
     def force_new(self, *args, **kwargs):
         return super().force_new(*args, **kwargs)
 
-    def push_data(self, data, is_v2=0, **kw):
+    def push_data(self, data, is_v2=0, raw_data=b'', **kw):
         if int(data.sat_num) not in sat_names:
             self._miss_cnt += 1
             return
 
         if is_v2:
             x = self._push_data2(data)
+            if not x:
+                try:
+                    data = _frame1.parse(raw_data)
+                except construct.ConstructError as e:
+                    return
+                if data.reserved0 == 0x98:  # special values?
+                    x = self._push_data1(data)
         else:
             x = self._push_data1(data)
         return x
@@ -348,7 +356,7 @@ class GeoscanImageReceiver(ImageReceiver):
 
                 img.push_data(off, data.data[:data.dlen - 6])
 
-        elif data.mtype in chain(self.CMD_IMG_FRAME, self.CMD_IMG_HR_FRAME):
+        elif data.mtype in chain(self.CMD_IMG_FRAME, self.CMD_IMG_HR_FRAME, self.CMD_IMG_FRAME_SPECIALS):
             has_soi = data.data.startswith(b'\xff\xd8')
             force = 0
             if sat_num != self._last_sat_num:
@@ -559,7 +567,7 @@ class GeoscanProtocol(common.Protocol):
 
         name = get_sat_name(int(frame.sat_num))
 
-        x = self.ir.push_data(frame, is_v2)
+        x = self.ir.push_data(frame, is_v2, raw_data=data)
         if x:
             if x != 2:
                 self.last_fn = self.ir.cur_img.fn
