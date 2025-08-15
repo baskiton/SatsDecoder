@@ -298,6 +298,7 @@ class GeoscanImageReceiver(ImageReceiver):
         self._last_sat_num = -1
         self._last_is_hr = 0
         self._last_fnum = -1
+        self._fids = {}
 
     def generate_fid(self, sat_num=None):
         if not (self.current_fid and self.merge_mode):
@@ -306,10 +307,16 @@ class GeoscanImageReceiver(ImageReceiver):
             hr = self._last_is_hr and '_hr' or ''
             fnum = (self._last_fnum > -1) and ('_N' + str(self._last_fnum)) or ''
             self.current_fid = f'{pfx.upper()}{hr}{fnum}_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
+            if fnum and self.merge_mode:
+                self._fids[self._last_fnum] = self.current_fid
         return self.current_fid
 
     def force_new(self, *args, **kwargs):
         return super().force_new(*args, **kwargs)
+
+    def clear(self):
+        self._fids.clear()
+        super().clear()
 
     def push_data(self, data, is_v2=0, raw_data=b'', **kw):
         if int(data.sat_num) not in sat_names:
@@ -422,12 +429,16 @@ class GeoscanImageReceiver(ImageReceiver):
             force = 1
         if data.fnum != self._last_fnum:
             self._last_fnum = data.fnum
-            force = 1
+            fid = self._fids.get(self._last_fnum)
+            if fid:
+                self.current_fid = fid
+            else:
+                force = 1
 
         if force:
             img = self.force_new(sat_num=sat_num)
         else:
-            img = self.get_image(has_soi, sat_num=sat_num)
+            img = self.get_image(0, sat_num=sat_num)
 
         with img.lock:
             if has_soi:
