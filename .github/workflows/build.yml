@@ -27,6 +27,13 @@ jobs:
         os: [ ubuntu-22.04, windows-latest ]
         python: [ "3.11" ]
         arch: [ "x64" ]
+        include:
+          - os: win2019
+            python: "3.7"
+            arch: "x64"
+          - os: win2019
+            python: "3.7"
+            arch: "x86"
     outputs:
       ver: ${{ steps.build.outputs.ver }}
 
@@ -62,7 +69,7 @@ jobs:
             ubuntu-22.04)
               mv dist/SatsDecoder dist/SatsDecoder-linux
               ;;
-            windows-2019)
+            win2019)
               mv dist/SatsDecoder.exe dist/SatsDecoder-win7-${{ matrix.arch }}.exe
               ;;
             windows-latest)
