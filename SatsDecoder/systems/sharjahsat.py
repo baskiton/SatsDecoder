@@ -223,13 +223,13 @@ class SharjahImageReceiver(ImageReceiver):
     def __init__(self, outdir):
         super().__init__(outdir, '.jpg')
 
-    def generate_fid(self):
+    def generate_fid(self, t=None):
         if not (self.current_fid and self.merge_mode):
-            self.last_date = now = dt.datetime.now()
+            self.last_date = now = t or dt.datetime.now(dt.timezone.utc)
             self.current_fid = f'SharjahSat-1_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
         return self.current_fid
 
-    def get_image(self, force_new=0, soi=0, pnum=0, **kwargs):
+    def get_image(self, force_new=0, soi=0, pnum=0, t=None, **kwargs):
         fid = self.current_fid
         img = self.images.get(fid)
         if img:
@@ -247,7 +247,7 @@ class SharjahImageReceiver(ImageReceiver):
 
         if force_new or not img:
             if not fid:
-                fid = self.generate_fid()
+                fid = self.generate_fid(t)
             img = self.new_file(fid)
             img.packets = pnum
             img.first_data_offset = 0
@@ -255,12 +255,12 @@ class SharjahImageReceiver(ImageReceiver):
         img.has_soi |= soi
         return img
 
-    def push_data(self, data, **kw):
+    def push_data(self, data, t=None, **kw):
         pack_num = data.hdr.packet_counter
         soi = data.data.startswith(b'\xff\xd8')
         eoi = pack_num == 1
 
-        img = self.get_image(soi, soi, pack_num)
+        img = self.get_image(soi, soi, pack_num, t)
         with img.lock:
             off = (img.packets - pack_num) * self.PACKET_SIZE
             img.push_data(off, data.data)
@@ -435,7 +435,7 @@ class SharjahProtocol(common.Protocol):
     def __init__(self, outdir):
         super().__init__(SharjahImageReceiver(outdir))
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         while bb:
             data = sharjah.parse(bb)
             if not data.ax25:
@@ -447,7 +447,7 @@ class SharjahProtocol(common.Protocol):
             name = self.get_sender_callsign(data)
             bb = data._tail
             if data.hdr.tm_id == IMG_ID:
-                x = self.ir.push_data(data)
+                x = self.ir.push_data(data, t)
                 if x:
                     yield 'img', name, (x, self.ir.cur_img)
 

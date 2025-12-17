@@ -16,6 +16,6 @@ class RawProtocol(common.Protocol):
     columns = ()
     c_width = ()
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         if bb:
             yield 'raw', 'unknown', bb

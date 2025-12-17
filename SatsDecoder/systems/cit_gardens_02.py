@@ -55,13 +55,13 @@ class Gardens02ImageReceiver(ImageReceiver):
         self.unreliable_id = set()
         self.last_id = -1
 
-    def generate_fid(self, force=0, name='Gardens-02', tx_id=0):
+    def generate_fid(self, force=0, name='Gardens-02', tx_id=0, t=None):
         if force or not (self.current_fid and self.merge_mode):
-            self.last_date = now = dt.datetime.now()
+            self.last_date = now = t or dt.datetime.now(dt.timezone.utc)
             self.current_fid = f'{name}_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}_{tx_id:02X}'
         return self.current_fid
 
-    def push_data(self, pkt, name='Gardens-02', **kw):
+    def push_data(self, pkt, name='Gardens-02', t=None, **kw):
         tx_id = pkt.tx_id
         p_num = pkt.p_num
         soi = not p_num and pkt.data.startswith(b'\xff\xd8')
@@ -81,7 +81,7 @@ class Gardens02ImageReceiver(ImageReceiver):
         force_new = self.last_id == -1 or self.last_id != tx_id
         self.last_id = tx_id
 
-        img = self.get_image(force_new or soi, force=force_new, name=name, tx_id=tx_id)
+        img = self.get_image(force_new or soi, force=force_new, name=name, tx_id=tx_id, t=t)
         with img.lock:
             img.has_soi ^= soi
             off = p_num * self.PKT_SZ
@@ -105,7 +105,7 @@ class CitGardens02Protocol(common.Protocol):
     def __init__(self, outdir):
         super().__init__(Gardens02ImageReceiver(outdir))
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         try:
             x = gardens.parse(bb)
         except:
@@ -127,4 +127,4 @@ class CitGardens02Protocol(common.Protocol):
                     continue
 
                 if len(pkt.data) == Gardens02ImageReceiver.PKT_SZ:  # image packet
-                    yield 'img', name, (self.ir.push_data(pkt, name), self.ir.cur_img)
+                    yield 'img', name, (self.ir.push_data(pkt, name, t), self.ir.cur_img)

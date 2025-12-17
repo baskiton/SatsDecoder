@@ -171,7 +171,7 @@ class ImageReceiver:
         self.images[fid] = img
         return img
 
-    def push_data(self, data, **kw):
+    def push_data(self, data, t=None, **kw):
         raise NotImplementedError
 
     def clear(self):

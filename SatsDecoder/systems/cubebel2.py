@@ -502,7 +502,7 @@ class Cubebel2Protocol(common.Protocol):
         },
     }
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         data = cubebel2.parse(bb)
         if not data.frame:
             return

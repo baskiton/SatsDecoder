@@ -1480,21 +1480,21 @@ class UspImageReceiver(ImageReceiver):
     def __init__(self, outdir):
         super().__init__(outdir)
 
-    def generate_fid(self, fname='', force=0):
+    def generate_fid(self, fname='', force=0, t=None):
         if self.current_fid.startswith('unknown_') and fname:
             self.rename_image(self.current_fid, fname)
         elif force or not (self.current_fid and self.merge_mode):
-            self.last_date = now = dt.datetime.now()
+            self.last_date = now = t or dt.datetime.now(dt.timezone.utc)
             if not fname:
                 fname = f'unknown_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
             self.current_fid = fname
         return self.current_fid
 
-    def push_data(self, data, **kw):
+    def push_data(self, data, t=None, **kw):
         packet = data.packet
 
         if data.message == FILETRANSFER_DATA:
-            img = self.get_image()
+            img = self.get_image(t)
             with img.lock:
                 if not packet.offset and packet.data.startswith(b'\xff\xd8'):
                     img.has_soi = 1
@@ -1503,13 +1503,13 @@ class UspImageReceiver(ImageReceiver):
                     img.first_data_offset = packet.offset
 
         elif data.message == FILETRANSFER_INIT:
-            self.generate_fid(packet.file_name, 1)
-            img = self.get_image()
+            self.generate_fid(packet.file_name.partition('\0')[0], 1, t)
+            img = self.get_image(t)
             with img.lock:
                 img.has_starter = 1
 
         elif data.message == FILETRANSFER_FILESIZE:
-            img = self.get_image()
+            img = self.get_image(t)
             with img.lock:
                 img.open().truncate(packet.size)
 
@@ -2371,7 +2371,7 @@ class UspProtocol(common.Protocol):
     def __init__(self, outdir):
         super().__init__(UspImageReceiver(outdir))
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         while bb:
             data = usp.parse(bb)
             if not data.usp:
@@ -2383,7 +2383,7 @@ class UspProtocol(common.Protocol):
 
                 if i.message in filetransfer:
                     ty = 'img'
-                    p_data = self.ir.push_data(i), self.ir.cur_img
+                    p_data = self.ir.push_data(i, t), self.ir.cur_img
 
                 elif i.message in tlm_map:
                     ty = 'tlm'

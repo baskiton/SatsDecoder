@@ -192,7 +192,7 @@ class StarlinkProtocol(common.Protocol):
         }
     }
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         x = starlink.parse(bb)
         if not x:
             return

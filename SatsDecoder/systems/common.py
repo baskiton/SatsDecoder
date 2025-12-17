@@ -86,7 +86,7 @@ class Protocol:
     def get_receiver_callsign(data):
         return ax25.get_receiver_callsign(data.ax25)
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         raise NotImplementedError
 
     def create_new_image(self):

@@ -140,7 +140,7 @@ class DStarOneProtocol(common.Protocol):
         },
     }
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         try:
             x = mobitex.parse(bb)
         except construct.ConstructError:

@@ -196,7 +196,7 @@ class GreenCubeProtocol(common.Protocol):
         },
     }
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         csp_packet = csp.csp.parse(bb)
         raw_greencube = csp_packet.data
         if not (csp_packet.hdr and raw_greencube):

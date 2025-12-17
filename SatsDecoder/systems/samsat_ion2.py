@@ -66,7 +66,7 @@ class SamSatIon2Protocol(common.Protocol):
         },
     }
 
-    def recognize(self, bb: bytes):
+    def recognize(self, bb: bytes, t=None):
         x = samsat.parse(bb)
         name = self.get_sender_callsign(x) or 'unknown'
 

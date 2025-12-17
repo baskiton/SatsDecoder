@@ -86,7 +86,7 @@ class CspProtocol(common.Protocol):
         },
     }
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         frame = csp.parse(bb)
         if not frame:
             yield 'raw', 'unknown', None, None, bb

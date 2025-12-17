@@ -66,13 +66,13 @@ class Lucky7ImageReceiver(ImageReceiver):
     def __init__(self, outdir):
         super().__init__(outdir, '.jpg')
 
-    def generate_fid(self):
+    def generate_fid(self, t=None):
         if not (self.current_fid and self.merge_mode):
-            self.last_date = now = dt.datetime.now()
+            self.last_date = now = t or dt.datetime.now(dt.timezone.utc)
             self.current_fid = f'LUCKY7_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
         return self.current_fid
 
-    def get_image(self, force_new=0, packets=0, **kwargs):
+    def get_image(self, force_new=0, packets=0, t=None, **kwargs):
         soi = force_new
         fid = self.current_fid
         img = self.images.get(fid)
@@ -83,7 +83,7 @@ class Lucky7ImageReceiver(ImageReceiver):
 
         if force_new or not img:
             if not fid:
-                fid = self.generate_fid()
+                fid = self.generate_fid(t)
 
             img = self.new_file(fid)
             img.packets = packets
@@ -93,10 +93,10 @@ class Lucky7ImageReceiver(ImageReceiver):
         img.has_soi |= soi
         return img
 
-    def push_data(self, data, **kw):
+    def push_data(self, data, t=None, **kw):
         off = self.PACKET_LEN * data.pnum
 
-        img = self.get_image(not data.pnum, data.packets)
+        img = self.get_image(not data.pnum, data.packets, t)
         with img.lock:
             eoi = data.pnum == img.packets
             img.push_data(off, data.data)
@@ -138,7 +138,7 @@ class Lucky7Protocol(common.Protocol):
     def __init__(self, outdir):
         super().__init__(Lucky7ImageReceiver(outdir))
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         hdr = lucky7_hdr.parse(bb)
         if hdr.obc_id not in (0x00, 0x80):
             return
@@ -151,6 +151,6 @@ class Lucky7Protocol(common.Protocol):
             yield 'tlm', p.sat_name, (p, p)
 
         elif 0xC000 <= hdr.obc_cnt:
-            x = self.ir.push_data(lucky7_img.parse(bb))
+            x = self.ir.push_data(lucky7_img.parse(bb), t)
             if x:
                 yield 'img', 'LUCKY7', (x, self.ir.cur_img)

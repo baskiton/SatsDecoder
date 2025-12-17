@@ -148,14 +148,14 @@ class LedsatImageReceiver(ImageReceiver):
         self.prev_plen = self.prev_pnum = 0
         self.unreliable_addr.clear()
 
-    def generate_fid(self, large=''):
+    def generate_fid(self, large='', t=None):
         if not (self.current_fid and self.merge_mode):
-            self.last_date = now = dt.datetime.now()
+            self.last_date = now = t or dt.datetime.now(dt.timezone.utc)
             large = large and f'_LARGE-({",".join(large)})'
             self.current_fid = f'LEDSAT_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}{large}'
         return self.current_fid
 
-    def push_data(self, data, large='', **kw):
+    def push_data(self, data, large='', t=None, **kw):
         off = data.pnum * data.plen
         soi = not data.pnum and data.data.startswith(b'\xff\xd8') and (b'JFIF' in data.data, b'JFXX' in data.data)
         if not (data.pnum or soi):
@@ -179,7 +179,7 @@ class LedsatImageReceiver(ImageReceiver):
         self.prev_pnum = data.pnum
         self.last_addr = large
 
-        img = self.get_image(force_new, large=large)
+        img = self.get_image(force_new, large=large, t=t)
 
         with img.lock:
             if soi:
@@ -280,7 +280,7 @@ class LedsatProtocol(common.Protocol):
     def __init__(self, outdir):
         super().__init__(LedsatImageReceiver(outdir))
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         csp_packet = csp.csp.parse(bb)
         raw_ledsat = csp_packet.data
         if not (csp_packet.hdr and raw_ledsat):
@@ -297,7 +297,7 @@ class LedsatProtocol(common.Protocol):
         ]
 
         if csp_packet.hdr.dest_port == LEDSAT_IMG_DPORT:
-            x = self.ir.push_data(s.packet)
+            x = self.ir.push_data(s.packet, t=t)
             if x:
                 args[0] = 'img'
                 args[-1] = x, self.ir.cur_img

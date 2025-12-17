@@ -259,7 +259,7 @@ class SnugliteProtocol(common.Protocol):
         x = packet.ax25_hdr.addresses[1]
         return '%s-%s' % (x.callsign.decode(), x.ssid)
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         x = snuglite.parse(bb)
         name = self.get_sender_callsign(x) or 'unknown'
 

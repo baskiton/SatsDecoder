@@ -96,7 +96,7 @@ class Ax25Protocol(common.Protocol):
     def get_sender_callsign(data):
         return get_sender_callsign(data.header)
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         frame = ax25.parse(bb)
         if not frame:
             yield 'raw', 'unknown', bb

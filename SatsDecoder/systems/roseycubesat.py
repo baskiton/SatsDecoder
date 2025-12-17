@@ -69,9 +69,9 @@ class RoseyImageReceiver(ImageReceiver):
         super().__init__(outdir, '.raw')
         self.prev_off = 0
 
-    def generate_fid(self):
+    def generate_fid(self, t=None):
         if not (self.current_fid and self.merge_mode):
-            self.last_date = now = dt.datetime.now()
+            self.last_date = now = t or dt.datetime.now(dt.timezone.utc)
             self.current_fid = f'RoseyCubesat-1_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
         return self.current_fid
 
@@ -89,13 +89,13 @@ class RoseyImageReceiver(ImageReceiver):
         img.mosaic = 'bayer;grbg'
         return img
 
-    def push_data(self, data, **kw):
+    def push_data(self, data, t=None, **kw):
         if data.packet.id != 0x00:
             # this is thumbnail 48x36
             return
 
         off = data.packet.pnum * self.PACKET_LEN
-        f = self.get_image(off < self.prev_off)
+        f = self.get_image(off < self.prev_off, t=t)
         self.prev_off = off
         with f.lock:
             f.push_data(off, data.packet.data)
@@ -127,14 +127,14 @@ class RoseyProtocol(common.Protocol):
     def __init__(self, outdir):
         super().__init__(RoseyImageReceiver(outdir))
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         data = rosey.parse(bb)
         if not data.rosey:
             return
 
         name = self.get_sender_callsign(data)
         if data.rosey.packet_id == IMG:
-            x = self.ir.push_data(data.rosey)
+            x = self.ir.push_data(data.rosey, t)
             if x:
                 yield 'img', name, '0x%04X' % data.rosey.packet_id, (x, self.ir.cur_img)
 

@@ -300,9 +300,9 @@ class GeoscanImageReceiver(ImageReceiver):
         self._last_fnum = -1
         self._fids = {}
 
-    def generate_fid(self, sat_num=None):
+    def generate_fid(self, sat_num=None, t=None):
         if not (self.current_fid and self.merge_mode):
-            self.last_date = now = dt.datetime.now()
+            self.last_date = now = t or dt.datetime.now(dt.timezone.utc)
             pfx = get_sat_name(sat_num).rpartition('-')[0]
             hr = self._last_is_hr and '_hr' or ''
             fnum = (self._last_fnum > -1) and ('_N' + str(self._last_fnum)) or ''
@@ -318,25 +318,25 @@ class GeoscanImageReceiver(ImageReceiver):
         self._fids.clear()
         super().clear()
 
-    def push_data(self, data, is_v2=0, raw_data=b'', **kw):
+    def push_data(self, data, is_v2=0, raw_data=b'', t=None, **kw):
         if int(data.sat_num) not in sat_names:
             self._miss_cnt += 1
             return
 
         if is_v2:
-            x = self._push_data2(data)
+            x = self._push_data2(data, t)
             if not x:
                 try:
                     data = _frame1.parse(raw_data)
                 except construct.ConstructError as e:
                     return
                 if data.reserved0 == 0x98:  # special values?
-                    x = self._push_data1(data)
+                    x = self._push_data1(data, t)
         else:
-            x = self._push_data1(data)
+            x = self._push_data1(data, t)
         return x
 
-    def _push_data1(self, data):
+    def _push_data1(self, data, t=None):
         sat_num = int(data.sat_num)
         off = (data.subsystem_num << 16) | data.offset
 
@@ -350,9 +350,9 @@ class GeoscanImageReceiver(ImageReceiver):
                 force = 1
 
             if force:
-                img = self.force_new(sat_num=sat_num)
+                img = self.force_new(sat_num=sat_num, t=t)
             else:
-                img = self.get_image(1, sat_num=sat_num)
+                img = self.get_image(1, sat_num=sat_num, t=t)
 
             with img.lock:
                 if data.data.startswith(b'\xff\xd8'):
@@ -375,9 +375,9 @@ class GeoscanImageReceiver(ImageReceiver):
                 force = 1
 
             if force:
-                img = self.force_new(sat_num=sat_num)
+                img = self.force_new(sat_num=sat_num, t=t)
             else:
-                img = self.get_image(has_soi, sat_num=sat_num)
+                img = self.get_image(has_soi, sat_num=sat_num, t=t)
                 if has_soi and not img.has_soi:
                     img.rebase_offset(off)
 
@@ -388,7 +388,7 @@ class GeoscanImageReceiver(ImageReceiver):
 
                 x = off - img.base_offset
                 if x < 0:
-                    img = self.force_new(sat_num=sat_num)
+                    img = self.force_new(sat_num=sat_num, t=t)
                     img.base_offset = img.BASE_OFFSET
                     if has_soi:
                         img.has_soi = 1
@@ -416,7 +416,7 @@ class GeoscanImageReceiver(ImageReceiver):
         self._prev_data_sz = len(data)
         return (self._prev_data_sz < prev_sz) and b'\xff\xd9' in data
 
-    def _push_data2(self, data):
+    def _push_data2(self, data, t=None):
         sat_num = int(data.sat_num)
         if data.marker != self.MARKER_V2_IMG:
             return
@@ -436,9 +436,9 @@ class GeoscanImageReceiver(ImageReceiver):
                 force = 1
 
         if force:
-            img = self.force_new(sat_num=sat_num)
+            img = self.force_new(sat_num=sat_num, t=t)
         else:
-            img = self.get_image(0, sat_num=sat_num)
+            img = self.get_image(0, sat_num=sat_num, t=t)
 
         with img.lock:
             if has_soi:
@@ -555,7 +555,7 @@ class GeoscanProtocol(common.Protocol):
         super().__init__(GeoscanImageReceiver(outdir))
         self.last_fn = None
 
-    def recognize(self, data):
+    def recognize(self, data, t=None):
         # raw_packet, data = data[:self.PACKETSIZE], data[self.PACKETSIZE:]
         tlm = geoscan.parse(data)
         name = self.get_sender_callsign(tlm)
@@ -578,7 +578,7 @@ class GeoscanProtocol(common.Protocol):
 
         name = get_sat_name(int(frame.sat_num))
 
-        x = self.ir.push_data(frame, is_v2, raw_data=data)
+        x = self.ir.push_data(frame, is_v2, raw_data=data, t=t)
         if x:
             if x != 2:
                 self.last_fn = self.ir.cur_img.fn

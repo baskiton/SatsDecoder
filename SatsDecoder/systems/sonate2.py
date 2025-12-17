@@ -8538,7 +8538,7 @@ class SonateProtocol(common.Protocol):
     def get_sender_callsign(data):
         return ax25.get_sender_callsign(data.header)
 
-    def recognize(self, bb):
+    def recognize(self, bb, t=None):
         frame = ccsds.parse_space_packet(bb)
         if not frame:
             return

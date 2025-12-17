@@ -242,7 +242,7 @@ class HistoryFrame(ttk.LabelFrame):
         #     iid = self.vals[date]
 
         if not date:
-            date = dt.datetime.utcnow()
+            date = dt.datetime.now(dt.timezone.utc)
 
         if ins:
             try:
@@ -911,7 +911,7 @@ class DecoderFrame(ttk.Frame):
     def feed(self, frame, t=None, store_tlm=1):
         try:
             data = frame[self.frame_off:]
-            for i in self.decoder.recognize(data):
+            for i in self.decoder.recognize(data, t):
                 args = i
                 ty, name, *_, packet = i
                 if '\0' in name:
@@ -930,7 +930,7 @@ class DecoderFrame(ttk.Frame):
 
                 elif ty == 'tlm':
                     packet, tlm = packet
-                    date = getattr(tlm, 'Time', t or dt.datetime.utcnow())
+                    date = getattr(tlm, 'Time', t or dt.datetime.now(dt.timezone.utc))
                     fp = ''
                     if store_tlm:
                         name = ('%s_%s_%s_%s.txt' % (name, self.proto, tlm._name, date)).replace(
