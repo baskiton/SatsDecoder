@@ -31,7 +31,7 @@ class Image:
         self.open()
 
     def open(self):
-        if not self.f:
+        if not self.f or self.f.closed:
             if self.fn.is_file():
                 mode = 'r+b'
             else:

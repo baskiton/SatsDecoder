@@ -427,6 +427,8 @@ class CanvasFrame(ttk.Frame):
             self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
 
         if self.active_pil_img:
+            # it is really need?
+            # PIL.Image.close() actually close file object, that used in ImageReceiver
             self.active_pil_img.close()
         self.active_pil_img = i
 
