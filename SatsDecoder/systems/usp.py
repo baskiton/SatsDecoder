@@ -1494,7 +1494,7 @@ class UspImageReceiver(ImageReceiver):
         packet = data.packet
 
         if data.message == FILETRANSFER_DATA:
-            img = self.get_image(t)
+            img = self.get_image(t=t)
             with img.lock:
                 if not packet.offset and packet.data.startswith(b'\xff\xd8'):
                     img.has_soi = 1
@@ -1504,12 +1504,12 @@ class UspImageReceiver(ImageReceiver):
 
         elif data.message == FILETRANSFER_INIT:
             self.generate_fid(packet.file_name.partition('\0')[0], 1, t)
-            img = self.get_image(t)
+            img = self.get_image(t=t)
             with img.lock:
                 img.has_starter = 1
 
         elif data.message == FILETRANSFER_FILESIZE:
-            img = self.get_image(t)
+            img = self.get_image(t=t)
             with img.lock:
                 img.open().truncate(packet.size)
 
