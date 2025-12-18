@@ -250,8 +250,12 @@ class HistoryFrame(ttk.LabelFrame):
             except tk.TclError:
                 parent_iid = self.table.insert('', tk.END, name, text=name)
 
+            dt_str = date
+            if isinstance(date, dt.datetime):
+                dt_str = date.strftime('%Y-%m-%d %H:%M:%S')
+
             iid = self.table.insert(parent_iid, tk.END, tags=(tag,),
-                                    values=[date, tag, *vals])
+                                    values=[dt_str, tag, *vals])
             self.vals[date] = iid
             self.order.setdefault(parent_iid, []).append(iid)
 
@@ -933,7 +937,10 @@ class DecoderFrame(ttk.Frame):
                     date = getattr(tlm, 'Time', t or dt.datetime.now(dt.timezone.utc))
                     fp = ''
                     if store_tlm:
-                        name = ('%s_%s_%s_%s.txt' % (name, self.proto, tlm._name, date)).replace(
+                        dt_str = date
+                        if isinstance(date, dt.datetime):
+                            dt_str = date.strftime('%Y-%m-%dT%H-%M-%S')
+                        name = ('%s_%s_%s_%s.txt' % (name, self.proto, tlm._name, dt_str)).replace(
                             ' ', '_').replace(':', '-')
                         fp = pathlib.Path(self.out_dir_v.get()) / name
                         fp.parent.mkdir(parents=True, exist_ok=True)

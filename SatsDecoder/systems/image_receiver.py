@@ -5,6 +5,7 @@
 #
 #  SPDX-License-Identifier: MIT
 
+import datetime as dt
 import math
 import pathlib
 import shutil
@@ -126,6 +127,8 @@ class ImageReceiver:
         self.merge_mode = 0
         self.current_fid = ''
         self.last_date = 0
+        self.time_fmt = '%Y-%m-%dT%H-%M-%S'
+        self.dated_img = 0
 
     @property
     def cur_img(self):
@@ -151,6 +154,9 @@ class ImageReceiver:
     def set_merge_mode(self, val):
         self.merge_mode = val
 
+    def set_dated_img(self, val):
+        self.dated_img = val
+
     def generate_fid(self, *args, **kwargs):
         raise NotImplementedError
 
@@ -160,7 +166,7 @@ class ImageReceiver:
 
     def new_file(self, fid):
         fn = self.outdir / fid
-        if self.suff:
+        if self.suff and not fn.suffix:
             fn = fn.with_suffix(self.suff)
 
         # img = self.images.get(fid)
@@ -178,3 +184,7 @@ class ImageReceiver:
         for i in self.images.values():
             i.close()
         self.current_fid = ''
+
+    def strftime(self, t=None):
+        self.last_date = t or dt.datetime.now(dt.timezone.utc)
+        return self.last_date.strftime(self.time_fmt)

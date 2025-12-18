@@ -5,11 +5,8 @@
 #
 #  SPDX-License-Identifier: MIT
 
-import datetime as dt
-
 import construct
 
-from SatsDecoder import utils
 from SatsDecoder.systems import ax25, common
 from SatsDecoder.systems.image_receiver import ImageReceiver
 
@@ -225,8 +222,7 @@ class SharjahImageReceiver(ImageReceiver):
 
     def generate_fid(self, t=None):
         if not (self.current_fid and self.merge_mode):
-            self.last_date = now = t or dt.datetime.now(dt.timezone.utc)
-            self.current_fid = f'SharjahSat-1_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
+            self.current_fid = f'SharjahSat-1_{self.strftime(t)}'
         return self.current_fid
 
     def get_image(self, force_new=0, soi=0, pnum=0, t=None, **kwargs):

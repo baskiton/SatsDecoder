@@ -21,7 +21,7 @@ class UNIXTimestampAdapter(construct.Adapter):
         return round(obj.timestamp())
 
     def _decode(self, obj, context, path=None):
-        return dt.datetime.utcfromtimestamp(obj)
+        return dt.datetime.fromtimestamp(obj, dt.timezone.utc)
 
 
 class UNIXTimestampUsAdapter(construct.Adapter):
@@ -29,7 +29,7 @@ class UNIXTimestampUsAdapter(construct.Adapter):
         return round(obj.timestamp() * 1000000)
 
     def _decode(self, obj, context, path=None):
-        return dt.datetime.utcfromtimestamp(obj / 1000000)
+        return dt.datetime.fromtimestamp(obj / 1000000, dt.timezone.utc)
 
 
 class TimeDeltaAdapter(construct.Adapter):

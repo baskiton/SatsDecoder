@@ -5,8 +5,6 @@
 #
 #  SPDX-License-Identifier: MIT
 
-import datetime as dt
-
 import construct
 
 from SatsDecoder.systems import ax25, common
@@ -71,8 +69,7 @@ class RoseyImageReceiver(ImageReceiver):
 
     def generate_fid(self, t=None):
         if not (self.current_fid and self.merge_mode):
-            self.last_date = now = t or dt.datetime.now(dt.timezone.utc)
-            self.current_fid = f'RoseyCubesat-1_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
+            self.current_fid = f'RoseyCubesat-1_{self.strftime(t)}'
         return self.current_fid
 
     def new_file(self, fid, sz=None):

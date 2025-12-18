@@ -5,8 +5,6 @@
 #
 #  SPDX-License-Identifier: MIT
 
-import datetime as dt
-
 import construct
 
 from SatsDecoder.systems import common
@@ -57,8 +55,7 @@ class Gardens02ImageReceiver(ImageReceiver):
 
     def generate_fid(self, force=0, name='Gardens-02', tx_id=0, t=None):
         if force or not (self.current_fid and self.merge_mode):
-            self.last_date = now = t or dt.datetime.now(dt.timezone.utc)
-            self.current_fid = f'{name}_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}_{tx_id:02X}'
+            self.current_fid = f'{name}_{self.strftime(t)}_{tx_id:02X}'
         return self.current_fid
 
     def push_data(self, pkt, name='Gardens-02', t=None, **kw):

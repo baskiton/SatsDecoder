@@ -5,8 +5,6 @@
 #
 #  SPDX-License-Identifier: MIT
 
-import datetime as dt
-
 import construct
 
 from SatsDecoder.systems import csp, common
@@ -150,9 +148,8 @@ class LedsatImageReceiver(ImageReceiver):
 
     def generate_fid(self, large='', t=None):
         if not (self.current_fid and self.merge_mode):
-            self.last_date = now = t or dt.datetime.now(dt.timezone.utc)
             large = large and f'_LARGE-({",".join(large)})'
-            self.current_fid = f'LEDSAT_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}{large}'
+            self.current_fid = f'LEDSAT_{self.strftime(t)}{large}'
         return self.current_fid
 
     def push_data(self, data, large='', t=None, **kw):

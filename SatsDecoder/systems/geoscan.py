@@ -5,8 +5,6 @@
 #
 #  SPDX-License-Identifier: MIT
 
-import datetime as dt
-
 from itertools import chain
 
 import construct
@@ -302,11 +300,10 @@ class GeoscanImageReceiver(ImageReceiver):
 
     def generate_fid(self, sat_num=None, t=None):
         if not (self.current_fid and self.merge_mode):
-            self.last_date = now = t or dt.datetime.now(dt.timezone.utc)
             pfx = get_sat_name(sat_num).rpartition('-')[0]
             hr = self._last_is_hr and '_hr' or ''
             fnum = (self._last_fnum > -1) and ('_N' + str(self._last_fnum)) or ''
-            self.current_fid = f'{pfx.upper()}{hr}{fnum}_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
+            self.current_fid = f'{pfx.upper()}{hr}{fnum}_{self.strftime(t)}'
             if fnum and self.merge_mode:
                 self._fids[self._last_fnum] = self.current_fid
         return self.current_fid

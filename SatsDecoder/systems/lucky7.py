@@ -5,11 +5,8 @@
 #
 #  SPDX-License-Identifier: MIT
 
-import datetime as dt
-
 import construct
 
-from SatsDecoder import utils
 from SatsDecoder.systems import common
 from SatsDecoder.systems.image_receiver import ImageReceiver
 
@@ -68,8 +65,7 @@ class Lucky7ImageReceiver(ImageReceiver):
 
     def generate_fid(self, t=None):
         if not (self.current_fid and self.merge_mode):
-            self.last_date = now = t or dt.datetime.now(dt.timezone.utc)
-            self.current_fid = f'LUCKY7_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
+            self.current_fid = f'LUCKY7_{self.strftime(t)}'
         return self.current_fid
 
     def get_image(self, force_new=0, packets=0, t=None, **kwargs):

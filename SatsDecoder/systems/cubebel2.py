@@ -5,8 +5,6 @@
 #
 #  SPDX-License-Identifier: MIT
 
-import datetime as dt
-
 import construct
 
 from SatsDecoder import utils

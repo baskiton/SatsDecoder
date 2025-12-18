@@ -5,8 +5,6 @@
 #
 #  SPDX-License-Identifier: MIT
 
-import datetime as dt
-
 import construct
 
 from SatsDecoder import utils
@@ -1478,16 +1476,13 @@ usp_range = construct.GreedyRange(usp)
 
 class UspImageReceiver(ImageReceiver):
     def __init__(self, outdir):
-        super().__init__(outdir)
+        super().__init__(outdir, '.jpg')
 
     def generate_fid(self, fname='', force=0, t=None):
         if self.current_fid.startswith('unknown_') and fname:
             self.rename_image(self.current_fid, fname)
         elif force or not (self.current_fid and self.merge_mode):
-            self.last_date = now = t or dt.datetime.now(dt.timezone.utc)
-            if not fname:
-                fname = f'unknown_{now.strftime("%Y-%m-%d_%H-%M-%S,%f")}'
-            self.current_fid = fname
+            self.current_fid = fname or f'USP_unknown_{self.strftime(t)}'
         return self.current_fid
 
     def push_data(self, data, t=None, **kw):
