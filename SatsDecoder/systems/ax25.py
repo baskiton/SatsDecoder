@@ -61,7 +61,7 @@ ax25 = construct.Struct(
 
 
 def get_callsign(ax25_hdr, idx):
-    if ax25_hdr:
+    if ax25_hdr and len(ax25_hdr.addresses) >= 2:
         x = ax25_hdr.addresses[idx]
         return '%s-%s' % (x.callsign, x.ssid.ssid)
 
