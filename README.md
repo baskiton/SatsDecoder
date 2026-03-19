@@ -104,6 +104,7 @@ Various data source types are available in the `Conn` combobox:
   }
   ```
 * `KISS files` - read KISS-files
+* `KISS TCP Client` - read TCP socket as client, KISS data
 * `SatDump frm files` - read SatDump frm files (only for AX.25 and Geoscan)
 
 ![](doc/Screenshot.jpg)

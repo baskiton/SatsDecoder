@@ -15,7 +15,6 @@ import re
 import select
 import shutil
 import socket as sk
-import struct
 import sys
 import threading
 import time
@@ -649,6 +648,7 @@ class DecoderFrame(ttk.Frame):
             utils.ConnMode.HEX_FILES: ('Open', 'Stop'),
             utils.ConnMode.JSON_FILES: ('Open', 'Stop'),
             utils.ConnMode.KISS_FILES: ('Open', 'Stop'),
+            utils.ConnMode.KISS_TCP_CLI: ('Connect', 'Disconnect'),
             utils.ConnMode.SATDUMP_FRM: ('Open', 'Stop'),
         }
         self.con_btn.config(text=d[self.get_conn_mode()]['d' in kw])
@@ -837,7 +837,7 @@ class DecoderFrame(ttk.Frame):
     def _start(self):
         curr_mode = self.get_conn_mode()
         self.is_server = curr_mode == utils.ConnMode.TCP_SRV
-        self.is_agwpe_cli = curr_mode == utils.ConnMode.AGWPE_CLI
+        self.curr_mode = curr_mode
         try:
             self.frame_off = 0
             s = sk.socket(sk.AF_INET, sk.SOCK_STREAM)
@@ -848,7 +848,7 @@ class DecoderFrame(ttk.Frame):
 
             else:
                 s.connect((self.server_v.get(), int(self.port_v.get())))
-                if self.is_agwpe_cli:
+                if self.curr_mode == utils.ConnMode.AGWPE_CLI:
                     self.frame_off = 1
                     s.send(utils.AGWPE_CON)
 
@@ -908,40 +908,36 @@ class DecoderFrame(ttk.Frame):
         if self.sk:
             self.event_generate(self.STOP_EVT, when='tail')
 
-    @staticmethod
-    def _recvall(conn, n):
-        ret = bytearray()
-        while len(ret) < n:
-            try:
-                x = conn.recv(n - len(ret))
-                if not x:
-                    return b''
-            except OSError as e:
-                if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK, sys.platform == 'win32' and errno.WSAEWOULDBLOCK):
-                    continue
-                raise
-            ret.extend(x)
-        return bytes(ret)
-
     def _receive(self, conn):
         t = None
         try:
-            if self.is_agwpe_cli:
+            if self.curr_mode == utils.ConnMode.AGWPE_CLI:
                 frame = conn.recv(utils.AGWPE_HDR_FMT.size)
                 if len(frame) != utils.AGWPE_HDR_FMT.size:
                     frame = 0
                 else:
                     port, kind, pid, c_from, c_to, dlen = utils.AGWPE_HDR_FMT.unpack_from(frame)
                     frame = conn.recv(dlen)
+
+            elif self.curr_mode == utils.ConnMode.KISS_TCP_CLI:
+                while 1:
+                    x = utils.kiss_read_stream(conn)
+                    if isinstance(x, dt.datetime):
+                        t = x
+                    else:
+                        frame = x
+                        break
+
             else:
-                frame = self._recvall(conn, utils.TCP_HDR_FMT.size)
+                frame = utils.recvall(conn, utils.TCP_HDR_FMT.size)
                 if len(frame) != utils.TCP_HDR_FMT.size:
                     frame = 0
                 else:
                     _t, frame_sz, = utils.TCP_HDR_FMT.unpack_from(frame)
                     if _t >= 0:
                         t = dt.datetime.fromtimestamp(_t, dt.timezone.utc)
-                    frame = self._recvall(conn, frame_sz)
+                    frame = utils.recvall(conn, frame_sz)
+
         except AttributeError:
             return 1
         except OSError as e:

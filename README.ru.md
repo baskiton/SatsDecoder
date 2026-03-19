@@ -104,6 +104,7 @@ https://r4uab.ru/settings-soundmodem/
   }
   ```
 * `KISS files` - из KISS-файлов
+* `KISS TCP Client` - TCP сокет как клиент, KISS-формат
 * `SatDump frm files` - из SatDump frm файлов (только для AX.25 и Geoscan)
 
 ![](doc/Screenshot.jpg)

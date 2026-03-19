@@ -7,6 +7,7 @@
 
 import datetime as dt
 import enum
+import errno
 import json
 import struct
 import sys
@@ -31,6 +32,7 @@ class ConnMode(enum.IntEnum):
     SATDUMP_FRM = enum.auto()
     HEX_FILES = enum.auto()
     JSON_FILES = enum.auto()
+    KISS_TCP_CLI = enum.auto()
 
 
 con_mode_names = {
@@ -41,6 +43,7 @@ con_mode_names = {
     ConnMode.HEX_FILES: 'HEX values from files',
     ConnMode.JSON_FILES: 'JSON files',
     ConnMode.KISS_FILES: 'KISS files',
+    ConnMode.KISS_TCP_CLI: 'KISS TCP Client',
     ConnMode.SATDUMP_FRM: 'SatDump frm files',
 }
 con_mode_names_inv = {v: k for k, v in con_mode_names.items()}
@@ -305,6 +308,21 @@ class DynamicNotebook(ttk.Notebook):
         ])
 
 
+def recvall(conn, n):
+    ret = bytearray()
+    while len(ret) < n:
+        try:
+            x = conn.recv(n - len(ret))
+            if not x:
+                return b''
+        except OSError as e:
+            if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK, sys.platform == 'win32' and errno.WSAEWOULDBLOCK):
+                continue
+            raise
+        ret.extend(x)
+    return bytes(ret)
+
+
 def nonblocking_message(type_, title=None, message=None, detail=None, parent=None):
     if type_ == messagebox.ERROR:
         img = '::tk::icons::error'
@@ -506,6 +524,41 @@ def kiss_read(fp):
             else:
                 # TODO: unknown, what to do?
                 pass
+
+
+def kiss_read_stream(conn):
+    # await beginning
+    while 1:
+        c = recvall(conn, 1)
+        if not c:
+            return
+        if c == KISS_FEND:
+            break
+
+    # read control byte
+    c = recvall(conn, 1)
+    if c == KISS_FEND:
+        c = recvall(conn, 1)
+    if not c:
+        return
+    c = ord(c)
+
+    if c == KISS_CMD_TS:
+        ts, = struct.unpack('>Q', kiss_unescape(recvall(conn, 8)))
+        t = kiss_epoch + dt.timedelta(seconds=ts / 1000)
+        recvall(conn, 1)
+        return t
+
+    elif c in KISS_CMD_DATA:
+        buf = bytearray()
+        while 1:
+            c = recvall(conn, 1)
+            if not c:
+                return
+            if c == KISS_FEND:
+                break
+            buf.extend(c)
+        return kiss_unescape(bytes(buf))
 
 
 def _json_get_t(v):
