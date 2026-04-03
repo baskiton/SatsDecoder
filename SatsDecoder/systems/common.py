@@ -76,7 +76,7 @@ class Protocol:
     has_ax25 = 0
 
     def __init__(self, ir: ImageReceiver = None):
-        self.ir = isinstance(ir, ImageReceiver) and ir
+        self.ir = isinstance(ir, ImageReceiver) and ir or None
 
     @staticmethod
     def get_sender_callsign(data):

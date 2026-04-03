@@ -16,6 +16,7 @@ from SatsDecoder.systems.geoscan import *
 from SatsDecoder.systems.greencube import *
 from SatsDecoder.systems.ledsat import *
 from SatsDecoder.systems.lucky7 import *
+from SatsDecoder.systems.r4uab import *
 from SatsDecoder.systems.roseycubesat import *
 from SatsDecoder.systems.samsat_ion2 import *
 from SatsDecoder.systems.sharjahsat import *
@@ -37,6 +38,7 @@ for i in (
         'dstar_one',
         'ledsat',
         'lucky7',
+        'r4uab',
         'roseycubesat',
         'samsat_ion2',
         'sharjahsat',
