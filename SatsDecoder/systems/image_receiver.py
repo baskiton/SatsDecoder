@@ -41,7 +41,7 @@ class Image:
                     self.fn.unlink()
                 except IsADirectoryError:
                     self.fn.rmdir()
-                except FileNotFoundError:
+                except (FileNotFoundError, PermissionError):
                     pass
             self.f = open(self.fn, mode)
 
@@ -183,7 +183,17 @@ class ImageReceiver:
     def clear(self):
         for i in self.images.values():
             i.close()
+        self.images = {}
         self.current_fid = ''
+
+    def close(self, fid=None):
+        if not fid:
+            fid = self.current_fid
+            self.current_fid = ''
+        if fid:
+            f = self.images.pop(fid, None)
+            if f:
+                f.close()
 
     def strftime(self, t=None):
         self.last_date = t or dt.datetime.now(dt.timezone.utc)

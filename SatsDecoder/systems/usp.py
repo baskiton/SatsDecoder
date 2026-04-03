@@ -1477,6 +1477,8 @@ usp_range = construct.GreedyRange(usp)
 
 
 class UspImageReceiver(ImageReceiver):
+    default_pfx = 'USP_unknown'
+
     def __init__(self, outdir):
         super().__init__(outdir, '.jpg')
         self.last_fname = ''
@@ -1487,14 +1489,16 @@ class UspImageReceiver(ImageReceiver):
                 t = self.last_date
             self.last_fname = fname
             x = pathlib.Path(fname)
-            return str(x.with_name(x.stem + '_' + self.strftime(t) + x.suffix))
-        return fname
+            return x.stem + '_' + self.strftime(t) + x.suffix
+        elif fname:
+            return str(pathlib.Path(fname).name)
+        return fname or f'{self.default_pfx}_{self.strftime(t)}'
 
     def generate_fid(self, fname='', force=0, t=None):
-        if self.current_fid.startswith('unknown_') and fname:
+        if self.current_fid.startswith(self.default_pfx) and fname:
             self.rename_image(self.current_fid, self.re_fname(fname, t))
         elif force or not (self.current_fid and self.merge_mode):
-            self.current_fid = self.re_fname(fname, t) or f'USP_unknown_{self.strftime(t)}'
+            self.current_fid = self.re_fname(fname, t)
         return self.current_fid
 
     def push_data(self, data, t=None, **kw):
@@ -1511,7 +1515,12 @@ class UspImageReceiver(ImageReceiver):
 
         elif data.message == FILETRANSFER_INIT:
             self.generate_fid(packet.file_name.partition('\0')[0], 1, t)
-            img = self.get_image(t=t)
+            try:
+                img = self.get_image(t=t)
+            except (FileNotFoundError, PermissionError):
+                self.close()
+                img = self.get_image(t=t)
+
             with img.lock:
                 img.has_starter = 1
 
