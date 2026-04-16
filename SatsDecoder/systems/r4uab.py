@@ -44,13 +44,19 @@ ptype_map = {
     ),
 }
 
-frame = construct.Struct(
+packet = construct.Struct(
     'hdr' / construct.Hex(construct.Const(0xC100E000, construct.Int32ub)),
     'marker' / construct.Hex(construct.Int8ub),
     'marker_variant' / construct.Hex(construct.Int8ub),
     'ptype' / construct.Hex(construct.Int8ub),
     'ptype_variant' / construct.Hex(construct.Int8ub),
     'payload' / construct.Switch(construct.this.ptype, ptype_map, default=construct.GreedyBytes),
+)
+
+r4uab = construct.Struct(
+    'ax25' / construct.Peek(ax25.ax25_header),
+    'ax25' / construct.If(lambda this: bool(this.ax25), ax25.ax25_header),
+    'packet' / construct.If(lambda this: (bool(this.ax25) and this.ax25.pid == 0xF0), packet),
 )
 
 
@@ -109,7 +115,9 @@ class R4uabProtocol(common.Protocol):
 
     def recognize(self, bb, t=None):
         try:
-            packet = frame.parse(bb)
+            frame = r4uab.parse(bb)
+            if not frame.packet:
+                return
         except construct.ConstError:
             return
         except construct.StreamError as e:
@@ -117,9 +125,9 @@ class R4uabProtocol(common.Protocol):
             print(bb)
             return
 
-        x = self.ir.push_data(packet, t=t)
+        x = self.ir.push_data(frame.packet, t=t)
         if x:
-            yield 'img', 'R4UAB-Sat', (x, self.ir.cur_img)
+            yield 'img', self.get_sender_callsign(frame), (x, self.ir.cur_img)
 
 
 if __name__ == '__main__':
@@ -132,10 +140,11 @@ if __name__ == '__main__':
     for b in bb:
         b = bytes.fromhex(b)
         try:
-            x = frame.parse(b)
+            x = r4uab.parse(b)
         except construct.ConstError:
             continue
         print(x)
-        transfer_id = (x.marker << 16) | (x.marker_variant << 8) | x.ptype_variant
+        xx = x.packet
+        transfer_id = (xx.marker << 16) | (xx.marker_variant << 8) | xx.ptype_variant
         print(hex(transfer_id))
-        print(f'{x.marker:02X}{x.marker_variant:02X}{x.ptype_variant:02X}')
+        print(f'{xx.marker:02X}{xx.marker_variant:02X}{xx.ptype_variant:02X}')
