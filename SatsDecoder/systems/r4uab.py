@@ -50,13 +50,15 @@ packet = construct.Struct(
     'marker_variant' / construct.Hex(construct.Int8ub),
     'ptype' / construct.Hex(construct.Int8ub),
     'ptype_variant' / construct.Hex(construct.Int8ub),
-    'payload' / construct.Switch(construct.this.ptype, ptype_map, default=construct.GreedyBytes),
+    'payload' / construct.Switch(construct.this.ptype, ptype_map, default=None),
 )
 
 r4uab = construct.Struct(
     'ax25' / construct.Peek(ax25.ax25_header),
     'ax25' / construct.If(lambda this: bool(this.ax25), ax25.ax25_header),
-    'packet' / construct.If(lambda this: (bool(this.ax25) and this.ax25.pid == 0xF0), packet),
+    'packet' / construct.Peek(packet),
+    'packet' / construct.If(lambda this: (bool(this.ax25) and this.ax25.pid == 0xF0),
+                            construct.IfThenElse(lambda this: bool(this.packet) and this.packet.payload is not None, packet, construct.GreedyBytes)),
 )
 
 
@@ -125,9 +127,14 @@ class R4uabProtocol(common.Protocol):
             print(bb)
             return
 
-        x = self.ir.push_data(frame.packet, t=t)
-        if x:
-            yield 'img', self.get_sender_callsign(frame), (x, self.ir.cur_img)
+        ty = 'raw'
+        data = frame.packet
+        if not isinstance(frame.packet, bytes):
+            x = self.ir.push_data(frame.packet, t=t)
+            if x:
+                ty = 'img'
+                data = (x, self.ir.cur_img)
+        yield ty, self.get_sender_callsign(frame), data
 
 
 if __name__ == '__main__':
