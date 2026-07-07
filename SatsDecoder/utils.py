@@ -147,7 +147,17 @@ class TlmPlotFrame(ttk.Frame):
             self.valid = 0
             return
 
-        self.table = tuple(sub for sub in vals['table'] if sub[2])
+        self.table = [] # (iid, title, plot, gid)
+        gid = 0
+
+        for iid, title, plot in vals['table']:
+            if plot == 0:   # don't draw
+                continue
+            if plot == 1:   # new group
+                gid += 1
+            # else use previous group
+            self.table.append((iid, title, plot, gid))
+
         self.time_data = {}
 
         self.columnconfigure(0, weight=1)
@@ -169,7 +179,8 @@ class TlmPlotFrame(ttk.Frame):
         self.plot_frame = ttk.Frame(self.canvas)
         dpi = 100
         single_plot_height = 2
-        fig_height = single_plot_height * len(self.table)
+        groups_cnt = gid
+        fig_height = single_plot_height * groups_cnt
         self.h_pix = int(fig_height * dpi)
         self.plot_frame.configure(height=self.h_pix)
         self.plot_frame.grid_propagate(False)
@@ -180,7 +191,7 @@ class TlmPlotFrame(ttk.Frame):
         self.canvas.bind('<Configure>', self._on_canvas_configure)
 
         self.fig, self.ax = plt.subplots(
-            len(self.table), 1,
+            groups_cnt, 1,
             sharex=True,
             figsize=(10, fig_height),
             dpi=dpi,
@@ -188,38 +199,48 @@ class TlmPlotFrame(ttk.Frame):
         )
         self.fig.set_layout_engine('constrained', h_pad=0.1, w_pad=0.1)
 
-        self.lines = []
-        self.scatters = []
-        self.last_points = []
+        self.lines = {}         # gid: list of lines
+        self.scatters = {}      # gid: list of scatters
+        self.last_points = {}   # gid: list of last_points
+
         colors = 'bgrcmy'
         color_i = 0
         markers = 'ov^<>sP*+xD'
         marker_i = 0
-        # color = 'red'
-        for i, ax in enumerate(self.ax):
-            iid, title, plot = self.table[i]
-            color = colors[color_i]
-            color_i += 1
-            color_i %= len(colors)
-            marker = markers[marker_i]
-            marker_i += 1
-            marker_i %= len(markers)
+        self.legend_params = dict(loc='best', fontsize=8)
 
-            line, = ax.plot([], [], color=color, linewidth=0.75)
-            self.lines.append(line)
+        groups_data = {}
+        for i in self.table:
+            groups_data.setdefault(i[3], []).append(i)
 
-            scatter = ax.scatter([], [], color=color, s=15, zorder=5, marker=marker)
-            self.scatters.append(scatter)
+        for idx, gid in enumerate(sorted(groups_data.keys())):
+            ii = groups_data[gid]
+            ax = self.ax[idx]
 
-            last_point = ax.scatter([], [], color=color, s=25, zorder=6, marker=marker)
-            self.last_points.append(last_point)
+            self.lines[gid] = []
+            self.scatters[gid] = []
+            self.last_points[gid] = []
 
-            ax.set_title(title, fontsize=10)
+            for iid, title, _, _ in ii:
+                color = colors[color_i % len(colors)]
+                color_i += 1
+                marker = markers[marker_i % len(markers)]
+                marker_i += 1
+
+                line, = ax.plot([], [], color=color, linewidth=0.75)
+                self.lines[gid].append(line)
+
+                scatter = ax.scatter([], [], color=color, s=15, zorder=5, marker=marker, label=title)
+                self.scatters[gid].append(scatter)
+
+                last_point = ax.scatter([], [], color=color, s=30, zorder=6, marker=marker)
+                self.last_points[gid].append(last_point)
+
+            ax.set_title(ii[0][1])
             ax.grid(True)
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S\n%Y-%m-%d'))
-            # ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%dT%H-%M-%SZ'))
-            # ax.tick_params(axis='x', rotation=45, labelsize=8)
             ax.tick_params(axis='both', labelsize=8)
+            ax.legend(**self.legend_params)
 
         self.plot_canvas = FigureCanvasTkAgg(self.fig, master=self.plot_frame)
         self.plot_widget = self.plot_canvas.get_tk_widget()
@@ -263,15 +284,18 @@ class TlmPlotFrame(ttk.Frame):
 
     def clear(self):
         self.time_data.clear()
-        for i in self.lines:
-            i.set_data([], [])
-        for i in self.scatter_plots:
-            i.set_offsets([])
-        for i in self.last_points:
-            i.set_offsets([])
+        for gid in self.lines:
+            for i in self.lines[gid]:
+                i.set_data([], [])
+            for i in self.scatters[gid]:
+                i.set_offsets(np.empty((0, 2)))
+            for i in self.last_points[gid]:
+                i.set_offsets(np.empty((0, 2)))
         for ax in self.ax:
             ax.relim()
             ax.autoscale_view()
+        for ax in self.ax:
+            ax.legend(**self.legend_params)
         self.plot_canvas.draw_idle()
 
     def fill(self, tlm):
@@ -280,23 +304,25 @@ class TlmPlotFrame(ttk.Frame):
             return
 
         params = {}
-        for i, ax in enumerate(self.ax):
-            iid = self.table[i][0]
+        for i in self.table:
+            iid = i[0]
             params[iid] = tlm[iid]
 
         self.time_data[t] = params
         sorted_times = list(sorted(self.time_data))
 
-        for i, ax in enumerate(self.ax):
-            iid, title, plot = self.table[i]
-            sorted_data = [self.time_data[t][iid] for t in sorted_times]
+        for gid in self.lines:
+            for i, (iid, _, _, _) in enumerate(i for i in self.table if i[3] == gid):
+                sorted_data = [self.time_data[t][iid] for t in sorted_times]
 
-            self.lines[i].set_data(sorted_times, sorted_data)
-            self.scatters[i].set_offsets(list(zip(sorted_times, sorted_data)))
-            self.last_points[i].set_offsets([(t, params[iid])])
+                self.lines[gid][i].set_data(sorted_times, sorted_data)
+                self.scatters[gid][i].set_offsets(list(zip(sorted_times, sorted_data)))
+                self.last_points[gid][i].set_offsets([(t, params[iid])])
 
-            ax.relim()
-            ax.autoscale_view()
+        for i, gid in enumerate(sorted(self.lines.keys())):
+            self.ax[i].relim()
+            self.ax[i].autoscale_view()
+            self.ax[i].legend(**self.legend_params)
 
         self.plot_canvas.draw_idle()
 
@@ -307,24 +333,26 @@ class TlmPlotFrame(ttk.Frame):
                 continue
 
             params = {}
-            for i, ax in enumerate(self.ax):
-                iid = self.table[i][0]
+            for i in self.table:
+                iid = i[0]
                 params[iid] = tlm[iid]
 
             self.time_data[t] = params
 
         sorted_times = list(sorted(self.time_data))
 
-        for i, ax in enumerate(self.ax):
-            iid, title, plot = self.table[i]
-            sorted_data = [self.time_data[t][iid] for t in sorted_times]
+        for gid in self.lines:
+            for i, (iid, _, _, _) in enumerate(i for i in self.table if i[3] == gid):
+                sorted_data = [self.time_data[t][iid] for t in sorted_times]
 
-            self.lines[i].set_data(sorted_times, sorted_data)
-            self.scatters[i].set_offsets(list(zip(sorted_times, sorted_data)))
-            self.last_points[i].set_offsets([(sorted_times[-1], sorted_data[-1])])
+                self.lines[gid][i].set_data(sorted_times, sorted_data)
+                self.scatters[gid][i].set_offsets(list(zip(sorted_times, sorted_data)))
+                self.last_points[gid][i].set_offsets([(sorted_times[-1], sorted_data[-1])])
 
-            ax.relim()
-            ax.autoscale_view()
+        for i, gid in enumerate(sorted(self.lines.keys())):
+            self.ax[i].relim()
+            self.ax[i].autoscale_view()
+            self.ax[i].legend(**self.legend_params)
 
         self.plot_canvas.draw_idle()
 
