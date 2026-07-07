@@ -681,6 +681,7 @@ class DecoderFrame(ttk.Frame):
                 fully = (
                     self.history_frame.vals[iid][-2]
                     for iid in self.history_frame.table.get_children(x.parent)
+                    if self.history_frame.table.tag_has('tlm', iid)
                 )
             self.dv_frame.set_tlm(vals[-2], vals[-1], fully)
         elif tag == 'img':
