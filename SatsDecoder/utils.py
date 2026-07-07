@@ -197,7 +197,11 @@ class TlmPlotFrame(ttk.Frame):
             dpi=dpi,
             constrained_layout=True,
         )
-        self.fig.set_layout_engine('constrained', h_pad=0.1, w_pad=0.1)
+        if hasattr(self.fig, 'set_layout_engine'):
+            self.fig.set_layout_engine('constrained', h_pad=0.1, w_pad=0.1)
+        else:
+            self.fig.set_constrained_layout(True)
+            self.fig.set_constrained_layout_pads(h_pad=0.1, w_pad=0.1)
 
         self.lines = {}         # gid: list of lines
         self.scatters = {}      # gid: list of scatters
