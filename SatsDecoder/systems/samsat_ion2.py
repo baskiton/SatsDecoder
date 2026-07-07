@@ -55,13 +55,13 @@ class SamSatIon2Protocol(common.Protocol):
             'table': (
                 ('name', 'Name', 0),
                 ('sign', 'Signature', 0),
-                ('Tbat1', 'Battery #1 temperature, °C', 0),
-                ('Tbat2', 'Battery #2 temperature, °C', 0),
+                ('Tbat1', 'Battery #1 temperature, °C', 1),
+                ('Tbat2', 'Battery #2 temperature, °C', 2),
                 ('Mrecv', 'Messages received', 0),
-                ('Ttx1', 'Transceiver #1 temperature, °C', 0),
-                ('Ttx2', 'Transceiver #2 temperature, °C', 0),
-                ('Ttx3', 'Transceiver #3 temperature, °C', 0),
-                ('Tmag', 'Magnetometer temperature, °C', 0),
+                ('Ttx1', 'Transceiver #1 temperature, °C', 1),
+                ('Ttx2', 'Transceiver #2 temperature, °C', 2),
+                ('Ttx3', 'Transceiver #3 temperature, °C', 2),
+                ('Tmag', 'Magnetometer temperature, °C', 1),
             )
         },
     }
