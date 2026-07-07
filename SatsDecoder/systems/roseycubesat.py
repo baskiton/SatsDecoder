@@ -108,15 +108,15 @@ class RoseyProtocol(common.Protocol):
     tlm_table = {
         'message': {
             'table': (
-                ('name', 'Name'),
-                ('text', 'Message'),
-                ('Time', 'Onboard Time'),
-                ('vbat', 'Battery Voltage'),
-                ('ibat', 'Battery Current'),
-                ('temp', 'Temperature'),
-                ('mode', 'Mode'),
-                ('eps_boot_cnt', 'EPS Boot Counter'),
-                ('cmd_cnt', 'Command Counter'),
+                ('name', 'Name', 0),
+                ('text', 'Message', 0),
+                ('Time', 'Onboard Time', 0),
+                ('vbat', 'Battery Voltage', 0),
+                ('ibat', 'Battery Current', 0),
+                ('temp', 'Temperature', 0),
+                ('mode', 'Mode', 0),
+                ('eps_boot_cnt', 'EPS Boot Counter', 0),
+                ('cmd_cnt', 'Command Counter', 0),
             ),
         },
     }

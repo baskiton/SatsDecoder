@@ -82,12 +82,12 @@ class Ax25Protocol(common.Protocol):
     tlm_table = {
         'frame': {
             'table': (
-                ('receiver_cs', 'Receiver Callsign'),
-                ('sender_cs', 'Sender Callsign'),
-                ('control', 'Control'),
-                ('pid', 'PID'),
-                ('data', 'Data'),
-                ('hex', 'Data (HEX)'),
+                ('receiver_cs', 'Receiver Callsign', 0),
+                ('sender_cs', 'Sender Callsign', 0),
+                ('control', 'Control', 0),
+                ('pid', 'PID', 0),
+                ('data', 'Data', 0),
+                ('hex', 'Data (HEX)', 0),
             ),
         },
     }

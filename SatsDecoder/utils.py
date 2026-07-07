@@ -16,9 +16,13 @@ import tkinter as tk
 from tkinter import ttk, font, messagebox
 
 import construct
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import numpy as np
 import PIL
 import PIL.Image
+
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 class ConnMode(enum.IntEnum):
@@ -92,7 +96,7 @@ class TlmCommonTable(ttk.Treeview):
                 x = self.insert('', tk.END, k, text=k)
                 w0 = 40
 
-            for iid, text in v:
+            for iid, text, _ in v:
                 w1 = f.measure(text) + w0
                 if w1 > w:
                     w = w1
@@ -102,9 +106,11 @@ class TlmCommonTable(ttk.Treeview):
         self.column('x', width=10, stretch=tk.NO)
 
         self.vsb = AutoScrollbar(self.master, orient=tk.VERTICAL, command=self.yview)
-        self.configure(yscrollcommand=self.vsb.set)
         self.hsb = AutoScrollbar(self.master, orient=tk.HORIZONTAL, command=self.xview)
-        self.configure(xscrollcommand=self.hsb.set)
+        self.configure(
+            yscrollcommand=self.vsb.set,
+            xscrollcommand=self.hsb.set,
+        )
 
     def fill(self, tlm, f_precision, fw_max=10):
         f = tk_nametofont('TkDefaultFont', self)
@@ -132,17 +138,207 @@ class TlmCommonTable(ttk.Treeview):
         return fw_max
 
 
-class TlmCommonFrame(ttk.Frame):
+class TlmPlotFrame(ttk.Frame):
     def __init__(self, master, vals):
+        super().__init__(master)
+        self.valid = 1
+
+        if not any(sub[0] == 'Time' for sub in vals['table'] if sub):
+            self.valid = 0
+            return
+
+        self.table = tuple(sub for sub in vals['table'] if sub[2])
+        self.time_data = {}
+
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+
+        self.canvas = tk.Canvas(self)
+        self.canvas.grid(column=0, row=0, sticky=tk.NSEW)
+
+        self.vsb = AutoScrollbar(self, orient=tk.VERTICAL, command=self.canvas.yview)
+        self.vsb.grid(row=0, column=1, sticky=tk.NS)
+        # self.hsb = AutoScrollbar(self, orient=tk.HORIZONTAL, command=self.canvas.xview)
+        # self.hsb.grid(row=1, column=0, sticky=tk.EW)
+        self.canvas.configure(
+            yscrollcommand=self.vsb.set,
+            # xscrollcommand=self.hsb.set,
+            scrollregion=self.canvas.bbox(tk.ALL),
+        )
+
+        self.plot_frame = ttk.Frame(self.canvas)
+        dpi = 100
+        single_plot_height = 2
+        fig_height = single_plot_height * len(self.table)
+        self.h_pix = int(fig_height * dpi)
+        self.plot_frame.configure(height=self.h_pix)
+        self.plot_frame.grid_propagate(False)
+        self.plot_window = self.canvas.create_window((0, 0), window=self.plot_frame, anchor=tk.NW)
+        self.plot_frame.columnconfigure(0, weight=1)
+        self.plot_frame.rowconfigure(0, weight=1)
+        self.plot_frame.bind('<Configure>', self._on_frame_configure)
+        self.canvas.bind('<Configure>', self._on_canvas_configure)
+
+        self.fig, self.ax = plt.subplots(
+            len(self.table), 1,
+            sharex=True,
+            figsize=(10, fig_height),
+            dpi=dpi,
+            constrained_layout=True,
+        )
+        self.fig.set_layout_engine('constrained', h_pad=0.1, w_pad=0.1)
+
+        self.lines = []
+        self.scatters = []
+        self.last_points = []
+        colors = 'bgrcmy'
+        color_i = 0
+        markers = 'ov^<>sP*+xD'
+        marker_i = 0
+        # color = 'red'
+        for i, ax in enumerate(self.ax):
+            iid, title, plot = self.table[i]
+            color = colors[color_i]
+            color_i += 1
+            color_i %= len(colors)
+            marker = markers[marker_i]
+            marker_i += 1
+            marker_i %= len(markers)
+
+            line, = ax.plot([], [], color=color, linewidth=0.75)
+            self.lines.append(line)
+
+            scatter = ax.scatter([], [], color=color, s=15, zorder=5, marker=marker)
+            self.scatters.append(scatter)
+
+            last_point = ax.scatter([], [], color=color, s=25, zorder=6, marker=marker)
+            self.last_points.append(last_point)
+
+            ax.set_title(title, fontsize=10)
+            ax.grid(True)
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S\n%Y-%m-%d'))
+            # ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%dT%H-%M-%SZ'))
+            # ax.tick_params(axis='x', rotation=45, labelsize=8)
+            ax.tick_params(axis='both', labelsize=8)
+
+        self.plot_canvas = FigureCanvasTkAgg(self.fig, master=self.plot_frame)
+        self.plot_widget = self.plot_canvas.get_tk_widget()
+        self.plot_widget.grid(row=0, column=0, sticky=tk.NSEW)
+
+        self.plot_widget.bind('<MouseWheel>', self._on_mousewheel)
+        self.plot_widget.bind('<Button-4>', self._on_mousewheel)
+        self.plot_widget.bind('<Button-5>', self._on_mousewheel)
+        self.canvas.bind('<MouseWheel>', self._on_mousewheel)
+        self.canvas.bind('<Button-4>', self._on_mousewheel)
+        self.canvas.bind('<Button-5>', self._on_mousewheel)
+
+    def _on_mousewheel(self, evt=None):
+        n = 0
+        if hasattr(evt, 'num'):
+            # Linux: Button-4 (up), Button-5 (down)
+            if evt.num == 4:
+                n = -1
+            elif evt.num == 5:
+                n = 1
+
+        elif hasattr(evt, 'delta'):
+            # Windows/macOS: positive delta = up
+            if evt.delta > 0:
+                n = -1
+            else:
+                n = 1
+
+        self.canvas.yview_scroll(n, 'units')
+        return 'break'
+
+    def _on_frame_configure(self, evt=None):
+        self.canvas.configure(scrollregion=self.canvas.bbox(tk.ALL))
+
+    def _on_canvas_configure(self, evt=None):
+        self.canvas.itemconfig(
+            self.plot_window,
+            width=evt.width,
+            height=self.plot_frame.winfo_reqheight(),
+        )
+
+    def clear(self):
+        self.time_data.clear()
+        for i in self.lines:
+            i.set_data([], [])
+        for i in self.scatter_plots:
+            i.set_offsets([])
+        for i in self.last_points:
+            i.set_offsets([])
+        for ax in self.ax:
+            ax.relim()
+            ax.autoscale_view()
+        self.plot_canvas.draw_idle()
+
+    def fill(self, tlm):
+        t = tlm.get('Time')
+        if not t:
+            return
+
+        params = {}
+        for i, ax in enumerate(self.ax):
+            iid = self.table[i][0]
+            params[iid] = tlm[iid]
+
+        self.time_data[t] = params
+        sorted_times = list(sorted(self.time_data))
+
+        for i, ax in enumerate(self.ax):
+            iid, title, plot = self.table[i]
+            sorted_data = [self.time_data[t][iid] for t in sorted_times]
+
+            self.lines[i].set_data(sorted_times, sorted_data)
+            self.scatters[i].set_offsets(list(zip(sorted_times, sorted_data)))
+            self.last_points[i].set_offsets([(t, params[iid])])
+
+            ax.relim()
+            ax.autoscale_view()
+
+        self.plot_canvas.draw_idle()
+
+    def fill_full(self, tlms):
+        for tlm in tlms:
+            t = tlm.get('Time')
+            if not t:
+                continue
+
+            params = {}
+            for i, ax in enumerate(self.ax):
+                iid = self.table[i][0]
+                params[iid] = tlm[iid]
+
+            self.time_data[t] = params
+
+        sorted_times = list(sorted(self.time_data))
+
+        for i, ax in enumerate(self.ax):
+            iid, title, plot = self.table[i]
+            sorted_data = [self.time_data[t][iid] for t in sorted_times]
+
+            self.lines[i].set_data(sorted_times, sorted_data)
+            self.scatters[i].set_offsets(list(zip(sorted_times, sorted_data)))
+            self.last_points[i].set_offsets([(sorted_times[-1], sorted_data[-1])])
+
+            ax.relim()
+            ax.autoscale_view()
+
+        self.plot_canvas.draw_idle()
+
+
+class TlmCommonFrame(ttk.Frame):
+    def __init__(self, master, tlm_table):
         super().__init__(master)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
+        self.tlm_table = tlm_table
         self.tlm_tables = {}
+        self.plot_frames = {}
         self.last_tlm = None
-
-        for k, v in vals.items():
-            self.tlm_tables[k] = TlmCommonTable(self, v)
 
         self.info_frm = ttk.Frame(self)
         self.info_frm.columnconfigure(0, weight=1)
@@ -151,32 +347,103 @@ class TlmCommonFrame(ttk.Frame):
         self.tlm_name_l = ttk.Label(self.info_frm)
         self.tlm_name_l.grid(row=0, column=0, sticky=tk.EW, pady=3)
 
-        ttk.Separator(self.info_frm, orient=tk.VERTICAL).grid(column=1, row=0, sticky=tk.NS, pady=3, padx=3)
-        ttk.Label(self.info_frm, text='Float precision:').grid(column=2, row=0, sticky=tk.E, pady=3)
+        ttk.Separator(self.info_frm, orient=tk.VERTICAL).grid(row=0, column=1, sticky=tk.NS, pady=3, padx=3)
+
+        self.mode = 0
+        self.switch_mode_b = ttk.Button(self.info_frm, text='Plot', command=self.switch_mode)
+        self.switch_mode_b.grid(row=0, column=2, sticky=tk.E, pady=3, padx=3)
+
+        ttk.Label(self.info_frm, text='Float precision:').grid(row=0, column=3, sticky=tk.E, pady=3)
         self.float_precision_v = tk.IntVar(self, 10)
         self.float_precision = ttk.Spinbox(self.info_frm, from_=0, to=100, width=3,
                                            textvariable=self.float_precision_v, command=self.float_review)
-        self.float_precision.grid(row=0, column=3, sticky=tk.E, pady=3)
+        self.float_precision.grid(row=0, column=4, sticky=tk.E, pady=3)
 
-    def fill(self, tlm, filename):
-        table = self.tlm_tables[tlm._name]
+    def clear(self):
+        self.child_forget(self.last_tlm._name if self.last_tlm else '')
+        for i in self.plot_frames.values():
+            i.clear()
+
+    def child_forget(self, tlm_name):
+        if tlm_name:
+            i = self.plot_frames.get(tlm_name)
+            if i and i.valid:
+                i.grid_forget()
+            i = self.tlm_tables.get(tlm_name)
+            if i:
+                i.grid_forget()
+                i.vsb.grid_forget()
+                i.hsb.grid_forget()
+
+    def show_table(self, tlm):
+        table = self.tlm_tables.get(tlm._name)
+        if not table:
+            table = TlmCommonTable(self, self.tlm_table[tlm._name])
+            self.tlm_tables[tlm._name] = table
+
         table.fill(tlm, self.float_precision_v.get())
-        self.last_tlm = tlm
-
-        for i in self.tlm_tables.values():
-            i.grid_forget()
-            i.vsb.grid_forget()
-            i.hsb.grid_forget()
-
         table.grid(column=0, row=0, sticky=tk.NSEW)
         table.vsb.grid(column=1, row=0, sticky=tk.NSEW)
         table.hsb.grid(column=0, row=1, sticky=tk.NSEW)
 
+    def get_plot(self, tlm_name):
+        plot = self.plot_frames.get(tlm_name)
+        if not plot:
+            plot = TlmPlotFrame(self, self.tlm_table[tlm_name])
+            self.plot_frames[tlm_name] = plot
+        return plot
+
+    def fill_plot(self, tlm, fully=()):
+        names = {}
+        for i in fully:
+            names.setdefault(i._name, []).append(i)
+
+        for name, tlms in names.items():
+            plot = self.get_plot(name)
+            if plot.valid:
+                plot.fill_full(tlms)
+
+        plot = self.get_plot(tlm._name)
+        if plot.valid:
+            plot.fill(tlm)
+
+    def show_plot(self, tlm_name):
+        plot = self.get_plot(tlm_name)
+        if plot.valid:
+            plot.grid(column=0, row=0, sticky=tk.NSEW)
+
+    def fill(self, tlm, filename, fully=()):
+        try:
+            old_tlm_name = self.last_tlm._name
+        except AttributeError:
+            old_tlm_name = ''
+
+        self.child_forget(old_tlm_name)
+        if fully:
+            self.fill_plot(tlm, fully)
+        if self.mode:
+            if not fully:
+                self.fill_plot(tlm)
+            self.show_plot(tlm._name)
+        else:
+            self.show_table(tlm)
+
+        self.last_tlm = tlm
         self.tlm_name_l.config(text=filename and filename.name)
 
     def float_review(self):
         table = self.tlm_tables[self.last_tlm._name]
         table.fill(self.last_tlm, self.float_precision_v.get())
+
+    def switch_mode(self):
+        self.mode ^= 1
+        self.switch_mode_b.config(text='Tlm' if self.mode else 'Plot')
+
+        self.child_forget(self.last_tlm._name)
+        if self.mode:
+            self.show_plot(self.last_tlm._name)
+        else:
+            self.show_table(self.last_tlm)
 
 
 class DynamicNotebook(ttk.Notebook):

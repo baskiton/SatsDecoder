@@ -115,6 +115,7 @@ class NewTabDialog(tk.Toplevel):
 
 
 class HistoryFrame(ttk.LabelFrame):
+    EVT_CLR = '<<hist.clear>>'
     EVT_SEL = '<<hist.select>>'
     FILTERS = 'tlm', 'img', 'raw', 'frame'
 
@@ -127,7 +128,7 @@ class HistoryFrame(ttk.LabelFrame):
         self.ctrl_frame.columnconfigure(0, weight=1)
         self.ctrl_frame.grid(sticky=tk.NSEW)
 
-        self.clear_btn = ttk.Button(self.ctrl_frame, text='clear', command=self.clear)
+        self.clear_btn = ttk.Button(self.ctrl_frame, text='Clear', command=self.clear)
         self.clear_btn.grid(sticky=tk.W, column=0, row=0)
 
         self.autoscroll_val = tk.IntVar(self, value=int(config.get('autoscroll', 1)))
@@ -184,6 +185,7 @@ class HistoryFrame(ttk.LabelFrame):
         self.detached_vals.clear()
         if self.master.decoder.ir:
             self.master.decoder.ir.clear()
+        self.master.event_generate(self.EVT_CLR, when='tail')
         self.master.event_generate(self.EVT_SEL, when='tail')
 
     def apply_filter(self):
@@ -211,9 +213,11 @@ class HistoryFrame(ttk.LabelFrame):
     def get_selected(self):
         r = self.table.selection()
         if r:
-            i = utils.Dict(self.table.item(r[0]))
+            iid = r[0]
+            i = utils.Dict(self.table.item(iid))
             if i:
-                i['iid'] = r[0]
+                i.iid = iid
+                i.parent = self.table.parent(iid)
             return i
 
     def put(self, tag, name, *args, date=None):
@@ -324,11 +328,13 @@ class CanvasFrame(ttk.Frame):
 
         self.vsb = utils.AutoScrollbar(self.canvas_frame, orient=tk.VERTICAL, command=self.canvas.yview)
         self.vsb.grid(row=0, column=1, sticky=tk.NS)
-        self.canvas.configure(yscrollcommand=self.vsb.set)
         self.hsb = utils.AutoScrollbar(self.canvas_frame, orient=tk.HORIZONTAL, command=self.canvas.xview)
         self.hsb.grid(row=1, column=0, sticky=tk.EW)
-        self.canvas.configure(xscrollcommand=self.hsb.set)
-        self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
+        self.canvas.configure(
+            yscrollcommand=self.vsb.set,
+            xscrollcommand=self.hsb.set,
+            scrollregion=self.canvas.bbox(tk.ALL),
+        )
 
         self.tail_frame = ttk.Frame(self)
         self.tail_frame.grid(row=2, sticky=tk.NSEW, pady=3)
@@ -480,6 +486,10 @@ class DataViewFrame(ttk.LabelFrame):
         if not skip_iai:
             self.cnv.active_img = None
 
+    def clear2(self):
+        self.clear()
+        self.tlm.clear()
+
     def change_text_mode(self):
         self.set_raw(self.text_raw)
 
@@ -519,10 +529,10 @@ class DataViewFrame(ttk.LabelFrame):
         self.view_select_raw.configure(state=st)
         self.view_select_ascii.configure(state=st)
 
-    def set_tlm(self, tlm, fname):
+    def set_tlm(self, tlm, fname, fully=()):
         self.clear()
 
-        self.tlm.fill(tlm, fname)
+        self.tlm.fill(tlm, fname, fully)
         self.tlm.grid(column=0, row=0, sticky=tk.NSEW)
 
     def set_img(self, img, select=0):
@@ -613,6 +623,7 @@ class DecoderFrame(ttk.Frame):
         # history frame
         self.history_frame = HistoryFrame(self, config)
         self.history_frame.grid(column=0, row=1, sticky=tk.NSEW, padx=2, pady=2)
+        self.bind(self.history_frame.EVT_CLR, self.clear)
         self.bind(self.history_frame.EVT_SEL, self.fill_data)
         self.bind(self.STOP_EVT, self.stop)
 
@@ -653,7 +664,10 @@ class DecoderFrame(ttk.Frame):
         }
         self.con_btn.config(text=d[self.get_conn_mode()]['d' in kw])
 
-    def fill_data(self, evt=None):
+    def clear(self, evt=None):
+        self.dv_frame.clear2()
+
+    def fill_data(self, evt=None, fully=()):
         x = self.history_frame.get_selected()
         if not (x and x.tags):
             self.dv_frame.clear()
@@ -663,7 +677,12 @@ class DecoderFrame(ttk.Frame):
         vals = self.history_frame.vals[x.iid]
 
         if tag == 'tlm':
-            self.dv_frame.set_tlm(vals[-2], vals[-1])
+            if fully:
+                fully = (
+                    self.history_frame.vals[iid][-2]
+                    for iid in self.history_frame.table.get_children(x.parent)
+                )
+            self.dv_frame.set_tlm(vals[-2], vals[-1], fully)
         elif tag == 'img':
             self.dv_frame.set_img(vals[-1], 1)
         else:   # raw, etc
@@ -749,7 +768,7 @@ class DecoderFrame(ttk.Frame):
                 for ln in text_e.get(1.0, tk.END).splitlines():
                     if self._hex_line(ln):
                         break
-                self.fill_data()
+                self.fill_data(fully=1)
 
             ask_hex.grab_release()
             ask_hex.destroy()
@@ -788,7 +807,7 @@ class DecoderFrame(ttk.Frame):
                     self.feed(data, t)
             except Exception as e:
                 self.show_err(message='read %s: %s' % (fn, e.args))
-        self.fill_data()
+        self.fill_data(fully=1)
 
     def _kiss_files(self):
         for fn in filedialog.askopenfilenames(filetypes=[('KISS', ['*.kss']), ('All files', '*.*')]):
@@ -797,7 +816,7 @@ class DecoderFrame(ttk.Frame):
                     self.feed(data, t)
             except Exception as e:
                 self.show_err(message='read %s: %s' % (fn, e.args))
-        self.fill_data()
+        self.fill_data(fully=1)
 
     def _satdump_files(self):
         is_geoscan = self.proto == systems.geoscan.proto_name
@@ -832,7 +851,7 @@ class DecoderFrame(ttk.Frame):
                         break
 
                     self.feed(data)
-        self.fill_data()
+        self.fill_data(fully=1)
 
     def _start(self):
         curr_mode = self.get_conn_mode()

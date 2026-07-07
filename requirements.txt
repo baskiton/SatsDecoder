@@ -1,3 +1,4 @@
 Pillow
 construct
 numpy<2
+matplotlib
