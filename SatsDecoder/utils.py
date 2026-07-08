@@ -9,6 +9,7 @@ import datetime as dt
 import enum
 import errno
 import json
+import math
 import struct
 import sys
 import tkinter as tk
@@ -250,28 +251,19 @@ class TlmPlotFrame(ttk.Frame):
         self.plot_widget = self.plot_canvas.get_tk_widget()
         self.plot_widget.grid(row=0, column=0, sticky=tk.NSEW)
 
-        self.plot_widget.bind('<MouseWheel>', self._on_mousewheel)
-        self.plot_widget.bind('<Button-4>', self._on_mousewheel)
-        self.plot_widget.bind('<Button-5>', self._on_mousewheel)
-        self.canvas.bind('<MouseWheel>', self._on_mousewheel)
-        self.canvas.bind('<Button-4>', self._on_mousewheel)
-        self.canvas.bind('<Button-5>', self._on_mousewheel)
+        for i in (self.plot_widget, self.canvas):
+            for e in ('<MouseWheel>', '<Button-4>', '<Button-5>'):
+                i.bind(e, self._on_mousewheel)
 
     def _on_mousewheel(self, evt=None):
         n = 0
-        if hasattr(evt, 'num'):
-            # Linux: Button-4 (up), Button-5 (down)
-            if evt.num == 4:
-                n = -1
-            elif evt.num == 5:
-                n = 1
+        if hasattr(evt, 'num') and evt.num in (4, 5):
+            # Linux: Button-4 (up > -1), Button-5 (down > 1)
+            n = evt.num * 2 - 9
 
-        elif hasattr(evt, 'delta'):
+        elif hasattr(evt, 'delta') and evt.delta:
             # Windows/macOS: positive delta = up
-            if evt.delta > 0:
-                n = -1
-            else:
-                n = 1
+            n = -int(math.copysign(1, evt.delta))
 
         self.canvas.yview_scroll(n, 'units')
         return 'break'
