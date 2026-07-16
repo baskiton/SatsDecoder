@@ -374,7 +374,7 @@ class TlmCommonFrame(ttk.Frame):
         ttk.Separator(self.info_frm, orient=tk.VERTICAL).grid(row=0, column=1, sticky=tk.NS, pady=3, padx=3)
 
         self.mode = 0
-        self.switch_mode_b = ttk.Button(self.info_frm, text='Plot', command=self.switch_mode)
+        self.switch_mode_b = ttk.Button(self.info_frm, text='Chart', command=self.switch_mode)
         self.switch_mode_b.grid(row=0, column=2, sticky=tk.E, pady=3, padx=3)
 
         ttk.Label(self.info_frm, text='Float precision:').grid(row=0, column=3, sticky=tk.E, pady=3)
@@ -461,7 +461,7 @@ class TlmCommonFrame(ttk.Frame):
 
     def switch_mode(self):
         self.mode ^= 1
-        self.switch_mode_b.config(text='Tlm' if self.mode else 'Plot')
+        self.switch_mode_b.config(text='Tlm' if self.mode else 'Chart')
 
         self.child_forget(self.last_tlm._name)
         if self.mode:
