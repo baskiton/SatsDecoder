@@ -44,6 +44,7 @@ The following protocols are currently supported:
 * `GreenCube` - [GreenCube](https://www.s5lab.space/index.php/decoding-ledsat-2/)
 * `Ledsat` - [LEDSAT](https://www.s5lab.space/index.php/decoding-ledsat/)
 * `Lucky-7` - [Lucky-7 Satellite protocol](https://www.lucky7satellite.org/radioamateurs)
+* `Marina`
 * `RoseyCubeSat`
 * `SamSat-Ionosphere` - [SamSat-Ion2 beacon structure](https://spaceresearch.ssau.ru/doc/SamSat/SamSat-Ion2/SamSat-Ionosphere-beacon.pdf)
 * `SharjahSat`
