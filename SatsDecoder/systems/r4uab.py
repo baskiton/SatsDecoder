@@ -63,7 +63,7 @@ r4uab = construct.Struct(
 
 
 class R4uabImageReceiver(ImageReceiver):
-    DATA_LEN = 200
+    DATA_LEN = 128
 
     def __init__(self, outdir):
         super().__init__(outdir)
