@@ -800,6 +800,7 @@ class DecoderFrame(ttk.Frame):
                     store_tlm = 0
                 if self._hex_line(ln, store_tlm):
                     break
+        self.fill_data(fully=1)
 
     def _json_files(self):
         for fn in filedialog.askopenfilenames(filetypes=[('JSON', ['*.json']), ('All files', '*.*')]):
