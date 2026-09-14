@@ -968,7 +968,7 @@ class DecoderFrame(ttk.Frame):
                 self.show_err(message='%s: %s (%s)' % (self.name, e, conn))
             return 1
 
-        if not frame:
+        if frame is None:
             if not self.is_server:
                 self.show_warn(message='%s: Connection lost' % self.name)
             return 1
