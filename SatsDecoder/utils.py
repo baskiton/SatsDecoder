@@ -11,6 +11,7 @@ import errno
 import json
 import math
 import struct
+import socket as sk
 import sys
 import tkinter as tk
 
@@ -817,39 +818,58 @@ def kiss_read(fp):
                 pass
 
 
-def kiss_read_stream(conn):
-    # await beginning
-    while 1:
-        c = recvall(conn, 1)
-        if not c:
-            return
-        if c == KISS_FEND:
-            break
+def kiss_read_stream(conn, rx_buf):
+    """
+    return: data
+    if data None:
+        connection closed
+    elif data == b'':
+        no data, skip
+    elif data is datetime:
+        is time =)
+    """
 
-    # read control byte
-    c = recvall(conn, 1)
-    if c == KISS_FEND:
-        c = recvall(conn, 1)
-    if not c:
+    peek_buf = conn.recv(8192, sk.MSG_PEEK)
+    if not peek_buf:
+        rx_buf.clear()
         return
-    c = ord(c)
 
-    if c == KISS_CMD_TS:
-        ts, = struct.unpack('>Q', kiss_unescape(recvall(conn, 8)))
-        t = kiss_epoch + dt.timedelta(seconds=ts / 1000)
-        recvall(conn, 1)
-        return t
+    buf = rx_buf + peek_buf
+    i_start = buf.find(KISS_FEND)
+    if i_start == -1:
+        # garbage. clean
+        conn.recv(len(peek_buf))
+        rx_buf.clear()
+        return b''
+    # clean FEND blob
+    i_start += len(buf[i_start:]) - len(buf[i_start:].lstrip(KISS_FEND)) - 1
+    i_end = buf.find(KISS_FEND, i_start + 1)
+    if i_end == -1:
+        # incomplete frame
+        # XXX: rx_buf can become huge
+        rx_buf.extend(conn.recv(len(peek_buf)))
+        del rx_buf[:i_start]
+        return b''
 
-    elif c in KISS_CMD_DATA:
-        buf = bytearray()
-        while 1:
-            c = recvall(conn, 1)
-            if not c:
-                return
-            if c == KISS_FEND:
-                break
-            buf.extend(c)
-        return kiss_unescape(bytes(buf))
+    frame = buf[i_start+1:i_end]
+    d = i_end + 1 - len(rx_buf)
+    del rx_buf[:i_end+1]
+    conn.recv(d)
+
+    cmd, data = frame[0], frame[1:]
+
+    if cmd == KISS_CMD_TS:
+        try:
+            ts, = struct.unpack_from('>Q', kiss_unescape(data))
+        except struct.error:
+            # invalid ts
+            return b''
+        return kiss_epoch + dt.timedelta(seconds=ts / 1000)
+
+    elif cmd in KISS_CMD_DATA:
+        return kiss_unescape(data)
+
+    return b''
 
 
 def _json_get_t(v):

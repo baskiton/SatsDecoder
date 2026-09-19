@@ -556,6 +556,7 @@ class DecoderFrame(ttk.Frame):
         self.proto = config.get('proto', name)
         self.name = name
         self.sk = self.thr = self.frame_off = 0
+        self.rx_buf = bytearray()
         self.decoder = systems.PROTOCOLS[self.proto](config.get('outdir'))
 
         self.grid(column=0, row=0, sticky=tk.NSEW)
@@ -876,6 +877,7 @@ class DecoderFrame(ttk.Frame):
 
             s.setblocking(0)
             self.sk = s
+            self.rx_buf.clear()
 
         except (ConnectionError, OSError) as e:
             self.show_err(message='%s: %s' % (self.name, e.strerror))
@@ -943,10 +945,10 @@ class DecoderFrame(ttk.Frame):
 
             elif self.curr_mode == utils.ConnMode.KISS_TCP_CLI:
                 while 1:
-                    x = utils.kiss_read_stream(conn)
+                    x = utils.kiss_read_stream(conn, self.rx_buf)
                     if isinstance(x, dt.datetime):
                         t = x
-                    else:
+                    elif x or x is None:
                         frame = x
                         break
 
