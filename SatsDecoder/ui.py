@@ -437,7 +437,8 @@ class CanvasFrame(ttk.Frame):
         del self._imgtk
         _imgtk = PIL.ImageTk.PhotoImage(utils.img_to_8bit(i))
         to_del, self.cnv_img_id = self.cnv_img_id, self.canvas.create_image(0, 0, anchor=tk.NW, image=_imgtk)
-        self.canvas.delete(to_del)
+        if to_del != tk.ALL:
+            self.canvas.delete(to_del)
         self._imgtk = _imgtk
 
         if i.size != self.canvas_sz:
