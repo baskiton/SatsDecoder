@@ -18,6 +18,7 @@ import socket as sk
 import sys
 import threading
 import time
+import traceback
 import tkinter as tk
 import urllib
 import urllib.error
@@ -646,7 +647,13 @@ class DecoderFrame(ttk.Frame):
     def show_warn(self, title=None, message=None, detail=None):
         self.show_message(messagebox.WARNING, title=title, message=message, detail=detail)
 
-    def show_err(self, title=None, message=None, detail=None):
+    def show_err(self, title=None, message=None, detail=None, tb=0):
+        if tb:
+            x = traceback.format_exc()
+            if detail:
+                detail = detail + '\n\n' + x
+            else:
+                detail = x
         self.show_message(messagebox.ERROR, title=title, message=message, detail=detail)
 
     def get_conn_mode(self):
@@ -970,6 +977,9 @@ class DecoderFrame(ttk.Frame):
             if e.errno not in (errno.EBADF, sys.platform == 'win32' and errno.WSAEBADF) and conn.fileno() != -1:
                 self.show_err(message='%s: %s (%s)' % (self.name, e, conn))
             return 1
+        except:
+            self.show_err(message='%s: Unexpected error. Disconnect' % self.name, tb=1)
+            return 1
 
         if not frame:
             if not self.is_server:
@@ -1025,10 +1035,12 @@ class DecoderFrame(ttk.Frame):
 
         except construct.ConstructError:
             # TODO: log it
+            import traceback as tb
+            tb.print_exc(chain=0)
             pass
 
         except Exception as e:
-            self.show_err(message='feed %s: %s' % (self.name, e))
+            self.show_err(message='%s: feed: %s' % (self.name, e))
             return 1
 
 

@@ -635,6 +635,7 @@ def nonblocking_message(type_, title=None, message=None, detail=None, parent=Non
 
     frame = ttk.Frame(top, padding=(10, 6, 10, 6))
     frame.grid(column=0, row=0, sticky=tk.NSEW)
+    frame.columnconfigure(1, weight=1)
 
     ttk.Label(frame, image=img, justify=tk.LEFT).grid(column=0, row=0)
     ttk.Label(frame, text=message or '', font='TkCaptionFont').grid(column=1, row=0)
@@ -808,8 +809,12 @@ def kiss_read(fp):
                 continue
             if fr[0] == KISS_CMD_TS:
                 # timestamp
-                ts, = struct.unpack('>Q', kiss_unescape(fr[1:]))
-                t = kiss_epoch + dt.timedelta(seconds=ts / 1000)
+                try:
+                    ts, = struct.unpack('>Q', kiss_unescape(fr[1:]))
+                    t = kiss_epoch + dt.timedelta(seconds=ts / 1000)
+                except (OverflowError, struct.error):
+                    # invalid ts
+                    pass
             elif fr[0] in KISS_CMD_DATA:
                 # data frame
                 yield kiss_unescape(fr[1:]), t
@@ -861,7 +866,7 @@ def kiss_read_stream(conn, rx_buf):
     if cmd == KISS_CMD_TS:
         try:
             ts, = struct.unpack_from('>Q', kiss_unescape(data))
-        except struct.error:
+        except (OverflowError, struct.error):
             # invalid ts
             return b''
         return kiss_epoch + dt.timedelta(seconds=ts / 1000)
