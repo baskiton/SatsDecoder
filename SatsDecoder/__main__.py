@@ -7,11 +7,13 @@
 
 import configparser
 
-from SatsDecoder import CONFIG, ui
+from SatsDecoder import CONFIG, HOMEDIR, ui
 from SatsDecoder.version import __version__
 
 
 if __name__ == '__main__':
+    HOMEDIR.mkdir(parents=True, exist_ok=True)
+
     cp = configparser.ConfigParser()
     d = {'main': {'check_update': 1},
          'info': {'version': __version__}}
