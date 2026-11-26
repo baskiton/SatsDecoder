@@ -24,6 +24,7 @@ from SatsDecoder.systems.sharjahsat import *
 from SatsDecoder.systems.snuglite import *
 from SatsDecoder.systems.sonate2 import *
 from SatsDecoder.systems.usp import *
+from SatsDecoder.systems.usp_rs18s import *
 from SatsDecoder.systems.wtc_simba import *
 from SatsDecoder.systems.raw import *
 
@@ -47,6 +48,7 @@ for i in (
         'snuglite',
         'sonate2',
         'wtc_simba',
+        'usp_rs18s',
         'raw',
         ):
     m = getattr(sys.modules['SatsDecoder.systems'], i)
