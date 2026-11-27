@@ -234,11 +234,47 @@ attitude = construct.Struct(
     'field_check' / construct.Computed(lambda this: this.field_check_raw * 0.01),
 )
 
+chat_message = construct.Struct(
+    'magic' / construct.Const(0xC2, construct.Int8ul),
+    'msg_seq' / construct.Int16ul,
+    'from_len' / construct.Int8ul,
+    'to_len' / construct.Int8ul,
+    'call_from' / construct.Bytes(construct.this.from_len),
+    'call_to' / construct.Bytes(construct.this.to_len),
+    'text' / construct.GreedyBytes,
+)
+
+def _chat_fields(data):
+    def text(b):
+        return bytes(b).decode('utf-8', errors='replace')
+
+    try:
+        msg = chat_message.parse(data)
+    except construct.ConstructError:
+        msg = None
+    # if the message is invalid, return raw text and empty fields
+    if msg is None or not 1 <= msg.from_len <= 10 or msg.to_len > 10:
+        return {'msg_seq': '', 'call_from': '', 'call_to': '', 'text': text(data)}
+    return {
+        'msg_seq': msg.msg_seq,
+        'call_from': text(msg.call_from),
+        'call_to': text(msg.call_to) or 'all',
+        'text': text(msg.text),
+    }
+
+chat_fields = (
+    '_chat' / construct.Computed(lambda this: _chat_fields(this.data)),
+    'msg_seq' / construct.Computed(lambda this: this._chat['msg_seq']),
+    'call_from' / construct.Computed(lambda this: this._chat['call_from']),
+    'call_to' / construct.Computed(lambda this: this._chat['call_to']),
+    'text' / construct.Computed(lambda this: this._chat['text']),
+)
+
 echo = construct.Struct(
     '_name' / construct.Computed('echo'),
     'name' / construct.Computed('Echo message'),
     'data' / construct.GreedyBytes,
-    'text' / construct.Computed(lambda this: bytes(this.data).decode('utf-8', errors='replace')),
+    *chat_fields,
 )
 
 chat_stored = construct.Struct(
@@ -249,7 +285,7 @@ chat_stored = construct.Struct(
     'offset' / construct.Int8ul,
     'timestamp' / common.UNIXTimestampAdapter(construct.Int32ul),
     'data' / construct.GreedyBytes,
-    'text' / construct.Computed(lambda this: bytes(this.data).decode('utf-8', errors='replace')),
+    *chat_fields,
 )
 
 node_text = construct.Struct(
@@ -472,13 +508,22 @@ class UspRS18SProtocol(UspProtocolBase):
                     ('bdot', 'B-dot active', 0),
                 ),
             },
-            'echo': {'table': (('name', 'Name', 0), ('text', 'Text', 0))},
+            'echo': {'table': (
+                ('name', 'Name', 0),
+                ('call_from', 'From', 0),
+                ('call_to', 'To', 0),
+                ('msg_seq', 'Message number', 0),
+                ('text', 'Text', 0),
+            )},
             'chat_stored': {'table': (
                 ('name', 'Name', 0),
                 ('seq', 'Sequence number', 0),
                 ('page', 'Page number', 0),
                 ('offset', 'Offset in page', 0),
                 ('timestamp', 'Message time', 0),
+                ('call_from', 'From', 0),
+                ('call_to', 'To', 0),
+                ('msg_seq', 'Message number', 0),
                 ('text', 'Text', 0),
             )},
             'node_text': {'table': (
