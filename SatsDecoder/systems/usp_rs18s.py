@@ -13,17 +13,6 @@ __all__ = 'UspRS18SProtocol',
 
 proto_name = 'usp_rs18s'
 
-# SBC has two beacon variants sharing one msgid, will be fixed
-# in next firmware update window
-def _payload_has_sbc_extended_fields(context):
-    size = getattr(context._, 'size', None)
-    if size is not None:
-        return size >= 53
-    stream = context._io
-    if hasattr(stream, 'getvalue'):
-        return len(stream.getvalue()) - stream.tell() >= 20
-    return False
-
 def _flags(*names):
     return construct.BitStruct(*[
         ('_reserved%d' % i if n is None else n) / construct.Flag
@@ -46,16 +35,12 @@ pl_sstv_flags = _flags(
     None, None, None, 'sstv_on_air', 'sstv_fix', 'sstv_grid', 'sstv_area', 'sstv_set',
 )
 
-sbc_telemetry_flags = _flags(
-    None, None, 'frozen', 'diag_mode', 'drift_compensation', 'product_ready', 'event', 'sensing',
-)
-
 sbc_beacon_flags = _flags(
-    None, 'frozen', 'diag_mode', 'drift_step', 'saturated', 'product_ready', 'event', 'sensing',
+    'hv_trip', 'frozen', 'diag_mode', 'drift_step', 'saturated', 'product_ready', 'event', 'sensing',
 )
 
 sbc_beacon_tlm_flags = _flags(
-    None, None, 'tlm_frozen', 'tlm_diag_mode', 'tlm_drift_compensation', 'tlm_product_ready', 'tlm_event', 'tlm_sensing',
+    None, 'tlm_hv_trip', 'tlm_frozen', 'tlm_diag_mode', 'tlm_drift_compensation', 'tlm_product_ready', 'tlm_event', 'tlm_sensing',
 )
 
 attitude_flags = _flags(
@@ -65,7 +50,6 @@ attitude_flags = _flags(
 
 PL_MAIN_BEACON = 0x1C1C
 PL_ALT_BEACON = 0x1C1D
-SBC_TELEMETRY = 0x102D
 SBC_BEACON = 0x1033
 ATTITUDE = 0x0876
 MSG_ECHO = 0x0881
@@ -75,26 +59,6 @@ MSG_LONG_MSG_DIGITAL = 0x0847
 
 # SAKHACUBE-CHOLBON definitions:
 # https://tdas.tmtc.yksa.space/packets/definitions/1/export.xtce
-pl_beacon_head = construct.Struct(
-    '_name' / construct.Computed('pl_beacon_head'),
-    'last_gs_contact' / common.UNIXTimestampAdapter(construct.Int32ul),
-    'flags0' / pl_status_flags,
-    'nodes_present' / construct.Int8ul,
-    'muxpos' / construct.Int8ul,
-    'node_pwr_status' / construct.Int8ul,
-    'node_rst_status' / construct.Int8ul,
-    'cluster_tx_bytes' / construct.Int32ul,
-    'cluster_rx_bytes' / construct.Int32ul,
-    'sbc_last_reply' / construct.Int32ul,
-    'flash_used_blocks' / construct.Int16ul,
-    'flash_free_blocks' / construct.Int16ul,
-    'active_schedules' / construct.Int8ul,
-    'scheduler_queue_len' / construct.Int8ul,
-    'bus_current' / construct.Int16ul,
-    'bus_current_max' / construct.Int16ul,
-)
-
-
 pl_main_beacon = construct.Struct(
     '_name' / construct.Computed('pl_main_beacon'),
     'name' / construct.Computed('Primary payload supervisor beacon'),
@@ -136,7 +100,7 @@ pl_alt_beacon = construct.Struct(
     'node_rst_status' / construct.Int8ul,
     'cluster_tx_bytes' / construct.Int32ul,
     'cluster_rx_bytes' / construct.Int32ul,
-    'sbc_last_reply' / construct.Int32ul,
+    'sbc_last_reply' / construct.Int32ul, # always 0 on 0x1D payload
     'flash_used_blocks' / construct.Int16ul,
     'flash_free_blocks' / construct.Int16ul,
     'active_schedules' / construct.Int8ul,
@@ -156,56 +120,6 @@ pl_alt_beacon = construct.Struct(
     'sstv_refused' / construct.Int16ul,
     'sstv_out_of_area' / construct.Int16ul,
     'sstv_last_tx' / common.UNIXTimestampAdapter(construct.Int32ul),
-)
-
-sbc_telemetry = construct.Struct(
-    '_name' / construct.Computed('sbc_telemetry'),
-    'name' / construct.Computed('Gamma Spectrometer telemetry'),
-    'flags0' / sbc_telemetry_flags,
-    'uptime' / common.TimeDeltaAdapter(construct.Int32ul),
-    'hv_temp_raw' / construct.Int16sl,
-    'amp_temp_raw' / construct.Int16sl,
-    'sipm_temp_raw' / construct.Int16sl,
-    'mcu_temp_raw' / construct.Int16sl,
-    'vbias' / construct.Int16ul,
-    'pot_hv' / construct.Int8ul,
-    'pot_amp' / construct.Int8ul,
-    'pot_det' / construct.Int8ul,
-    'cps' / construct.Int16ul,
-    'cp10s' / construct.Int32ul,
-    'total_counts' / construct.Int32ul,
-    'baseline_cps' / construct.Int16ul,
-    'light_max' / construct.Int16ul,
-    'light_face' / construct.Int8ul,
-    'triggers' / construct.IfThenElse(
-        _payload_has_sbc_extended_fields,
-        construct.Int32ul,
-        construct.Computed(0),
-    ), # extended fields will be removed in next firmware update window
-    'accepted' / construct.IfThenElse(
-        _payload_has_sbc_extended_fields,
-        construct.Int32ul,
-        construct.Computed(0),
-    ),
-    'pileup' / construct.IfThenElse(
-        _payload_has_sbc_extended_fields,
-        construct.Int32ul,
-        construct.Computed(0),
-    ),
-    'busy' / construct.IfThenElse(
-        _payload_has_sbc_extended_fields,
-        construct.Int32ul,
-        construct.Computed(0),
-    ),
-    'live_ms' / construct.IfThenElse(
-        _payload_has_sbc_extended_fields,
-        construct.Int32ul,
-        construct.Computed(0),
-    ),
-    'hv_temp' / construct.Computed(lambda this: this.hv_temp_raw * 0.1),
-    'amp_temp' / construct.Computed(lambda this: this.amp_temp_raw * 0.1),
-    'sipm_temp' / construct.Computed(lambda this: this.sipm_temp_raw * 0.1),
-    'mcu_temp' / construct.Computed(lambda this: this.mcu_temp_raw * 0.1),
 )
 
 u24 = construct.Struct(
@@ -231,8 +145,8 @@ sbc_beacon = construct.Struct(
     'pot_hv' / construct.Int8ul,
     'pot_amp' / construct.Int8ul,
     'pot_det' / construct.Int8ul,
-    'light_max' / construct.Int16ul,
-    'light_face' / construct.Int8ul,
+    'rest_mv_raw' / construct.Int16ul,
+    'rest_noise_raw' / construct.Int8ul,
     'baseline_cps' / construct.Int16ul,
     'product_id' / construct.Int16ul,
     'product_len' / construct.Int16ul,
@@ -272,6 +186,8 @@ sbc_beacon = construct.Struct(
     'amp_temp' / construct.Computed(lambda this: this.amp_temp_raw * 0.1),
     'sipm_temp' / construct.Computed(lambda this: this.sipm_temp_raw * 0.1),
     'mcu_temp' / construct.Computed(lambda this: this.mcu_temp_raw * 0.1),
+    'rest_mv' / construct.Computed(lambda this: this.rest_mv_raw * 0.1),
+    'rest_noise_mv' / construct.Computed(lambda this: this.rest_noise_raw * 0.1),
 )
 
 attitude = construct.Struct(
@@ -356,7 +272,6 @@ message_digital = construct.Struct(
 rs18s_tlm_map = {
     PL_MAIN_BEACON: pl_main_beacon._name / pl_main_beacon,
     PL_ALT_BEACON: pl_alt_beacon._name / pl_alt_beacon,
-    SBC_TELEMETRY: sbc_telemetry._name / sbc_telemetry,
     SBC_BEACON: sbc_beacon._name / sbc_beacon,
     ATTITUDE: attitude._name / attitude,
     MSG_ECHO: echo._name / echo,
@@ -462,7 +377,6 @@ class UspRS18SProtocol(UspProtocolBase):
                     ('node_rst_status', 'Node reset status', 0),
                     ('cluster_tx_bytes', 'Cluster TX bytes', 1),
                     ('cluster_rx_bytes', 'Cluster RX bytes', 2),
-                    ('sbc_last_reply', 'Last spectrometer reply', 0),
                     ('flash_used_blocks', 'Used flash blocks', 1),
                     ('flash_free_blocks', 'Free flash blocks', 2),
                     ('active_schedules', 'Active schedules', 0),
@@ -495,31 +409,6 @@ class UspRS18SProtocol(UspProtocolBase):
                     ('sstv_on_air', 'SSTV on air', 0),
                 ),
             },
-            'sbc_telemetry': {
-                'table': (
-                    ('name', 'Name', 0),
-                    ('uptime', 'Spectrometer uptime, s', 0),
-                    ('hv_temp', 'High voltage temperature, C', 0),
-                    ('amp_temp', 'Amplifier temperature, C', 0),
-                    ('sipm_temp', 'SiPM temperature, C', 0),
-                    ('mcu_temp', 'MCU temperature, C', 0),
-                    ('vbias', 'SiPM bias voltage, mV', 0),
-                    ('cps', 'Counts in last second', 0),
-                    ('cp10s', 'Counts in last 10 s', 0),
-                    ('total_counts', 'Total counts', 0),
-                    ('triggers', 'Triggers', 0),
-                    ('accepted', 'Accepted counts', 0),
-                    ('live_ms', 'Live time, ms', 0),
-                ),
-                'flags': (
-                    ('sensing', 'Sensing', 0),
-                    ('event', 'Event', 0),
-                    ('product_ready', 'Product ready', 0),
-                    ('drift_compensation', 'Drift compensation', 0),
-                    ('diag_mode', 'Diagnostic mode', 0),
-                    ('frozen', 'Frozen', 0),
-                ),
-            },
             'sbc_beacon': {
                 'table': (
                     ('name', 'Name', 0),
@@ -531,6 +420,9 @@ class UspRS18SProtocol(UspProtocolBase):
                     ('amp_temp', 'Amplifier temperature, C', 0),
                     ('sipm_temp', 'SiPM temperature, C', 0),
                     ('mcu_temp', 'MCU temperature, C', 0),
+                    ('vbias', 'SiPM bias voltage, mV', 0),
+                    ('rest_mv', 'Preamp resting level, mV', 0),
+                    ('rest_noise_mv', 'Resting level noise, mV', 0),
                     ('live_ms', 'Live time, ms', 0),
                     ('uptime', 'Spectrometer uptime, s', 0),
                     ('tlm_total_counts', 'Spectrometer total counts', 0),
@@ -551,6 +443,7 @@ class UspRS18SProtocol(UspProtocolBase):
                     ('drift_step', 'Drift step', 0),
                     ('diag_mode', 'Diagnostic mode', 0),
                     ('frozen', 'Frozen', 0),
+                    ('hv_trip', 'HV guard trip', 0),
                 ),
             },
             'attitude': {
