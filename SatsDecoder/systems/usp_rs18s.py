@@ -9,11 +9,12 @@ from SatsDecoder.systems.image_receiver import ImageReceiver
 from SatsDecoder.systems.usp import tlm_map, filetransfer
 from SatsDecoder.systems.usp import UspProtocol as UspProtocolBase
 
-__all__ = "UspRS18SProtocol",
+__all__ = 'UspRS18SProtocol',
 
 proto_name = 'usp_rs18s'
 
-
+# SBC has two beacon variants sharing one msgid, will be fixed
+# in next firmware update window
 def _payload_has_sbc_extended_fields(context):
     size = getattr(context._, 'size', None)
     if size is not None:
@@ -23,18 +24,14 @@ def _payload_has_sbc_extended_fields(context):
         return len(stream.getvalue()) - stream.tell() >= 20
     return False
 
-
 def _flags(*names):
-    """Bit struct from flag names, MSB first. None marks a reserved bit."""
     return construct.BitStruct(*[
         ('_reserved%d' % i if n is None else n) / construct.Flag
         for i, n in enumerate(names)
     ])
 
-
 pl_status_flags = _flags(
-    'speed_step', 'sstv_held', 'sstv_event', 'orbit_valid',
-    'overcurrent', 'time_lock', 'low_power', 'safe_mode',
+    'speed_step', 'sstv_held', 'sstv_event', 'orbit_valid', 'overcurrent', 'time_lock', 'low_power', 'safe_mode',
 )
 
 pl_adcs_flags = _flags(
@@ -42,35 +39,29 @@ pl_adcs_flags = _flags(
 )
 
 pl_mfs_flags = _flags(
-    'mfs_replay', 'mfs_on_air', 'mfs_more', 'mfs_ax25',
-    'mfs_locked', 'mfs_scanning', 'mfs_ready', 'mfs_enabled',
+    'mfs_replay', 'mfs_on_air', 'mfs_more', 'mfs_ax25', 'mfs_locked', 'mfs_scanning', 'mfs_ready', 'mfs_enabled',
 )
 
 pl_sstv_flags = _flags(
-    None, None, None, 'sstv_on_air', 'sstv_fix', 'sstv_grid', 'sstv_area',
-    'sstv_set',
+    None, None, None, 'sstv_on_air', 'sstv_fix', 'sstv_grid', 'sstv_area', 'sstv_set',
 )
 
 sbc_telemetry_flags = _flags(
-    None, None, 'frozen', 'diag_mode', 'drift_compensation',
-    'product_ready', 'event', 'sensing',
+    None, None, 'frozen', 'diag_mode', 'drift_compensation', 'product_ready', 'event', 'sensing',
 )
 
 sbc_beacon_flags = _flags(
-    None, 'frozen', 'diag_mode', 'drift_step', 'saturated',
-    'product_ready', 'event', 'sensing',
+    None, 'frozen', 'diag_mode', 'drift_step', 'saturated', 'product_ready', 'event', 'sensing',
 )
 
 sbc_beacon_tlm_flags = _flags(
-    None, None, 'tlm_frozen', 'tlm_diag_mode', 'tlm_drift_compensation',
-    'tlm_product_ready', 'tlm_event', 'tlm_sensing',
+    None, None, 'tlm_frozen', 'tlm_diag_mode', 'tlm_drift_compensation', 'tlm_product_ready', 'tlm_event', 'tlm_sensing',
 )
 
 attitude_flags = _flags(
-    'rate_high', 'angle', 'eclipse', 'triad', 'sun_valid', 'light', 'mag',
-    'orbit', None, None, None, None, 'run', 'eop', 'point_sample', 'bdot',
+    'rate_high', 'angle', 'eclipse', 'triad', 'sun_valid', 'light', 'mag', 'orbit', 
+    None, None, None, None, 'run', 'eop', 'point_sample', 'bdot',
 )
-
 
 PL_MAIN_BEACON = 0x1C1C
 PL_ALT_BEACON = 0x1C1D
@@ -133,7 +124,6 @@ pl_main_beacon = construct.Struct(
     'adcs_last_bdot' / common.UNIXTimestampAdapter(construct.Int32ul),
 )
 
-
 pl_alt_beacon = construct.Struct(
     '_name' / construct.Computed('pl_alt_beacon'),
     'name' / construct.Computed('Secondary payload supervisor beacon'),
@@ -168,7 +158,6 @@ pl_alt_beacon = construct.Struct(
     'sstv_last_tx' / common.UNIXTimestampAdapter(construct.Int32ul),
 )
 
-
 sbc_telemetry = construct.Struct(
     '_name' / construct.Computed('sbc_telemetry'),
     'name' / construct.Computed('Gamma Spectrometer telemetry'),
@@ -192,7 +181,7 @@ sbc_telemetry = construct.Struct(
         _payload_has_sbc_extended_fields,
         construct.Int32ul,
         construct.Computed(0),
-    ),
+    ), # extended fields will be removed in next firmware update window
     'accepted' / construct.IfThenElse(
         _payload_has_sbc_extended_fields,
         construct.Int32ul,
@@ -219,13 +208,11 @@ sbc_telemetry = construct.Struct(
     'mcu_temp' / construct.Computed(lambda this: this.mcu_temp_raw * 0.1),
 )
 
-
 u24 = construct.Struct(
     'lo' / construct.Int16ul,
     'hi' / construct.Int8ul,
     'value' / construct.Computed(lambda this: this.lo | (this.hi << 16)),
 )
-
 
 sbc_beacon = construct.Struct(
     '_name' / construct.Computed('sbc_beacon'),
@@ -287,7 +274,6 @@ sbc_beacon = construct.Struct(
     'mcu_temp' / construct.Computed(lambda this: this.mcu_temp_raw * 0.1),
 )
 
-
 attitude = construct.Struct(
     '_name' / construct.Computed('attitude'),
     'name' / construct.Computed('TRIAD Attitude solution'),
@@ -336,9 +322,7 @@ echo = construct.Struct(
     '_name' / construct.Computed('echo'),
     'name' / construct.Computed('Echo message'),
     'data' / construct.GreedyBytes,
-    'text' /
-    construct.Computed(lambda this: bytes(
-        this.data).decode('utf-8', errors='replace')),
+    'text' / construct.Computed(lambda this: bytes(this.data).decode('utf-8', errors='replace')),
 )
 
 chat_stored = construct.Struct(
@@ -349,9 +333,7 @@ chat_stored = construct.Struct(
     'offset' / construct.Int8ul,
     'timestamp' / common.UNIXTimestampAdapter(construct.Int32ul),
     'data' / construct.GreedyBytes,
-    'text' /
-    construct.Computed(lambda this: bytes(
-        this.data).decode('utf-8', errors='replace')),
+    'text' / construct.Computed(lambda this: bytes(this.data).decode('utf-8', errors='replace')),
 )
 
 node_text = construct.Struct(
@@ -360,9 +342,7 @@ node_text = construct.Struct(
     'node_id' / construct.Int8ul,
     'timestamp' / common.UNIXTimestampAdapter(construct.Int32ul),
     'data' / construct.GreedyBytes,
-    'text' /
-    construct.Computed(lambda this: bytes(
-        this.data).decode('utf-8', errors='replace')),
+    'text' / construct.Computed(lambda this: bytes(this.data).decode('utf-8', errors='replace')),
 )
 
 message_digital = construct.Struct(
@@ -370,9 +350,7 @@ message_digital = construct.Struct(
     'name' / construct.Computed('Message from Space (MFS)'),
     'id' / construct.Int16ul,
     'data' / construct.GreedyBytes,
-    'text' /
-    construct.Computed(lambda this: bytes(
-        this.data).decode('utf-8', errors='replace')),
+    'text' / construct.Computed(lambda this: bytes(this.data).decode('utf-8', errors='replace')),
 )
 
 rs18s_tlm_map = {
@@ -422,12 +400,10 @@ Frame = construct.Struct(
 usp = construct.Struct(
     'ax25' / construct.Peek(ax25.ax25_header),
     'ax25' / construct.If(lambda this: bool(this.ax25), ax25.ax25_header),
-    'usp' / construct.If(lambda this: (bool(this.ax25)
-                         and this.ax25.pid == 0xF0), Frame),
+    'usp' / construct.If(lambda this: (bool(this.ax25) and this.ax25.pid == 0xF0), Frame),
 )
 
 usp_range = construct.GreedyRange(usp)
-
 
 class UspRS18SProtocol(UspProtocolBase):
     def __init__(self, *args, **kwargs):
@@ -647,3 +623,4 @@ class UspRS18SProtocol(UspProtocolBase):
                     ty = 'raw'
 
                 yield ty, self.get_sender_callsign(data), '0x%04X' % i.message, p_data
+
